@@ -1,0 +1,348 @@
+{
+  "lessons": [
+    {
+      "id": "lesson-001",
+      "title": "Дроби: сложение и вычитание",
+      "description": "Интерактивный урок по работе с обыкновенными дробями. Учащиеся научатся складывать и вычитать дроби с одинаковыми и разными знаменателями.",
+      "subject": "Математика",
+      "grade": 5,
+      "duration": 45,
+      "author": {
+        "id": "user-001",
+        "name": "Иванова Мария Петровна",
+        "avatar": "/avatars/maria.jpg"
+      },
+      "isPublished": true,
+      "isTemplate": true,
+      "views": 1234,
+      "rating": 4.8,
+      "ratingsCount": 234,
+      "likes": 567,
+      "tags": ["дроби", "арифметика", "5 класс"],
+      "blocks": [
+        {
+          "id": "block-001",
+          "type": "introduction",
+          "position": 1,
+          "content": {
+            "title": "Введение",
+            "text": "Сегодня мы научимся складывать и вычитать дроби. Это важный навык, который пригодится вам в жизни — от деления пиццы до расчёта скидок!",
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-002",
+          "type": "explanation",
+          "position": 2,
+          "content": {
+            "title": "Теория: одинаковые знаменатели",
+            "text": "Когда знаменатели одинаковые, просто складываем числители:\n\n2/5 + 1/5 = 3/5",
+            "image": "/images/fractions-same-denom.png",
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-003",
+          "type": "practice",
+          "position": 3,
+          "content": {
+            "title": "Практика: решаем вместе",
+            "problems": [
+              { "question": "1/4 + 2/4 = ?", "answer": "3/4" },
+              { "question": "5/8 - 2/8 = ?", "answer": "3/8" },
+              { "question": "3/7 + 3/7 = ?", "answer": "6/7" }
+            ],
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-004",
+          "type": "explanation",
+          "position": 4,
+          "content": {
+            "title": "Теория: разные знаменатели",
+            "text": "Когда знаменатели разные, сначала приводим к общему знаменателю:\n\n1/2 + 1/3 = 3/6 + 2/6 = 5/6",
+            "image": "/images/fractions-diff-denom.png",
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-005",
+          "type": "quiz",
+          "position": 5,
+          "content": {
+            "title": "Проверь себя",
+            "questions": [
+              {
+                "question": "Чему равно 1/2 + 1/4?",
+                "options": ["2/6", "3/4", "2/4", "1/6"],
+                "correct": 1
+              },
+              {
+                "question": "Чему равно 2/3 - 1/6?",
+                "options": ["1/3", "1/2", "1/6", "2/6"],
+                "correct": 1
+              }
+            ],
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-006",
+          "type": "homework",
+          "position": 6,
+          "content": {
+            "title": "Домашнее задание",
+            "tasks": [
+              "Учебник, стр. 45, №1-5",
+              "Рабочая тетрадь, стр. 22-23"
+            ],
+            "dueInDays": 2
+          }
+        }
+      ],
+      "createdAt": "2026-01-15T10:00:00Z",
+      "updatedAt": "2026-01-20T14:30:00Z"
+    },
+    {
+      "id": "lesson-002",
+      "title": "Фотосинтез: как растения создают еду",
+      "description": "Увлекательный урок о процессе фотосинтеза с экспериментами и интерактивными заданиями. Ученики узнают, как растения превращают солнечный свет в энергию.",
+      "subject": "Биология",
+      "grade": 6,
+      "duration": 45,
+      "author": {
+        "id": "user-002",
+        "name": "Петров Алексей Николаевич",
+        "avatar": "/avatars/alexey.jpg"
+      },
+      "isPublished": true,
+      "isTemplate": true,
+      "views": 987,
+      "rating": 4.9,
+      "ratingsCount": 156,
+      "likes": 432,
+      "tags": ["фотосинтез", "растения", "биология", "6 класс"],
+      "blocks": [
+        {
+          "id": "block-101",
+          "type": "introduction",
+          "position": 1,
+          "content": {
+            "title": "Откуда растения берут еду?",
+            "text": "Вы когда-нибудь задумывались, почему растения зелёные? И как они растут, хотя у них нет рта? Сегодня мы раскроем эту тайну!",
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-102",
+          "type": "video",
+          "position": 2,
+          "content": {
+            "title": "Видео: Фотосинтез за 3 минуты",
+            "url": "https://example.com/photosynthesis-video",
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-103",
+          "type": "explanation",
+          "position": 3,
+          "content": {
+            "title": "Формула фотосинтеза",
+            "text": "CO₂ + H₂O + Свет → C₆H₁₂O₆ + O₂\n\nУглекислый газ + Вода + Солнечный свет = Глюкоза + Кислород",
+            "image": "/images/photosynthesis-diagram.png",
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-104",
+          "type": "experiment",
+          "position": 4,
+          "content": {
+            "title": "Эксперимент: Кислород из листа",
+            "materials": ["Лист растения", "Стакан воды", "Воронка", "Пробирка", "Лампа"],
+            "steps": [
+              "Поместите лист под воду",
+              "Накройте воронкой",
+              "Переверните пробирку над воронкой",
+              "Включите лампу и ждите 20 минут",
+              "Соберите пузырьки газа в пробирку"
+            ],
+            "duration": 15
+          }
+        },
+        {
+          "id": "block-105",
+          "type": "discussion",
+          "position": 5,
+          "content": {
+            "title": "Обсуждение",
+            "questions": [
+              "Почему растения важны для жизни на Земле?",
+              "Что произойдёт, если все растения исчезнут?",
+              "Как люди используют фотосинтез?"
+            ],
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-106",
+          "type": "quiz",
+          "position": 6,
+          "content": {
+            "title": "Тест",
+            "questions": [
+              {
+                "question": "Что выделяют растения при фотосинтезе?",
+                "options": ["Углекислый газ", "Кислород", "Азот", "Водород"],
+                "correct": 1
+              },
+              {
+                "question": "В какой части растения происходит фотосинтез?",
+                "options": ["В корнях", "В стебле", "В листьях", "В цветах"],
+                "correct": 2
+              }
+            ],
+            "duration": 5
+          }
+        }
+      ],
+      "createdAt": "2026-01-10T09:00:00Z",
+      "updatedAt": "2026-01-18T11:00:00Z"
+    },
+    {
+      "id": "lesson-003",
+      "title": "Present Simple: ежедневные привычки",
+      "description": "Урок английского языка о настоящем простом времени. Ученики научатся описывать свои ежедневные действия и привычки.",
+      "subject": "Английский язык",
+      "grade": 4,
+      "duration": 40,
+      "author": {
+        "id": "user-003",
+        "name": "Сидорова Елена Викторовна",
+        "avatar": "/avatars/elena.jpg"
+      },
+      "isPublished": true,
+      "isTemplate": true,
+      "views": 2156,
+      "rating": 4.7,
+      "ratingsCount": 312,
+      "likes": 891,
+      "tags": ["present simple", "grammar", "english", "4 класс"],
+      "blocks": [
+        {
+          "id": "block-201",
+          "type": "warmup",
+          "position": 1,
+          "content": {
+            "title": "Warm-up: Morning Routine",
+            "text": "What do you do every morning? Let's discuss!",
+            "questions": [
+              "What time do you wake up?",
+              "Do you eat breakfast?",
+              "How do you get to school?"
+            ],
+            "duration": 5
+          }
+        },
+        {
+          "id": "block-202",
+          "type": "explanation",
+          "position": 2,
+          "content": {
+            "title": "Present Simple: Rules",
+            "text": "We use Present Simple for:\n• Habits: I brush my teeth every day.\n• Facts: Water boils at 100°C.\n• Routines: School starts at 8 AM.\n\nRemember: Add -s/-es for he/she/it!",
+            "examples": [
+              { "subject": "I/You/We/They", "verb": "play" },
+              { "subject": "He/She/It", "verb": "plays" }
+            ],
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-203",
+          "type": "practice",
+          "position": 3,
+          "content": {
+            "title": "Fill in the blanks",
+            "exercises": [
+              { "sentence": "She ___ (go) to school by bus.", "answer": "goes" },
+              { "sentence": "They ___ (like) pizza.", "answer": "like" },
+              { "sentence": "My dad ___ (work) in an office.", "answer": "works" },
+              { "sentence": "We ___ (play) football on Sundays.", "answer": "play" }
+            ],
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-204",
+          "type": "speaking",
+          "position": 4,
+          "content": {
+            "title": "Pair Work: Interview",
+            "instruction": "Ask your partner about their daily routine. Use these questions:",
+            "questions": [
+              "What time do you wake up?",
+              "What do you have for breakfast?",
+              "Do you walk to school or take the bus?",
+              "What do you do after school?",
+              "What time do you go to bed?"
+            ],
+            "duration": 10
+          }
+        },
+        {
+          "id": "block-205",
+          "type": "game",
+          "position": 5,
+          "content": {
+            "title": "Game: Daily Routine Bingo",
+            "instruction": "Create a bingo card with 9 daily activities. Walk around and find classmates who do these things!",
+            "activities": [
+              "wake up before 7 AM",
+              "eat eggs for breakfast",
+              "walk to school",
+              "play sports after school",
+              "watch TV in the evening",
+              "read before bed",
+              "help with housework",
+              "feed a pet",
+              "go to bed after 9 PM"
+            ],
+            "duration": 5
+          }
+        }
+      ],
+      "createdAt": "2026-01-05T14:00:00Z",
+      "updatedAt": "2026-01-12T16:00:00Z"
+    }
+  ],
+  "blockTypes": [
+    { "id": "introduction", "name": "Введение", "icon": "🎯" },
+    { "id": "explanation", "name": "Объяснение", "icon": "📖" },
+    { "id": "video", "name": "Видео", "icon": "🎬" },
+    { "id": "practice", "name": "Практика", "icon": "✏️" },
+    { "id": "quiz", "name": "Тест", "icon": "❓" },
+    { "id": "discussion", "name": "Обсуждение", "icon": "💬" },
+    { "id": "experiment", "name": "Эксперимент", "icon": "🔬" },
+    { "id": "game", "name": "Игра", "icon": "🎮" },
+    { "id": "warmup", "name": "Разминка", "icon": "🌟" },
+    { "id": "speaking", "name": "Говорение", "icon": "🗣️" },
+    { "id": "homework", "name": "Домашнее задание", "icon": "📝" }
+  ],
+  "subjects": [
+    { "id": "math", "name": "Математика", "icon": "📐" },
+    { "id": "russian", "name": "Русский язык", "icon": "📝" },
+    { "id": "english", "name": "Английский язык", "icon": "🇬🇧" },
+    { "id": "biology", "name": "Биология", "icon": "🌿" },
+    { "id": "physics", "name": "Физика", "icon": "⚡" },
+    { "id": "chemistry", "name": "Химия", "icon": "🧪" },
+    { "id": "history", "name": "История", "icon": "🏛️" },
+    { "id": "geography", "name": "География", "icon": "🌍" },
+    { "id": "literature", "name": "Литература", "icon": "📚" },
+    { "id": "art", "name": "ИЗО", "icon": "🎨" },
+    { "id": "music", "name": "Музыка", "icon": "🎵" },
+    { "id": "pe", "name": "Физкультура", "icon": "⚽" }
+  ]
+}
