@@ -25,6 +25,33 @@ const fadeUpObj = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
 };
 
+const TypewriterText = ({ text, delayOffset = 0.5 }) => {
+  const characters = Array.from(text);
+  
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.04, delayChildren: delayOffset },
+    },
+  };
+
+  const child = {
+    hidden: { opacity: 0, x: -10, filter: "blur(4px)" },
+    show: { opacity: 1, x: 0, filter: "blur(0px)", transition: { type: "spring", damping: 12, stiffness: 100 } },
+  };
+
+  return (
+    <motion.span style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "center" }} variants={container} initial="hidden" animate="show">
+      {characters.map((char, index) => (
+        <motion.span variants={child} key={index} style={{ display: 'inline-block' }}>
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+};
+
 function Landing() {
     const { t, language, toggleLanguage } = useLanguage();
 
@@ -75,8 +102,8 @@ function Landing() {
                         
                         <motion.h1 variants={fadeUpObj} className="v2-hero-title">
                             {language === 'kk' ? 'Болашақ білім беру' : 'Образование будущего'} <br />
-                            <span className="v2-gradient-text">
-                                {language === 'kk' ? 'жасанды интеллектпен' : 'с искусственным интеллектом'}
+                            <span className="v2-gradient-text" style={{ display: 'inline-block' }}>
+                                <TypewriterText text={language === 'kk' ? 'жасанды интеллектпен' : 'с искусственным интеллектом'} delayOffset={0.6} />
                             </span>
                         </motion.h1>
                         
