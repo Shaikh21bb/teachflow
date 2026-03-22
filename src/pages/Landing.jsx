@@ -101,7 +101,9 @@ function Landing() {
                         </motion.div>
                         
                         <motion.h1 variants={fadeUpObj} className="v2-hero-title">
-                            {language === 'kk' ? 'Мұғалімдердің жаңа суперкүші' : 'Новая суперсила для учителей'} <br />
+                            <span style={{ color: '#ffffff' }}>
+                                {language === 'kk' ? 'Мұғалімдердің жаңа суперкүші' : 'Новая суперсила для учителей'}
+                            </span> <br />
                             <span className="v2-gradient-text" style={{ display: 'inline-block' }}>
                                 <TypewriterText text={language === 'kk' ? 'жасанды интеллект негізінде' : 'на базе искусственного интеллекта'} delayOffset={0.6} />
                             </span>
