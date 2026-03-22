@@ -1,372 +1,257 @@
-import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { useLanguage } from '../contexts/LanguageContext'
+import { Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import { motion } from 'framer-motion';
+import { 
+  BrainCircuit, 
+  BarChart3, 
+  Users, 
+  BookOpen, 
+  Sparkles, 
+  CheckCircle2,
+  ArrowRight,
+  Globe2
+} from 'lucide-react';
+
+const staggeredContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const fadeUpObj = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } }
+};
 
 function Landing() {
-    const { t, language, toggleLanguage } = useLanguage()
-
-    // Premium Scroll Reveal Animation Hook
-    useEffect(() => {
-        const observerCallback = (entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
-                    // Optional: stop observing once revealed
-                    // observer.unobserve(entry.target);
-                }
-            });
-        };
-
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: "0px 0px -50px 0px"
-        };
-
-        const observer = new IntersectionObserver(observerCallback, observerOptions);
-        const revealElements = document.querySelectorAll('.reveal');
-        
-        revealElements.forEach(el => observer.observe(el));
-
-        return () => {
-            revealElements.forEach(el => observer.unobserve(el));
-        };
-    }, []);
+    const { t, language, toggleLanguage } = useLanguage();
 
     return (
-        <>
-            <div className="landing-wrapper">
-                {/* Header */}
-                <header className="header glass-header">
-                    <div className="container header-inner">
-                        <div className="logo">
-                            <div className="logo-icon-ai">AI</div>
-                            <span className="logo-text">Urpaq.ai</span>
-                        </div>
+        <div className="v2-landing-wrapper">
+            <div className="v2-bg-glow" />
 
-                        <nav className="nav">
-                            <a href="#features" className="nav-link">{t('landing.features.badge')}</a>
-                            <a href="#how-it-works" className="nav-link">{language === 'kk' ? 'Қалай жұмыс істейді' : 'Как это работает'}</a>
-                            <a href="#pricing" className="nav-link">{t('landing.pricing.title')}</a>
-                        </nav>
-
-                        <div className="header-actions">
-                            <button
-                                onClick={toggleLanguage}
-                                className="btn btn-ghost"
-                                style={{ marginRight: '10px' }}
-                            >
-                                {language === 'kk' ? '🇰🇿' : '🇷🇺'}
-                            </button>
-                            <Link to="/login" className="btn btn-ghost">{language === 'kk' ? 'Кіру' : 'Вход'}</Link>
-                            <Link to="/register" className="btn btn-primary btn-glow">{language === 'kk' ? 'Тіркелу' : 'Регистрация'}</Link>
-                        </div>
+            {/* Header */}
+            <header className="v2-header">
+                <div className="v2-header-inner">
+                    <div className="logo white">
+                        <div className="logo-icon-ai text-white">AI</div>
+                        <span className="font-outfit" style={{ fontWeight: 700, fontSize: '1.25rem' }}>Urpaq.ai</span>
                     </div>
-                </header>
 
-                {/* Hero Section */}
-                <section className="hero-ai">
-                    <div className="container hero-inner-ai">
-                        <div className="hero-content reveal fade-up">
-                            <div className="hero-badge-ai">
-                                <span className="pulse-dot"></span>
-                                {t('landing.hero.badge')}
-                            </div>
-                            <h1 className="hero-title-ai">
-                                {t('landing.hero.title')} <br />
-                                <span className="gradient-text-ai">{t('landing.hero.titleBold')}</span>
-                            </h1>
-                            <p className="hero-subtitle-ai">
-                                {t('landing.hero.subtitle')}
-                            </p>
-
-                            <div className="hero-actions">
-                                <Link to="/dashboard" className="btn btn-lg btn-primary btn-glow">
-                                    {t('landing.hero.cta')}
-                                </Link>
-                                <a href="#demo" className="btn btn-lg btn-glass">
-                                    {t('landing.hero.demo')}
-                                </a>
-                            </div>
-
-                            <div className="hero-stats-ai">
-                                <div className="stat-item-ai">
-                                    <span className="stat-value">5000+</span>
-                                    <span className="stat-label">{t('landing.hero.stats.teachers')}</span>
-                                </div>
-                                <div className="stat-separator"></div>
-                                <div className="stat-item-ai">
-                                    <span className="stat-value">150K+</span>
-                                    <span className="stat-label">{t('landing.hero.stats.students')}</span>
-                                </div>
-                                <div className="stat-separator"></div>
-                                <div className="stat-item-ai">
-                                    <span className="stat-value">98%</span>
-                                    <span className="stat-label">{t('landing.hero.stats.satisfaction')}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="hero-visual reveal fade-left" style={{ '--delay': '0.3s' }}>
-                            <div className="glass-card-float card-1">
-                                <div className="float-icon">🤖</div>
-                                <div className="float-content">
-                                    <div className="float-title">AI</div>
-                                    <div className="float-text">100%</div>
-                                </div>
-                            </div>
-                            <div className="glass-card-float card-2">
-                                <div className="float-icon">📊</div>
-                                <div className="float-content">
-                                    <div className="float-title">Stats</div>
-                                    <div className="float-text">📈</div>
-                                </div>
-                            </div>
-                            <div className="hero-circle-bg"></div>
-                        </div>
+                    <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button
+                            onClick={toggleLanguage}
+                            className="v2-btn v2-btn-outline"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.1)' }}
+                        >
+                            <Globe2 size={14} style={{ marginRight: '6px' }} />
+                            {language === 'kk' ? 'ҚАЗ' : 'РУС'}
+                        </button>
+                        <Link to="/login" className="v2-btn v2-btn-outline" style={{ border: 'none' }}>
+                            {language === 'kk' ? 'Кіру' : 'Вход'}
+                        </Link>
+                        <Link to="/register" className="v2-btn v2-btn-primary">
+                            {language === 'kk' ? 'Тіркелу' : 'Регистрация'}
+                        </Link>
                     </div>
-                </section>
+                </div>
+            </header>
 
-                {/* Trusted By */}
-                <section className="trusted-section reveal">
-                    <div className="container">
-                        <p className="trusted-title">{language === 'kk' ? 'Қазақстандағы үздік мектептер сенім артады' : 'Лучшие школы Казахстана доверяют нам'}</p>
-                        <div className="trusted-logos">
-                            <span className="trusted-logo">NIS</span>
-                            <span className="trusted-logo">BIL</span>
-                            <span className="trusted-logo">Quantum</span>
-                            <span className="trusted-logo">Haileybury</span>
-                            <span className="trusted-logo">Spectrum</span>
+            {/* Hero Section */}
+            <section className="v2-hero">
+                <div className="container" style={{ position: 'relative', zIndex: 10 }}>
+                    <motion.div 
+                        initial="hidden" 
+                        animate="show" 
+                        variants={staggeredContainer}
+                        className="hero-content"
+                    >
+                        <motion.div variants={fadeUpObj} className="v2-hero-badge">
+                            <Sparkles size={16} />
+                            {t('landing.hero.badge')}
+                        </motion.div>
+                        
+                        <motion.h1 variants={fadeUpObj} className="v2-hero-title">
+                            {language === 'kk' ? 'Болашақ білім беру' : 'Образование будущего'} <br />
+                            <span className="v2-gradient-text">
+                                {language === 'kk' ? 'жасанды интеллектпен' : 'с искусственным интеллектом'}
+                            </span>
+                        </motion.h1>
+                        
+                        <motion.p variants={fadeUpObj} className="v2-hero-subtitle">
+                           {t('landing.hero.subtitle')}
+                        </motion.p>
+                        
+                        <motion.div variants={fadeUpObj} style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem' }}>
+                            <Link to="/register" className="v2-btn v2-btn-primary" style={{ fontSize: '1.125rem', padding: '1rem 2.5rem' }}>
+                                {t('landing.hero.cta')} <ArrowRight size={20} style={{ marginLeft: '8px' }} />
+                            </Link>
+                        </motion.div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Stats */}
+            <section style={{ padding: '0 2rem 120px', position: 'relative', zIndex: 10 }}>
+                <div className="container">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={staggeredContainer}
+                        style={{ display: 'flex', justifyContent: 'center', gap: '4rem', flexWrap: 'wrap' }}
+                    >
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>5000+</div>
+                            <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.teachers')}</div>
+                         </motion.div>
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>150K+</div>
+                            <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.students')}</div>
+                         </motion.div>
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>98%</div>
+                            <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.satisfaction')}</div>
+                         </motion.div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Features Bento Grid */}
+            <section id="features" className="v2-section">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={fadeUpObj}
+                >
+                    <h2 className="v2-section-title font-outfit">{t('landing.features.title')}</h2>
+                </motion.div>
+
+                <motion.div 
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={staggeredContainer}
+                    className="v2-bento-grid"
+                >
+                    {/* Large Card 1 */}
+                    <motion.div variants={fadeUpObj} className="v2-bento-card large">
+                        <div className="v2-bento-icon"><BrainCircuit size={28} /></div>
+                        <h3 className="v2-bento-title font-outfit">{t('landing.features.aiBuilder.title')}</h3>
+                        <p className="v2-bento-desc">{t('landing.features.aiBuilder.desc')}</p>
+                    </motion.div>
+
+                    {/* Standard Card 1 */}
+                    <motion.div variants={fadeUpObj} className="v2-bento-card">
+                        <div className="v2-bento-icon"><BarChart3 size={28} /></div>
+                        <h3 className="v2-bento-title font-outfit">{t('landing.features.analytics.title')}</h3>
+                        <p className="v2-bento-desc">{t('landing.features.analytics.desc')}</p>
+                    </motion.div>
+
+                    {/* Standard Card 2 */}
+                    <motion.div variants={fadeUpObj} className="v2-bento-card">
+                        <div className="v2-bento-icon"><BookOpen size={28} /></div>
+                        <h3 className="v2-bento-title font-outfit">{t('nav.library')}</h3>
+                        <p className="v2-bento-desc">
+                            {language === 'kk'
+                                ? 'Мыңдаған дайын материалдар мен басқа мұғалімдердің үздік тәжірибелеріне қол жеткізіңіз.'
+                                : 'Получите доступ к тысячам готовых материалов и лучшим практикам других учителей.'}
+                        </p>
+                    </motion.div>
+
+                    {/* Large Card 2 */}
+                    <motion.div variants={fadeUpObj} className="v2-bento-card large">
+                        <div className="v2-bento-icon"><Users size={28} /></div>
+                        <h3 className="v2-bento-title font-outfit">{language === 'kk' ? 'Ата-аналармен Байланыс' : 'Связь с родителями'}</h3>
+                        <p className="v2-bento-desc">
+                            {language === 'kk'
+                                ? 'Автоматты хабарламалар мен есептерді ата-аналарға жіберіңіз. Кері байланысты жақсартыңыз.'
+                                : 'Отправляйте автоматические уведомления и отчеты родителям. Улучшайте обратную связь.'}
+                        </p>
+                    </motion.div>
+                </motion.div>
+            </section>
+
+            {/* Pricing Section */}
+            <section id="pricing" className="v2-section">
+                <motion.div 
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={fadeUpObj}
+                >
+                    <h2 className="v2-section-title font-outfit">{t('landing.pricing.title')}</h2>
+                </motion.div>
+
+                <motion.div 
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={staggeredContainer}
+                    className="v2-bento-grid"
+                >
+                    {/* Free */}
+                    <motion.div variants={fadeUpObj} className="v2-pricing-card">
+                        <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.free.name')}</h3>
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
+                            0 ₸<span style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 400 }}>/{t('common.month').toLowerCase()}</span>
                         </div>
+                        <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> 5 {language === 'kk' ? 'сабақ жоспары/ай' : 'планов уроков/мес'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> 1 {language === 'kk' ? 'сынып' : 'класс'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Базалық аналитика' : 'Базовая аналитика'}</li>
+                        </ul>
+                        <Link to="/register" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{t('common.create')}</Link>
+                    </motion.div>
+
+                    {/* Pro */}
+                    <motion.div variants={fadeUpObj} className="v2-pricing-card featured" style={{ position: 'relative' }}>
+                        <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#8b5cf6', color: '#fff', padding: '6px 20px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 }}>{t('landing.pricing.pro.popular')}</div>
+                        <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.pro.name')}</h3>
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', color: '#fff', fontFamily: 'Outfit, sans-serif' }}>
+                            5,980 ₸<span style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 400 }}>/{t('common.month').toLowerCase()}</span>
+                        </div>
+                        <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'Шексіз сабақ жоспарлары' : 'Безлимитные планы уроков'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'AI Көмекші (GPT-4)' : 'AI Помощник (GPT-4)'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? '10 сыныпқа дейін' : 'До 10 классов'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'Толық аналитика' : 'Полная аналитика'}</li>
+                        </ul>
+                        <Link to="/register" className="v2-btn v2-btn-primary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{t('common.add')}</Link>
+                    </motion.div>
+
+                    {/* School */}
+                    <motion.div variants={fadeUpObj} className="v2-pricing-card">
+                        <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.school.name')}</h3>
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
+                            {language === 'kk' ? 'Келісімді' : 'Договорная'}
+                        </div>
+                        <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Барлық мұғалімдерге доступ' : 'Доступ для всех учителей'}</li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Мектеп аналитикасы' : 'Аналитика школы'}</li>
+                        </ul>
+                        <a href="https://wa.me/77771225784" target="_blank" rel="noreferrer" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>WhatsApp: +7 777 122 5784</a>
+                    </motion.div>
+                </motion.div>
+            </section>
+
+            {/* Footer */}
+            <footer className="v2-footer">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+                    <div className="logo white">
+                        <div className="logo-icon-ai text-white">AI</div>
+                        <span className="font-outfit" style={{ fontWeight: 700, fontSize: '1.25rem' }}>Urpaq.ai</span>
                     </div>
-                </section>
-
-                {/* Features Section */}
-                <section id="features" className="features-ai section">
-                    <div className="container">
-                        <div className="section-header-ai reveal fade-up">
-                            <span className="section-badge-ai">{t('landing.features.badge')}</span>
-                            <h2 className="section-title-ai">{t('landing.features.title')}</h2>
-                            <p className="section-subtitle-ai">
-                                {t('landing.features.subtitle')}
-                            </p>
-                        </div>
-
-                        <div className="features-grid-ai">
-                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">📚</span>
-                                </div>
-                                <h3 className="feature-title-ai">{t('landing.features.aiBuilder.title')}</h3>
-                                <p className="feature-desc-ai">
-                                    {t('landing.features.aiBuilder.desc')}
-                                </p>
-                            </div>
-
-                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.2s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">📝</span>
-                                </div>
-                                <h3 className="feature-title-ai">{t('landing.features.autoGrading.title')}</h3>
-                                <p className="feature-desc-ai">
-                                    {t('landing.features.autoGrading.desc')}
-                                </p>
-                            </div>
-
-                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">📊</span>
-                                </div>
-                                <h3 className="feature-title-ai">{t('landing.features.analytics.title')}</h3>
-                                <p className="feature-desc-ai">
-                                    {t('landing.features.analytics.desc')}
-                                </p>
-                            </div>
-
-                            <div className="feature-card-ai reveal" style={{ '--delay': '0.4s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">🤝</span>
-                                </div>
-                                <h3 className="feature-title-ai">{language === 'kk' ? 'Ата-аналармен Байланыс' : 'Связь с родителями'}</h3>
-                                <p className="feature-desc-ai">
-                                    {language === 'kk'
-                                        ? 'Автоматты хабарламалар мен есептерді ата-аналарға жіберіңіз. Кері байланысты жақсартыңыз.'
-                                        : 'Отправляйте автоматические уведомления и отчеты родителям. Улучшайте обратную связь.'}
-                                </p>
-                            </div>
-
-                            <div className="feature-card-ai reveal" style={{ '--delay': '0.5s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">📂</span>
-                                </div>
-                                <h3 className="feature-title-ai">{t('nav.library')}</h3>
-                                <p className="feature-desc-ai">
-                                    {language === 'kk'
-                                        ? 'Мыңдаған дайын материалдар мен басқа мұғалімдердің үздік тәжірибелеріне қол жеткізіңіз.'
-                                        : 'Получите доступ к тысячам готовых материалов и лучшим практикам других учителей.'}
-                                </p>
-                            </div>
-
-                            <div className="feature-card-ai reveal" style={{ '--delay': '0.6s' }}>
-                                <div className="feature-icon-wrapper">
-                                    <span className="feature-icon-ai">🏆</span>
-                                </div>
-                                <h3 className="feature-title-ai">{language === 'kk' ? 'Геймификация' : 'Геймификация'}</h3>
-                                <p className="feature-desc-ai">
-                                    {language === 'kk'
-                                        ? 'Оқу процесін қызықты ойынға айналдырыңыз. Оқушылар ұпай жинап, мотивация алады.'
-                                        : 'Превратите процесс обучения в увлекательную игру. Ученики зарабатывают баллы и получают мотивацию.'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* How It Works */}
-                <section id="how-it-works" className="how-section-ai section">
-                    <div className="container">
-                        <div className="section-header-ai reveal fade-up">
-                            <span className="section-badge-ai">{language === 'kk' ? 'Қалай жұмыс істейді' : 'Как это работает'}</span>
-                            <h2 className="section-title-ai">{language === 'kk' ? 'Бәрі өте қарапайым' : 'Всё очень просто'}</h2>
-                        </div>
-
-                        <div className="steps-ai">
-                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
-                                <div className="step-number-ai">01</div>
-                                <h3>{language === 'kk' ? 'Тіркеліңіз' : 'Зарегистрируйтесь'}</h3>
-                                <p>{language === 'kk' ? 'Платформада аккаунт ашып, сыныптарыңызды қосыңыз.' : 'Создайте аккаунт на платформе и добавьте свои классы.'}</p>
-                            </div>
-                            <div className="step-arrow">→</div>
-                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.2s' }}>
-                                <div className="step-number-ai">02</div>
-                                <h3>{language === 'kk' ? 'Сабақ құрыңыз' : 'Создайте урок'}</h3>
-                                <p>{language === 'kk' ? 'AI көмегімен сабақ жоспарын және материалдарды дайындаңыз.' : 'Подготовьте план урока и материалы с помощью AI.'}</p>
-                            </div>
-                            <div className="step-arrow">→</div>
-                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
-                                <div className="step-number-ai">03</div>
-                                <h3>{language === 'kk' ? 'Нәтиже көріңіз' : 'Смотрите результат'}</h3>
-                                <p>{language === 'kk' ? 'Оқушылардың белсенділігі мен үлгерімінің өсуін бақылаңыз.' : 'Наблюдайте за ростом активности и успеваемости учеников.'}</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Pricing */}
-                <section id="pricing" className="pricing-section-ai section">
-                    <div className="container">
-                        <div className="section-header-ai reveal fade-up">
-                            <h2 className="section-title-ai">{t('landing.pricing.title')}</h2>
-                            <p className="section-subtitle-ai">{t('landing.pricing.subtitle')}</p>
-                        </div>
-
-                        <div className="pricing-grid">
-                            <div className="pricing-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
-                                <div className="pricing-header-ai">
-                                    <h3>{t('landing.pricing.free.name')}</h3>
-                                    <div className="price-ai">0 ₸<span>/{t('common.month').toLowerCase()}</span></div>
-                                    <p>{t('landing.pricing.free.desc')}</p>
-                                </div>
-                                <ul className="pricing-features-ai">
-                                    <li>✅ 5 {language === 'kk' ? 'сабақ жоспары/ай' : 'планов уроков/мес'}</li>
-                                    <li>✅ 1 {language === 'kk' ? 'сынып' : 'класс'}</li>
-                                    <li>✅ {language === 'kk' ? 'Базалық аналитика' : 'Базовая аналитика'}</li>
-                                </ul>
-                                <button className="btn btn-outline-ai">{t('common.create')}</button>
-                            </div>
-
-                            <div className="pricing-card-ai featured reveal fade-up" style={{ '--delay': '0.2s' }}>
-                                <div className="best-value">{t('landing.pricing.pro.popular')}</div>
-                                <div className="pricing-header-ai">
-                                    <h3>{t('landing.pricing.pro.name')}</h3>
-                                    <div className="price-ai">5,980 ₸<span>/{t('common.month').toLowerCase()}</span></div>
-                                    <p>{t('landing.pricing.pro.desc')}</p>
-                                </div>
-                                <ul className="pricing-features-ai">
-                                    <li>✅ {language === 'kk' ? 'Шексіз сабақ жоспарлары' : 'Безлимитные планы уроков'}</li>
-                                    <li>✅ {language === 'kk' ? 'AI Көмекші (GPT-4)' : 'AI Помощник (GPT-4)'}</li>
-                                    <li>✅ {language === 'kk' ? '10 сыныпқа дейін' : 'До 10 классов'}</li>
-                                    <li>✅ {language === 'kk' ? 'Толық аналитика' : 'Полная аналитика'}</li>
-                                    <li>✅ {language === 'kk' ? 'Экспорт PDF/Word' : 'Экспорт в PDF/Word'}</li>
-                                </ul>
-                                <button className="btn btn-primary btn-glow">{t('common.add')}</button>
-                            </div>
-
-                            <div className="pricing-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
-                                <div className="pricing-header-ai">
-                                    <h3>{t('landing.pricing.school.name')}</h3>
-                                    <div className="price-ai">{language === 'kk' ? 'Келісімді' : 'Договорная'}</div>
-                                    <p>{t('landing.pricing.school.desc')}</p>
-                                </div>
-                                <ul className="pricing-features-ai">
-                                    <li>✅ {language === 'kk' ? 'Барлық мұғалімдерге доступ' : 'Доступ для всех учителей'}</li>
-                                    <li>✅ {language === 'kk' ? 'Әкімшілік панель' : 'Панель администратора'}</li>
-                                    <li>✅ {language === 'kk' ? 'Мектеп аналитикасы' : 'Аналитика школы'}</li>
-                                    <li>✅ {language === 'kk' ? 'API интеграциялар' : 'API интеграции'}</li>
-                                </ul>
-                                <a
-                                    href="https://wa.me/77771225784?text=Платформа%20туралы%20толық%20ақпарат%20алғым%20келеді"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-outline-ai"
-                                    style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
-                                >
-                                    WhatsApp: +7 777 122 5784
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* CTA Section */}
-                <section className="cta-section-ai">
-                    <div className="container cta-inner-ai reveal scale-in">
-                        <h2 className="cta-title-ai">{language === 'kk' ? 'Болашақ бүгін басталады' : 'Будущее начинается сегодня'}</h2>
-                        <p className="cta-desc-ai">{language === 'kk' ? '5000-нан астам мұғалім Urpaq.ai көмегімен жұмысын жеңілдетті. Сіз де қосылыңыз!' : 'Более 5000 учителей упростили свою работу с Urpaq.ai. Присоединяйтесь и вы!'}</p>
-                        <div className="cta-buttons">
-                            <Link to="/register" className="btn btn-lg btn-white">{t('landing.hero.cta')}</Link>
-                            <button className="btn btn-lg btn-transparent">{language === 'kk' ? 'Толығырақ' : 'Подробнее'}</button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Footer */}
-                <footer className="footer-ai">
-                    <div className="container">
-                        <div className="footer-content">
-                            <div className="footer-brand">
-                                <div className="logo white">
-                                    <div className="logo-icon-ai text-white">AI</div>
-                                    <span>Urpaq.ai</span>
-                                </div>
-                                <p>{language === 'kk' ? 'Қазақстандық мұғалімдерге арналған инновациялық платформа.' : 'Инновационная платформа для казахстанских учителей.'}</p>
-                            </div>
-                            <div className="footer-links-col">
-                                <h4>{language === 'kk' ? 'Өнім' : 'Продукт'}</h4>
-                                <a href="#">{t('landing.features.badge')}</a>
-                                <a href="#">{t('landing.pricing.title')}</a>
-                                <a href="#">{language === 'kk' ? 'Жаңартулар' : 'Обновления'}</a>
-                            </div>
-                            <div className="footer-links-col">
-                                <h4>{language === 'kk' ? 'Компания' : 'Компания'}</h4>
-                                <a href="#">{language === 'kk' ? 'Біз туралы' : 'О нас'}</a>
-                                <a href="#">{language === 'kk' ? 'Блог' : 'Блог'}</a>
-                                <a href="#">{language === 'kk' ? 'Карьера' : 'Карьера'}</a>
-                            </div>
-                            <div className="footer-links-col">
-                                <h4>{t('nav.help')}</h4>
-                                <a href="#">{language === 'kk' ? 'Қолдау орталығы' : 'Центр поддержки'}</a>
-                                <a href="https://wa.me/77771225784">+7 777 122 5784</a>
-                                <a href="#">{language === 'kk' ? 'Құпиялылық' : 'Конфиденциальность'}</a>
-                            </div>
-                        </div>
-                        <div className="footer-bottom">
-                            <p>&copy; 2026 Urpaq.ai. {language === 'kk' ? 'Барлық құқықтар қорғалған' : 'Все права защищены'} (All rights reserved).</p>
-                        </div>
-                    </div>
-                </footer>
-            </div>
-        </>
-    )
+                    <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+                        &copy; 2026 Urpaq.ai. {language === 'kk' ? 'Барлық құқықтар қорғалған' : 'Все права защищены'}.
+                    </p>
+                </div>
+            </footer>
+        </div>
+    );
 }
 
-export default Landing
+export default Landing;
