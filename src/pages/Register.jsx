@@ -89,7 +89,7 @@ function Register() {
                         WebkitTextFillColor: 'transparent',
                         marginBottom: 'var(--spacing-2)'
                     }}>
-                        yraq.ai
+                        Urpaq.ai
                     </h1>
                     <p style={{ color: 'var(--color-gray-500)' }}>
                         {language === 'kk' ? 'Жаңа аккаунт жасау' : 'Создать новый аккаунт'}

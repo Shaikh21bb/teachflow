@@ -54,7 +54,7 @@ function Login() {
                         WebkitTextFillColor: 'transparent',
                         marginBottom: 'var(--spacing-2)'
                     }}>
-                        yraq.ai
+                        Urpaq.ai
                     </h1>
                     <p style={{ color: 'var(--color-gray-500)' }}>
                         {language === 'kk' ? 'Жүйеге кіру' : 'Вход в систему'}

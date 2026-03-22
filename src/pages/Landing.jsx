@@ -12,7 +12,7 @@ function Landing() {
                     <div className="container header-inner">
                         <div className="logo">
                             <div className="logo-icon-ai">AI</div>
-                            <span className="logo-text">yraq.ai</span>
+                            <span className="logo-text">Urpaq.ai</span>
                         </div>
 
                         <nav className="nav">
@@ -293,7 +293,7 @@ function Landing() {
                 <section className="cta-section-ai">
                     <div className="container cta-inner-ai">
                         <h2 className="cta-title-ai">{language === 'kk' ? 'Болашақ бүгін басталады' : 'Будущее начинается сегодня'}</h2>
-                        <p className="cta-desc-ai">{language === 'kk' ? '5000-нан астам мұғалім yraq.ai көмегімен жұмысын жеңілдетті. Сіз де қосылыңыз!' : 'Более 5000 учителей упростили свою работу с yraq.ai. Присоединяйтесь и вы!'}</p>
+                        <p className="cta-desc-ai">{language === 'kk' ? '5000-нан астам мұғалім Urpaq.ai көмегімен жұмысын жеңілдетті. Сіз де қосылыңыз!' : 'Более 5000 учителей упростили свою работу с Urpaq.ai. Присоединяйтесь и вы!'}</p>
                         <div className="cta-buttons">
                             <Link to="/register" className="btn btn-lg btn-white">{t('landing.hero.cta')}</Link>
                             <button className="btn btn-lg btn-transparent">{language === 'kk' ? 'Толығырақ' : 'Подробнее'}</button>
@@ -308,7 +308,7 @@ function Landing() {
                             <div className="footer-brand">
                                 <div className="logo white">
                                     <div className="logo-icon-ai text-white">AI</div>
-                                    <span>yraq.ai</span>
+                                    <span>Urpaq.ai</span>
                                 </div>
                                 <p>{language === 'kk' ? 'Қазақстандық мұғалімдерге арналған инновациялық платформа.' : 'Инновационная платформа для казахстанских учителей.'}</p>
                             </div>
@@ -332,7 +332,7 @@ function Landing() {
                             </div>
                         </div>
                         <div className="footer-bottom">
-                            <p>&copy; 2026 yraq.ai. {language === 'kk' ? 'Барлық құқықтар қорғалған' : 'Все права защищены'} (All rights reserved).</p>
+                            <p>&copy; 2026 Urpaq.ai. {language === 'kk' ? 'Барлық құқықтар қорғалған' : 'Все права защищены'} (All rights reserved).</p>
                         </div>
                     </div>
                 </footer>

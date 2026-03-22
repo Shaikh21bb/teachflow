@@ -1756,7 +1756,7 @@ a:hover {
 }
 
 /* ==========================================
-   yraq.ai Rebranding & Design System
+   Urpaq.ai Rebranding & Design System
    ========================================== */
 
 :root {
@@ -2309,4 +2309,427 @@ a:hover {
 
 .logo.white {
   color: white;
+}
+
+/* ==========================================
+   MOBILE RESPONSIVE — Urpaq.ai
+   ========================================== */
+
+/* --- Hamburger Menu Button (hidden by default) --- */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.75rem;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 100;
+}
+
+/* --- Tablet (max-width: 1024px) --- */
+@media (max-width: 1024px) {
+  /* Landing: Hero */
+  .hero-inner-ai {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .hero-visual {
+    display: none;
+  }
+
+  .hero-title-ai {
+    font-size: 3rem;
+  }
+
+  .hero-subtitle-ai {
+    margin: 0 auto 2rem;
+  }
+
+  .hero-badge-ai {
+    justify-content: center;
+  }
+
+  .hero-stats-ai {
+    margin: 2rem auto 0;
+  }
+
+  /* Landing: Features */
+  .features-grid-ai {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Landing: Steps */
+  .steps-ai {
+    flex-direction: column;
+  }
+
+  .step-arrow {
+    transform: rotate(90deg);
+  }
+
+  /* Landing: Pricing */
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .pricing-card-ai.featured {
+    transform: scale(1);
+  }
+
+  /* Landing: Section titles */
+  .section-title-ai {
+    font-size: 2.25rem;
+  }
+
+  .cta-title-ai {
+    font-size: 2.5rem;
+  }
+
+  /* Landing: Footer */
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  /* App: Sidebar */
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: none;
+  }
+
+  .sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  /* App: Stats */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* App: Lessons grid */
+  .lessons-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* App: Builder */
+  .builder {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-sidebar,
+  .builder-properties {
+    display: none;
+  }
+}
+
+/* --- Phone (max-width: 768px) --- */
+@media (max-width: 768px) {
+  /* Landing: Header */
+  .header-inner {
+    padding: 0 var(--spacing-4);
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .header-actions .btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  /* Landing: Hero */
+  .hero-ai {
+    padding: 140px 0 60px;
+  }
+
+  .hero-title-ai {
+    font-size: 2.25rem;
+  }
+
+  .hero-subtitle-ai {
+    font-size: 1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .hero-stats-ai {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .stat-separator {
+    width: 80%;
+    height: 1px;
+  }
+
+  .stat-item-ai {
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  /* Landing: Features */
+  .features-grid-ai {
+    grid-template-columns: 1fr;
+  }
+
+  .feature-card-ai {
+    padding: 1.5rem;
+  }
+
+  .feature-card-ai:hover {
+    transform: none;
+  }
+
+  .section-header-ai {
+    margin-bottom: 2.5rem;
+  }
+
+  .section-title-ai {
+    font-size: 1.75rem;
+  }
+
+  .section-subtitle-ai {
+    font-size: 1rem;
+  }
+
+  /* Landing: Steps */
+  .step-card-ai {
+    padding: 1.5rem;
+  }
+
+  .step-card-ai h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Landing: Pricing */
+  .pricing-card-ai {
+    padding: 2rem;
+  }
+
+  .price-ai {
+    font-size: 2.25rem;
+  }
+
+  /* Landing: CTA */
+  .cta-section-ai {
+    padding: 4rem 0;
+  }
+
+  .cta-title-ai {
+    font-size: 1.75rem;
+  }
+
+  .cta-desc-ai {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cta-buttons .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  /* Landing: Trusted */
+  .trusted-logos {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .trusted-logo {
+    font-size: 1.2rem;
+  }
+
+  /* Landing: Footer */
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .footer-brand {
+    text-align: center;
+  }
+
+  .footer-brand .logo {
+    justify-content: center;
+  }
+
+  .footer-links-col {
+    text-align: center;
+  }
+
+  .footer-bottom {
+    text-align: center;
+    padding: 1.5rem 0;
+  }
+
+  .footer-ai {
+    padding-top: 3rem;
+  }
+
+  /* App: Dashboard */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .widget-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lessons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* App: Assignments */
+  .assignment-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+  }
+
+  .assignment-status {
+    text-align: left;
+    width: 100%;
+  }
+
+  .progress-bar {
+    width: 100%;
+  }
+
+  .assignment-meta {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+
+  /* App: Classes */
+  .class-card {
+    flex-direction: column;
+  }
+
+  /* App: Library filters */
+  .library-filters {
+    flex-direction: column;
+    gap: var(--spacing-3);
+  }
+
+  /* App: Main padding */
+  .main-content {
+    padding: var(--spacing-4);
+  }
+
+  /* Auth: Login/Register */
+  .auth-container {
+    padding: var(--spacing-4);
+  }
+
+  .auth-card {
+    padding: var(--spacing-6);
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* --- Small Phone (max-width: 480px) --- */
+@media (max-width: 480px) {
+  .hero-title-ai {
+    font-size: 1.75rem;
+  }
+
+  .hero-badge-ai {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  .section-title-ai {
+    font-size: 1.5rem;
+  }
+
+  .cta-title-ai {
+    font-size: 1.5rem;
+  }
+
+  .logo-text {
+    font-size: 1.2rem;
+  }
+
+  .logo-icon-ai {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  .section {
+    padding: var(--spacing-8) 0;
+  }
+
+  .step-number-ai {
+    font-size: 2.5rem;
+  }
 }

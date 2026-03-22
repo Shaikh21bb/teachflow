@@ -14,7 +14,7 @@ const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GE
 /**
  * System prompt for educational AI assistant
  */
-const SYSTEM_PROMPT = `Ты — әл-Фараби, AI помощник для казахстанских учителей на платформе yraq.ai.
+const SYSTEM_PROMPT = `Ты — әл-Фараби, AI помощник для казахстанских учителей на платформе Urpaq.ai.
 
 Твоя роль:
 - Помогать учителям создавать планы уроков

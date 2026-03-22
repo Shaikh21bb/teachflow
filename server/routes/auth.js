@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { runQuery, getOne, getAll, getLastInsertId } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'yraq-ai-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'urpaq-ai-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '24h';
 
 // Register new user

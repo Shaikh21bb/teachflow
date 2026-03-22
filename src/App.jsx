@@ -54,6 +54,10 @@ function ProtectedRoute({ children }) {
 function DashboardLayout({ children }) {
     const location = useLocation()
     const { t, language, toggleLanguage } = useLanguage()
+    const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    // Close sidebar on navigation
+    const handleNavClick = () => setSidebarOpen(false)
 
     const navItems = [
         { path: '/dashboard', icon: '🏠', label: t('nav.home') },
@@ -67,11 +71,17 @@ function DashboardLayout({ children }) {
 
     return (
         <div className="dashboard">
-            <aside className="sidebar">
+            {/* Mobile overlay */}
+            <div
+                className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+            />
+
+            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <Link to="/" className="logo">
+                    <Link to="/" className="logo" onClick={handleNavClick}>
                         <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>AI</div>
-                        <span>yraq.ai</span>
+                        <span>Urpaq.ai</span>
                     </Link>
                 </div>
 
@@ -83,6 +93,7 @@ function DashboardLayout({ children }) {
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                                onClick={handleNavClick}
                             >
                                 <span className="sidebar-link-icon">{item.icon}</span>
                                 <span>{item.label}</span>
@@ -92,15 +103,15 @@ function DashboardLayout({ children }) {
 
                     <div className="sidebar-section">
                         <div className="sidebar-section-title">{t('nav.other')}</div>
-                        <a href="#" className="sidebar-link">
+                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon">🔗</span>
                             <span>{t('nav.integrations')}</span>
                         </a>
-                        <a href="#" className="sidebar-link">
+                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon">⚙️</span>
                             <span>{t('nav.settings')}</span>
                         </a>
-                        <a href="#" className="sidebar-link">
+                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon">❓</span>
                             <span>{t('nav.help')}</span>
                         </a>
@@ -110,6 +121,15 @@ function DashboardLayout({ children }) {
 
             <main className="main-content">
                 <header className="topbar">
+                    {/* Mobile hamburger */}
+                    <button
+                        className="mobile-menu-btn"
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        aria-label="Menu"
+                    >
+                        {sidebarOpen ? '✕' : '☰'}
+                    </button>
+
                     <div className="topbar-search">
                         <span>🔍</span>
                         <input type="text" placeholder={t('common.searchPlaceholder')} />

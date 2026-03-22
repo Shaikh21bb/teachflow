@@ -128,9 +128,9 @@ async function seedDatabase() {
     const demoPassword = await bcrypt.hash('demo1234', 10);
 
     db.run(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
-        ['Айгүл Мұғалімова', 'demo@yraq.ai', demoPassword, 'teacher']);
+        ['Айгүл Мұғалімова', 'demo@urpaq.ai', demoPassword, 'teacher']);
 
-    console.log('   ✅ Email: demo@yraq.ai');
+    console.log('   ✅ Email: demo@urpaq.ai');
     console.log('   ✅ Пароль: demo1234\n');
 
     // ===== КЛАССЫ =====
@@ -666,7 +666,7 @@ async function seedDatabase() {
     console.log(`   • Уведомлений: ${notifications.length}`);
     console.log(`   • Сохранённых материалов: ${savedMaterials.length}`);
     console.log('\n🔐 Демо-аккаунт:');
-    console.log('   Email: demo@yraq.ai');
+    console.log('   Email: demo@urpaq.ai');
     console.log('   Пароль: demo1234');
     console.log('\n🚀 Перезапустите сервер: npm run dev');
 }

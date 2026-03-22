@@ -6,12 +6,12 @@ const LanguageContext = createContext();
 export function LanguageProvider({ children }) {
     const [language, setLanguage] = useState(() => {
         // Get from localStorage or default to Kazakh
-        return localStorage.getItem('yraq_language') || 'kk';
+        return localStorage.getItem('urpaq_language') || 'kk';
     });
 
     useEffect(() => {
         // Save to localStorage whenever language changes
-        localStorage.setItem('yraq_language', language);
+        localStorage.setItem('urpaq_language', language);
     }, [language]);
 
     const toggleLanguage = () => {

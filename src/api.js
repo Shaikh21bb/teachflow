@@ -1,4 +1,4 @@
-// API utility functions for yraq.ai
+// API utility functions for Urpaq.ai
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 

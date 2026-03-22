@@ -1,4 +1,4 @@
-// Translation dictionary for yraq.ai
+// Translation dictionary for Urpaq.ai
 export const translations = {
     kk: {
         // Navigation
@@ -167,7 +167,7 @@ export const translations = {
             features: {
                 badge: 'Мүмкіндіктер',
                 title: 'Мұғалімнің суперкүші ⚡',
-                subtitle: 'yraq.ai күнделікті рутинаны автоматтандырып, шығармашылыққа уақыт береді.',
+                subtitle: 'Urpaq.ai күнделікті рутинаны автоматтандырып, шығармашылыққа уақыт береді.',
                 aiBuilder: {
                     title: 'AI Сабақ Конструкторы',
                     desc: 'Тақырыпты жазыңыз, ал AI 1 минут ішінде толық сабақ жоспарын, презентация және тапсырмаларды дайындайды.',
@@ -368,7 +368,7 @@ export const translations = {
             features: {
                 badge: 'Возможности',
                 title: 'Суперсила учителя ⚡',
-                subtitle: 'yraq.ai автоматизирует рутину и даёт время для творчества.',
+                subtitle: 'Urpaq.ai автоматизирует рутину и даёт время для творчества.',
                 aiBuilder: {
                     title: 'AI Конструктор уроков',
                     desc: 'Напишите тему, и AI подготовит полный план урока, презентацию и задания за 1 минуту.',
