@@ -1410,7 +1410,8 @@ a:hover {
   font-weight: 600;
   margin-bottom: var(--spacing-3);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -1808,8 +1809,71 @@ a:hover {
   font-size: 1.5rem;
   background: linear-gradient(to right, white, #94a3b8);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ==========================================
+   PREMIUM ANIMATIONS & REVEAL EFFECTS
+   ========================================== */
+
+/* Intersection Observer Reveal Classes */
+.reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--delay, 0s);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0) scale(1) translateX(0);
+}
+
+.fade-up {
+  transform: translateY(40px);
+}
+
+.fade-left {
+  transform: translateX(40px);
+}
+
+.scale-in {
+  transform: scale(0.95);
+}
+
+/* Glowing Background Orbs Animation */
+@keyframes orb-float {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(-45%, -55%) scale(1.1);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(-55%, -45%) scale(0.9);
+    opacity: 0.2;
+  }
+}
+
+.hero-circle-bg {
+  animation: orb-float 10s infinite ease-in-out;
+}
+
+@keyframes float-delay {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.card-1 {
+  animation: float-delay 5s ease-in-out infinite;
+}
+.card-2 {
+  animation: float-delay 6s ease-in-out infinite reverse;
+}
+
 
 .nav-link {
   color: #94a3b8;
@@ -2108,25 +2172,48 @@ a:hover {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 24px;
   padding: 2.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card-ai::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .feature-card-ai:hover {
-  transform: translateY(-10px);
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(30, 41, 59, 1);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.feature-card-ai:hover::before {
+  opacity: 1;
 }
 
 .feature-icon-wrapper {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
   border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.feature-card-ai:hover .feature-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
 }
 
 .feature-icon-ai {
@@ -2158,12 +2245,20 @@ a:hover {
 }
 
 .step-card-ai {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   padding: 2.5rem;
   border-radius: 24px;
   text-align: center;
   position: relative;
   flex: 1;
+  transition: all 0.3s ease;
+}
+
+.step-card-ai:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .step-number-ai {
@@ -2199,14 +2294,43 @@ a:hover {
   background: var(--color-dark-card);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 24px;
-  padding: 3rem;
+  padding: 2.5rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  overflow: hidden;
+}
+
+.pricing-card-ai::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.pricing-card-ai:hover {
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(30, 41, 59, 1);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+.pricing-card-ai:hover::before {
+  opacity: 1;
 }
 
 .pricing-card-ai.featured {
   background: linear-gradient(180deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
-  border: 2px solid #6366f1;
+  border-color: rgba(99, 102, 241, 0.5);
   transform: scale(1.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(99, 102, 241, 0.15);
+  z-index: 1;
+}
+
+.pricing-card-ai.featured:hover {
+  transform: scale(1.08) translateY(-5px);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
 }
 
 .best-value {
@@ -2269,9 +2393,10 @@ a:hover {
 
 .cta-title-ai {
   font-size: 3.5rem;
-  font-weight: 800;
-  background: var(--gradient-ai-main);
+  font-weight: 700;
+  background: linear-gradient(135deg, white, var(--color-primary-light));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 1.5rem;
 }

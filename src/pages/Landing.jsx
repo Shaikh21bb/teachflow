@@ -1,8 +1,36 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 
 function Landing() {
     const { t, language, toggleLanguage } = useLanguage()
+
+    // Premium Scroll Reveal Animation Hook
+    useEffect(() => {
+        const observerCallback = (entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // Optional: stop observing once revealed
+                    // observer.unobserve(entry.target);
+                }
+            });
+        };
+
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const observer = new IntersectionObserver(observerCallback, observerOptions);
+        const revealElements = document.querySelectorAll('.reveal');
+        
+        revealElements.forEach(el => observer.observe(el));
+
+        return () => {
+            revealElements.forEach(el => observer.unobserve(el));
+        };
+    }, []);
 
     return (
         <>
@@ -38,7 +66,7 @@ function Landing() {
                 {/* Hero Section */}
                 <section className="hero-ai">
                     <div className="container hero-inner-ai">
-                        <div className="hero-content">
+                        <div className="hero-content reveal fade-up">
                             <div className="hero-badge-ai">
                                 <span className="pulse-dot"></span>
                                 {t('landing.hero.badge')}
@@ -78,7 +106,7 @@ function Landing() {
                             </div>
                         </div>
 
-                        <div className="hero-visual">
+                        <div className="hero-visual reveal fade-left" style={{ '--delay': '0.3s' }}>
                             <div className="glass-card-float card-1">
                                 <div className="float-icon">🤖</div>
                                 <div className="float-content">
@@ -99,7 +127,7 @@ function Landing() {
                 </section>
 
                 {/* Trusted By */}
-                <section className="trusted-section">
+                <section className="trusted-section reveal">
                     <div className="container">
                         <p className="trusted-title">{language === 'kk' ? 'Қазақстандағы үздік мектептер сенім артады' : 'Лучшие школы Казахстана доверяют нам'}</p>
                         <div className="trusted-logos">
@@ -115,7 +143,7 @@ function Landing() {
                 {/* Features Section */}
                 <section id="features" className="features-ai section">
                     <div className="container">
-                        <div className="section-header-ai">
+                        <div className="section-header-ai reveal fade-up">
                             <span className="section-badge-ai">{t('landing.features.badge')}</span>
                             <h2 className="section-title-ai">{t('landing.features.title')}</h2>
                             <p className="section-subtitle-ai">
@@ -124,7 +152,7 @@ function Landing() {
                         </div>
 
                         <div className="features-grid-ai">
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">📚</span>
                                 </div>
@@ -134,7 +162,7 @@ function Landing() {
                                 </p>
                             </div>
 
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.2s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">📝</span>
                                 </div>
@@ -144,7 +172,7 @@ function Landing() {
                                 </p>
                             </div>
 
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">📊</span>
                                 </div>
@@ -154,7 +182,7 @@ function Landing() {
                                 </p>
                             </div>
 
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal" style={{ '--delay': '0.4s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">🤝</span>
                                 </div>
@@ -166,7 +194,7 @@ function Landing() {
                                 </p>
                             </div>
 
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal" style={{ '--delay': '0.5s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">📂</span>
                                 </div>
@@ -178,7 +206,7 @@ function Landing() {
                                 </p>
                             </div>
 
-                            <div className="feature-card-ai">
+                            <div className="feature-card-ai reveal" style={{ '--delay': '0.6s' }}>
                                 <div className="feature-icon-wrapper">
                                     <span className="feature-icon-ai">🏆</span>
                                 </div>
@@ -196,25 +224,25 @@ function Landing() {
                 {/* How It Works */}
                 <section id="how-it-works" className="how-section-ai section">
                     <div className="container">
-                        <div className="section-header-ai">
+                        <div className="section-header-ai reveal fade-up">
                             <span className="section-badge-ai">{language === 'kk' ? 'Қалай жұмыс істейді' : 'Как это работает'}</span>
                             <h2 className="section-title-ai">{language === 'kk' ? 'Бәрі өте қарапайым' : 'Всё очень просто'}</h2>
                         </div>
 
                         <div className="steps-ai">
-                            <div className="step-card-ai">
+                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
                                 <div className="step-number-ai">01</div>
                                 <h3>{language === 'kk' ? 'Тіркеліңіз' : 'Зарегистрируйтесь'}</h3>
                                 <p>{language === 'kk' ? 'Платформада аккаунт ашып, сыныптарыңызды қосыңыз.' : 'Создайте аккаунт на платформе и добавьте свои классы.'}</p>
                             </div>
                             <div className="step-arrow">→</div>
-                            <div className="step-card-ai">
+                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.2s' }}>
                                 <div className="step-number-ai">02</div>
                                 <h3>{language === 'kk' ? 'Сабақ құрыңыз' : 'Создайте урок'}</h3>
                                 <p>{language === 'kk' ? 'AI көмегімен сабақ жоспарын және материалдарды дайындаңыз.' : 'Подготовьте план урока и материалы с помощью AI.'}</p>
                             </div>
                             <div className="step-arrow">→</div>
-                            <div className="step-card-ai">
+                            <div className="step-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
                                 <div className="step-number-ai">03</div>
                                 <h3>{language === 'kk' ? 'Нәтиже көріңіз' : 'Смотрите результат'}</h3>
                                 <p>{language === 'kk' ? 'Оқушылардың белсенділігі мен үлгерімінің өсуін бақылаңыз.' : 'Наблюдайте за ростом активности и успеваемости учеников.'}</p>
@@ -226,13 +254,13 @@ function Landing() {
                 {/* Pricing */}
                 <section id="pricing" className="pricing-section-ai section">
                     <div className="container">
-                        <div className="section-header-ai">
+                        <div className="section-header-ai reveal fade-up">
                             <h2 className="section-title-ai">{t('landing.pricing.title')}</h2>
                             <p className="section-subtitle-ai">{t('landing.pricing.subtitle')}</p>
                         </div>
 
                         <div className="pricing-grid">
-                            <div className="pricing-card-ai">
+                            <div className="pricing-card-ai reveal fade-up" style={{ '--delay': '0.1s' }}>
                                 <div className="pricing-header-ai">
                                     <h3>{t('landing.pricing.free.name')}</h3>
                                     <div className="price-ai">0 ₸<span>/{t('common.month').toLowerCase()}</span></div>
@@ -246,7 +274,7 @@ function Landing() {
                                 <button className="btn btn-outline-ai">{t('common.create')}</button>
                             </div>
 
-                            <div className="pricing-card-ai featured">
+                            <div className="pricing-card-ai featured reveal fade-up" style={{ '--delay': '0.2s' }}>
                                 <div className="best-value">{t('landing.pricing.pro.popular')}</div>
                                 <div className="pricing-header-ai">
                                     <h3>{t('landing.pricing.pro.name')}</h3>
@@ -263,7 +291,7 @@ function Landing() {
                                 <button className="btn btn-primary btn-glow">{t('common.add')}</button>
                             </div>
 
-                            <div className="pricing-card-ai">
+                            <div className="pricing-card-ai reveal fade-up" style={{ '--delay': '0.3s' }}>
                                 <div className="pricing-header-ai">
                                     <h3>{t('landing.pricing.school.name')}</h3>
                                     <div className="price-ai">{language === 'kk' ? 'Келісімді' : 'Договорная'}</div>
@@ -291,7 +319,7 @@ function Landing() {
 
                 {/* CTA Section */}
                 <section className="cta-section-ai">
-                    <div className="container cta-inner-ai">
+                    <div className="container cta-inner-ai reveal scale-in">
                         <h2 className="cta-title-ai">{language === 'kk' ? 'Болашақ бүгін басталады' : 'Будущее начинается сегодня'}</h2>
                         <p className="cta-desc-ai">{language === 'kk' ? '5000-нан астам мұғалім Urpaq.ai көмегімен жұмысын жеңілдетті. Сіз де қосылыңыз!' : 'Более 5000 учителей упростили свою работу с Urpaq.ai. Присоединяйтесь и вы!'}</p>
                         <div className="cta-buttons">
