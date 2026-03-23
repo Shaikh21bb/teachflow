@@ -3,27 +3,27 @@ const router = express.Router();
 const { getOne, getAll } = require('../db/database');
 
 // Get dashboard statistics
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
     try {
         // Count lessons for today
         const today = new Date().toISOString().split('T')[0];
-        const lessonsToday = getAll(
+        const lessonsToday = await getAll(
             `SELECT COUNT(*) as count FROM lessons WHERE DATE(created_at) = ?`,
             [today]
         );
 
         // Count active assignments
-        const activeAssignments = getAll(
+        const activeAssignments = await getAll(
             `SELECT COUNT(*) as count FROM assignments WHERE status = 'active'`
         );
 
         // Count total students
-        const totalStudents = getAll(
+        const totalStudents = await getAll(
             `SELECT COUNT(*) as count FROM students`
         );
 
         // Count pending reviews (completed assignments not yet graded)
-        const pendingReviews = getAll(
+        const pendingReviews = await getAll(
             `SELECT COUNT(*) as count FROM assignments WHERE status = 'completed'`
         );
 
@@ -40,9 +40,9 @@ router.get('/stats', (req, res) => {
 });
 
 // Get upcoming lessons
-router.get('/upcoming-lessons', (req, res) => {
+router.get('/upcoming-lessons', async (req, res) => {
     try {
-        const lessons = getAll(
+        const lessons = await getAll(
             `SELECT l.*, c.name as class_name 
              FROM lessons l 
              LEFT JOIN classes c ON l.grade = c.grade 

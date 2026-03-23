@@ -3,9 +3,9 @@ const router = express.Router();
 const { getAll, runQuery } = require('../db/database');
 
 // Get all notifications
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const notifications = getAll(
+        const notifications = await getAll(
             `SELECT * FROM notifications 
              ORDER BY created_at DESC 
              LIMIT 10`
@@ -19,11 +19,11 @@ router.get('/', (req, res) => {
 });
 
 // Create a notification
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { icon, type, text } = req.body;
 
-        runQuery(
+        await runQuery(
             `INSERT INTO notifications (icon, type, text) VALUES (?, ?, ?)`,
             [icon, type, text]
         );
@@ -36,11 +36,11 @@ router.post('/', (req, res) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', (req, res) => {
+router.put('/:id/read', async (req, res) => {
     try {
         const { id } = req.params;
 
-        runQuery(
+        await runQuery(
             `UPDATE notifications SET is_read = 1 WHERE id = ?`,
             [id]
         );

@@ -36,7 +36,7 @@ router.post('/register', async (req, res) => {
         console.log('Checking if user exists...');
         let existingUser;
         try {
-            existingUser = getOne('SELECT * FROM users WHERE email = ?', [email]);
+            existingUser = await getOne('SELECT * FROM users WHERE email = ?', [email]);
         } catch (dbError) {
             console.error('Database error checking user:', dbError);
             return res.status(500).json({ error: 'Ошибка базы данных' });
@@ -55,7 +55,7 @@ router.post('/register', async (req, res) => {
         // Insert user
         console.log('Inserting user into database...');
         try {
-            runQuery(
+            await runQuery(
                 'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
                 [name, email, passwordHash, 'teacher']
             );
@@ -65,7 +65,7 @@ router.post('/register', async (req, res) => {
         }
 
         // Get the newly created user by email (more reliable than getLastInsertId)
-        const user = getOne('SELECT id, name, email, role, created_at FROM users WHERE email = ?', [email]);
+        const user = await getOne('SELECT id, name, email, role, created_at FROM users WHERE email = ?', [email]);
 
         if (!user) {
             console.error('User not found after insert');
@@ -111,7 +111,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Find user
-        const user = getOne('SELECT * FROM users WHERE email = ?', [email]);
+        const user = await getOne('SELECT * FROM users WHERE email = ?', [email]);
         if (!user) {
             return res.status(401).json({ error: 'Неверный email или пароль' });
         }
@@ -128,7 +128,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Update last login
-        runQuery('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+        await runQuery('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
 
         // Update last login in Google Sheets
         try {
@@ -161,9 +161,9 @@ router.post('/login', async (req, res) => {
 });
 
 // Get current user info
-router.get('/me', authenticateToken, (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
     try {
-        const user = getOne(
+        const user = await getOne(
             'SELECT id, name, email, role, created_at, last_login FROM users WHERE id = ?',
             [req.user.userId]
         );

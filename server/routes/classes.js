@@ -4,9 +4,9 @@ const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
 const router = express.Router();
 
 // GET all classes
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const classes = getAll(`
+        const classes = await getAll(`
       SELECT c.*, 
         (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) as student_count
       FROM classes c
@@ -19,14 +19,14 @@ router.get('/', (req, res) => {
 });
 
 // GET single class with students
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const classInfo = getOne('SELECT * FROM classes WHERE id = ?', [parseInt(req.params.id)]);
+        const classInfo = await getOne('SELECT * FROM classes WHERE id = ?', [parseInt(req.params.id)]);
         if (!classInfo) {
             return res.status(404).json({ error: 'Class not found' });
         }
 
-        const students = getAll('SELECT * FROM students WHERE class_id = ? ORDER BY name', [parseInt(req.params.id)]);
+        const students = await getAll('SELECT * FROM students WHERE class_id = ? ORDER BY name', [parseInt(req.params.id)]);
 
         res.json({ ...classInfo, students });
     } catch (err) {
@@ -35,9 +35,9 @@ router.get('/:id', (req, res) => {
 });
 
 // GET students of a class
-router.get('/:id/students', (req, res) => {
+router.get('/:id/students', async (req, res) => {
     try {
-        const students = getAll('SELECT * FROM students WHERE class_id = ? ORDER BY name', [parseInt(req.params.id)]);
+        const students = await getAll('SELECT * FROM students WHERE class_id = ? ORDER BY name', [parseInt(req.params.id)]);
         res.json(students);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -45,17 +45,17 @@ router.get('/:id/students', (req, res) => {
 });
 
 // POST create class
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { name, subject, grade } = req.body;
 
-        runQuery(`
+        await runQuery(`
       INSERT INTO classes (name, subject, grade)
       VALUES (?, ?, ?)
     `, [name, subject, grade]);
 
-        const id = getLastInsertId();
-        const classInfo = getOne('SELECT * FROM classes WHERE id = ?', [id]);
+        const id = await getLastInsertId();
+        const classInfo = await getOne('SELECT * FROM classes WHERE id = ?', [id]);
         res.status(201).json(classInfo);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -63,17 +63,17 @@ router.post('/', (req, res) => {
 });
 
 // POST add student to class
-router.post('/:id/students', (req, res) => {
+router.post('/:id/students', async (req, res) => {
     try {
         const { name, email } = req.body;
 
-        runQuery(`
+        await runQuery(`
       INSERT INTO students (name, email, class_id)
       VALUES (?, ?, ?)
     `, [name, email, parseInt(req.params.id)]);
 
-        const id = getLastInsertId();
-        const student = getOne('SELECT * FROM students WHERE id = ?', [id]);
+        const id = await getLastInsertId();
+        const student = await getOne('SELECT * FROM students WHERE id = ?', [id]);
         res.status(201).json(student);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -81,16 +81,16 @@ router.post('/:id/students', (req, res) => {
 });
 
 // PUT update class
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
         const { name, subject, grade } = req.body;
 
-        runQuery(`
+        await runQuery(`
       UPDATE classes SET name = ?, subject = ?, grade = ?
       WHERE id = ?
     `, [name, subject, grade, parseInt(req.params.id)]);
 
-        const classInfo = getOne('SELECT * FROM classes WHERE id = ?', [parseInt(req.params.id)]);
+        const classInfo = await getOne('SELECT * FROM classes WHERE id = ?', [parseInt(req.params.id)]);
         res.json(classInfo);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -98,9 +98,9 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE class
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        runQuery('DELETE FROM classes WHERE id = ?', [parseInt(req.params.id)]);
+        await runQuery('DELETE FROM classes WHERE id = ?', [parseInt(req.params.id)]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -108,9 +108,9 @@ router.delete('/:id', (req, res) => {
 });
 
 // DELETE student
-router.delete('/:classId/students/:studentId', (req, res) => {
+router.delete('/:classId/students/:studentId', async (req, res) => {
     try {
-        runQuery('DELETE FROM students WHERE id = ?', [parseInt(req.params.studentId)]);
+        await runQuery('DELETE FROM students WHERE id = ?', [parseInt(req.params.studentId)]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
