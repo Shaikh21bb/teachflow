@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { motion } from 'framer-motion';
@@ -54,6 +55,7 @@ const TypewriterText = ({ text, delayOffset = 0.5 }) => {
 
 function Landing() {
     const { t, language, toggleLanguage } = useLanguage();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
         <div className="v2-landing-wrapper">
@@ -67,7 +69,8 @@ function Landing() {
                         <span className="font-outfit" style={{ fontWeight: 700, fontSize: '1.25rem' }}>Urpaq.ai</span>
                     </div>
 
-                    <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    {/* Desktop Nav */}
+                    <div className="v2-desktop-nav">
                         <button
                             onClick={toggleLanguage}
                             className="v2-btn v2-btn-outline"
@@ -83,7 +86,34 @@ function Landing() {
                             {language === 'kk' ? 'Тіркелу' : 'Регистрация'}
                         </Link>
                     </div>
+
+                    {/* Mobile Hamburger */}
+                    <button className="v2-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu">
+                        <span className={`v2-hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                        <span className={`v2-hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                        <span className={`v2-hamburger-line ${mobileMenuOpen ? 'open' : ''}`} />
+                    </button>
                 </div>
+
+                {/* Mobile Menu Overlay */}
+                {mobileMenuOpen && (
+                    <motion.div
+                        className="v2-mobile-menu"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                    >
+                        <button onClick={toggleLanguage} className="v2-mobile-menu-item">
+                            <Globe2 size={18} /> {language === 'kk' ? 'Тілді ауыстыру' : 'Сменить язык'}
+                        </button>
+                        <Link to="/login" className="v2-mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
+                            {language === 'kk' ? 'Кіру' : 'Вход'}
+                        </Link>
+                        <Link to="/register" className="v2-btn v2-btn-primary" style={{ width: '100%', marginTop: '0.5rem' }} onClick={() => setMobileMenuOpen(false)}>
+                            {language === 'kk' ? 'Тіркелу' : 'Регистрация'}
+                        </Link>
+                    </motion.div>
+                )}
             </header>
 
             {/* Hero Section */}
@@ -220,7 +250,7 @@ function Landing() {
                     whileInView="show"
                     viewport={{ once: true, margin: "-100px" }}
                     variants={staggeredContainer}
-                    className="v2-bento-grid"
+                    className="v2-pricing-grid"
                 >
                     {/* Free */}
                     <motion.div variants={fadeUpObj} className="v2-pricing-card">
