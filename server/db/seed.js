@@ -1,133 +1,16 @@
-const initSqlJs = require('sql.js');
 const bcrypt = require('bcryptjs');
-const path = require('path');
-const fs = require('fs');
-
-const dbPath = path.join(__dirname, 'teachflow.db');
+const { getDatabase, runQuery } = require('./database.js');
 
 async function seedDatabase() {
     console.log('🌱 Начинаем заполнение базы данных...\n');
 
-    const SQL = await initSqlJs();
-
-    // Удаляем старую БД и создаём новую
-    if (fs.existsSync(dbPath)) {
-        fs.unlinkSync(dbPath);
-        console.log('🗑️  Старая база данных удалена');
-    }
-
-    const db = new SQL.Database();
-
-    // ===== СОЗДАНИЕ ТАБЛИЦ =====
-    console.log('📋 Создаём таблицы...');
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT DEFAULT 'teacher',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_login DATETIME,
-            is_active INTEGER DEFAULT 1
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS classes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            subject TEXT,
-            grade INTEGER,
-            user_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS students (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT,
-            class_id INTEGER,
-            avg_grade REAL DEFAULT 0,
-            status TEXT DEFAULT 'good',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS lessons (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            subject TEXT,
-            grade INTEGER,
-            duration INTEGER DEFAULT 45,
-            description TEXT,
-            content TEXT,
-            rating REAL DEFAULT 0,
-            ratings_count INTEGER DEFAULT 0,
-            likes INTEGER DEFAULT 0,
-            is_published INTEGER DEFAULT 0,
-            user_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS assignments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            type TEXT DEFAULT 'homework',
-            class_id INTEGER,
-            due_date TEXT,
-            submitted INTEGER DEFAULT 0,
-            total INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'active',
-            user_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            icon TEXT,
-            type TEXT DEFAULT 'info',
-            text TEXT NOT NULL,
-            is_read INTEGER DEFAULT 0,
-            user_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS saved_materials (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            lesson_id INTEGER,
-            title TEXT NOT NULL,
-            type TEXT DEFAULT 'lesson',
-            notes TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (lesson_id) REFERENCES lessons(id)
-        )
-    `);
+    await getDatabase();
 
     // ===== ДЕМО-ПОЛЬЗОВАТЕЛЬ =====
     console.log('👤 Создаём демо-пользователя...');
     const demoPassword = await bcrypt.hash('demo1234', 10);
 
-    db.run(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
+    await runQuery(`INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
         ['Айгүл Мұғалімова', 'demo@urpaq.ai', demoPassword, 'teacher']);
 
     console.log('   ✅ Email: demo@urpaq.ai');
@@ -146,10 +29,10 @@ async function seedDatabase() {
         { name: '11А', subject: 'Химия', grade: 11 }
     ];
 
-    classes.forEach(c => {
-        db.run(`INSERT INTO classes (name, subject, grade, user_id) VALUES (?, ?, ?, 1)`,
+    for (const c of classes) {
+        await runQuery(`INSERT INTO classes (name, subject, grade, user_id) VALUES (?, ?, ?, 1)`,
             [c.name, c.subject, c.grade]);
-    });
+    }
     console.log(`   ✅ Создано ${classes.length} классов\n`);
 
     // ===== УЧЕНИКИ =====
@@ -230,13 +113,13 @@ async function seedDatabase() {
     };
 
     let totalStudents = 0;
-    Object.entries(studentsByClass).forEach(([classId, students]) => {
-        students.forEach(s => {
-            db.run(`INSERT INTO students (name, email, class_id, avg_grade, status) VALUES (?, ?, ?, ?, ?)`,
+    for (const [classId, students] of Object.entries(studentsByClass)) {
+        for (const s of students) {
+            await runQuery(`INSERT INTO students (name, email, class_id, avg_grade, status) VALUES (?, ?, ?, ?, ?)`,
                 [s.name, s.name.toLowerCase().replace(/\s+/g, '.') + '@school.kz', parseInt(classId), s.grade, s.status]);
             totalStudents++;
-        });
-    });
+        }
+    }
     console.log(`   ✅ Создано ${totalStudents} учеников\n`);
 
     // ===== УРОКИ =====
@@ -570,11 +453,11 @@ async function seedDatabase() {
         }
     ];
 
-    lessons.forEach(l => {
-        db.run(`INSERT INTO lessons (title, subject, grade, duration, description, content, rating, ratings_count, likes, is_published, user_id) 
+    for (const l of lessons) {
+        await runQuery(`INSERT INTO lessons (title, subject, grade, duration, description, content, rating, ratings_count, likes, is_published, user_id) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
             [l.title, l.subject, l.grade, l.duration, l.description, l.content, l.rating, l.ratings_count, l.likes, l.is_published]);
-    });
+    }
     console.log(`   ✅ Создано ${lessons.length} уроков\n`);
 
     // ===== ТАПСЫРМАЛАР =====
@@ -598,15 +481,15 @@ async function seedDatabase() {
         { title: 'Лабораториялық: Химиялық реакциялар', type: 'homework', class_id: 8, days: 4, submitted: 12, total: 24 }
     ];
 
-    assignments.forEach(a => {
+    for (const a of assignments) {
         const dueDate = new Date(today);
         dueDate.setDate(dueDate.getDate() + a.days);
         const status = a.status || 'active';
 
-        db.run(`INSERT INTO assignments (title, type, class_id, due_date, submitted, total, status, user_id) 
+        await runQuery(`INSERT INTO assignments (title, type, class_id, due_date, submitted, total, status, user_id) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
             [a.title, a.type, a.class_id, dueDate.toISOString().split('T')[0], a.submitted, a.total, status]);
-    });
+    }
     console.log(`   ✅ Создано ${assignments.length} заданий\n`);
 
     // ===== УВЕДОМЛЕНИЯ =====
@@ -624,13 +507,13 @@ async function seedDatabase() {
         { icon: '📚', type: 'info', text: 'Жаңа сабақтар кітапханаға қосылды' }
     ];
 
-    notifications.forEach((n, i) => {
+    for (let i = 0; i < notifications.length; i++) { const n = notifications[i];
         const createdAt = new Date(today);
         createdAt.setMinutes(createdAt.getMinutes() - (i * 30)); // Каждое уведомление на 30 минут раньше
 
-        db.run(`INSERT INTO notifications (icon, type, text, user_id, created_at) VALUES (?, ?, ?, 1, ?)`,
+        await runQuery(`INSERT INTO notifications (icon, type, text, user_id, created_at) VALUES (?, ?, ?, 1, ?)`,
             [n.icon, n.type, n.text, createdAt.toISOString()]);
-    });
+    }
     console.log(`   ✅ Создано ${notifications.length} уведомлений\n`);
 
     // ===== СОХРАНЁННЫЕ МАТЕРИАЛЫ =====
@@ -643,17 +526,13 @@ async function seedDatabase() {
         { lesson_id: 6, title: 'Present Simple Tense', notes: 'Қайталау материалы' }
     ];
 
-    savedMaterials.forEach(m => {
-        db.run(`INSERT INTO saved_materials (user_id, lesson_id, title, type, notes) VALUES (1, ?, ?, 'lesson', ?)`,
+    for (const m of savedMaterials) {
+        await runQuery(`INSERT INTO saved_materials (user_id, lesson_id, title, type, notes) VALUES (1, ?, ?, 'lesson', ?)`,
             [m.lesson_id, m.title, m.notes]);
-    });
+    }
     console.log(`   ✅ Создано ${savedMaterials.length} сохранённых материалов\n`);
 
     // ===== СОХРАНЕНИЕ БД =====
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
-
     console.log('═══════════════════════════════════════════');
     console.log('✅ База данных успешно создана!');
     console.log('═══════════════════════════════════════════');
