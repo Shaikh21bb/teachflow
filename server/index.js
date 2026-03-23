@@ -15,7 +15,11 @@ app.use(helmet({
 app.use(morgan('dev'));
 const allowedOrigins = [
     'http://localhost:5173',
-    process.env.FRONTEND_URL,
+    'https://teachflow-pi.vercel.app',
+    'https://www.teachflow-pi.vercel.app',
+    'https://urpaq.ai',
+    'https://www.urpaq.ai',
+    process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
