@@ -16,6 +16,8 @@ function Register() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [agreedToTerms, setAgreedToTerms] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
     function handleChange(e) {
         setFormData({
@@ -145,15 +147,36 @@ function Register() {
                         <label className="label">
                             {language === 'kk' ? 'Құпия сөз' : 'Пароль'}
                         </label>
-                        <input
-                            type="password"
-                            name="password"
-                            className="input"
-                            value={formData.password}
-                            onChange={handleChange}
-                            placeholder="••••••••"
-                            required
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                className="input"
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="••••••••"
+                                required
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-gray-500)',
+                                    fontSize: '1.2rem',
+                                    padding: '0'
+                                }}
+                            >
+                                {showPassword ? '👁️' : '👁️‍🗨️'}
+                            </button>
+                        </div>
                         <p style={{
                             fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-gray-500)',
@@ -167,15 +190,36 @@ function Register() {
                         <label className="label">
                             {language === 'kk' ? 'Құпия сөзді растау' : 'Подтвердите пароль'}
                         </label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            className="input"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            placeholder="••••••••"
-                            required
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                name="confirmPassword"
+                                className="input"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                placeholder="••••••••"
+                                required
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                style={{
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-gray-500)',
+                                    fontSize: '1.2rem',
+                                    padding: '0'
+                                }}
+                            >
+                                {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{ marginBottom: 'var(--spacing-6)' }}>

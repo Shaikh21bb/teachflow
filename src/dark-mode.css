@@ -3,16 +3,16 @@
    ========================================== */
 
 .theme-dark {
-  /* Invert Neutral Colors */
-  --color-gray-50: #0f172a;
-  --color-gray-100: #1e293b;
-  --color-gray-200: #334155;
-  --color-gray-300: #475569;
-  --color-gray-400: #64748b;
-  --color-gray-500: #94a3b8;
-  --color-gray-600: #cbd5e1;
-  --color-gray-700: #e2e8f0;
-  --color-gray-800: #f1f5f9;
+  /* Deep Carbon Dark Colors */
+  --color-gray-50: #0a0a0a;
+  --color-gray-100: #141414;
+  --color-gray-200: #222222;
+  --color-gray-300: #333333;
+  --color-gray-400: #444444;
+  --color-gray-500: #666666;
+  --color-gray-600: #888888;
+  --color-gray-700: #aaaaaa;
+  --color-gray-800: #dddddd;
   --color-gray-900: #ffffff;
 
   /* Adjust Primary backgrounds for dark mode readability */
