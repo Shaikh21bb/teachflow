@@ -88,7 +88,10 @@ function ClassDashboard() {
                     <h1 className="page-title">{t('classes.title')}</h1>
                     <p className="page-subtitle">{t('classes.subtitle')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAddStudent(true)}>+ {t('classes.addStudent')}</button>
+                <button className="btn btn-primary hide-on-mobile" onClick={() => setShowAddStudent(true)}>+ {t('classes.addStudent')}</button>
+                <button className="fab-mobile hide-on-desktop" onClick={() => setShowAddStudent(true)}>
+                    <span className="btn-icon">✚</span>
+                </button>
             </div>
 
             {/* Class Tabs */}
@@ -146,7 +149,7 @@ function ClassDashboard() {
                     <input type="text" className="input" placeholder={t('common.searchPlaceholder')} style={{ width: '200px' }} />
                 </div>
 
-                <div style={{ padding: 'var(--spacing-4)' }}>
+                <div className="table-responsive" style={{ padding: 'var(--spacing-4)', overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--color-gray-200)' }}>

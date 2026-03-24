@@ -80,7 +80,10 @@ function Assignments() {
                     <h1 className="page-title">{t('assignments.title')}</h1>
                     <p className="page-subtitle">{t('assignments.subtitle')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ {t('dashboard.newAssignment')}</button>
+                <button className="btn btn-primary hide-on-mobile" onClick={() => setShowModal(true)}>+ {t('dashboard.newAssignment')}</button>
+                <button className="fab-mobile hide-on-desktop" onClick={() => setShowModal(true)}>
+                    <span className="btn-icon">✚</span>
+                </button>
             </div>
 
             {/* Stats */}

@@ -121,14 +121,11 @@ function DashboardLayout({ children }) {
 
             <main className="main-content">
                 <header className="topbar">
-                    {/* Mobile hamburger */}
-                    <button
-                        className="mobile-menu-btn"
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        aria-label="Menu"
-                    >
-                        {sidebarOpen ? '✕' : '☰'}
-                    </button>
+                    {/* Mobile Header Logo (Replaces Hamburger) */}
+                    <Link to="/" className="mobile-header-logo hide-on-desktop" onClick={handleNavClick}>
+                        <div className="logo-icon" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>AI</div>
+                        <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
+                    </Link>
 
                     <div className="topbar-search">
                         <span>🔍</span>

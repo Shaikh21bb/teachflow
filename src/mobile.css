@@ -1,0 +1,244 @@
+/* ==========================================
+   Mobile UI - Bottom Navigation & FAB
+   ========================================== */
+@media (max-width: 768px) {
+  /* Hide sidebar overlay and traditional menu button */
+  .sidebar-overlay,
+  .mobile-menu-btn {
+    display: none !important;
+  }
+
+  /* Show mobile header logo */
+  .mobile-header-logo {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  /* Main layout adjustments for Bottom Tab Bar */
+  .main-content {
+    margin-left: 0 !important;
+    padding-bottom: 80px; /* Space for the bottom nav */
+  }
+
+  .page-content {
+    padding: var(--spacing-4) !important;
+  }
+
+  .topbar {
+    padding: 0 var(--spacing-4) !important;
+  }
+
+  .topbar-search {
+    display: none !important; /* Hide giant search bar on mobile screens */
+  }
+
+  /* Transform Sidebar into Bottom Tab Bar */
+  .sidebar {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 70px !important;
+    flex-direction: row !important;
+    border-right: none !important;
+    border-top: 1px solid var(--color-gray-200) !important;
+    z-index: 1000 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.05) !important;
+    transform: none !important; 
+    padding: 0 !important;
+    transition: none !important;
+  }
+
+  .sidebar-header,
+  .sidebar-section-title {
+    display: none !important;
+  }
+
+  .sidebar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    padding: 0 var(--spacing-2) !important;
+    width: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide the "Other" section links (Settings, Help) to keep Bottom Nav clean */
+  .sidebar-section:last-child {
+    display: none !important;
+  }
+
+  .sidebar-section {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    justify-content: space-evenly !important;
+  }
+
+  .sidebar-link {
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 6px 2px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    width: 20% !important;
+    margin-bottom: 0 !important;
+    background: transparent !important;
+  }
+  
+  .sidebar-link.active {
+    background: transparent !important;
+    color: var(--color-primary-600) !important;
+  }
+  
+  .sidebar-link.active .sidebar-link-icon {
+    transform: translateY(-2px);
+    color: var(--color-primary-600);
+  }
+
+  .sidebar-link-icon {
+    font-size: 24px !important;
+    margin-bottom: 0 !important;
+    transition: transform var(--transition-fast) !important;
+  }
+
+  .sidebar-link span:not(.sidebar-link-icon) {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+  }
+
+  /* Floating Action Button (FAB) styles for mobile */
+  .fab-mobile {
+    position: fixed !important;
+    bottom: 90px !important; 
+    right: 16px !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: var(--gradient-primary) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+    z-index: 900 !important;
+    padding: 0 !important;
+    transition: transform var(--transition-fast) !important;
+  }
+  
+  .fab-mobile:active {
+    transform: scale(0.95) !important;
+  }
+  
+  .fab-mobile .btn-text {
+    display: none !important;
+  }
+  
+  .fab-mobile .btn-icon {
+    font-size: 24px !important;
+    margin: 0 !important;
+  }
+
+  /* Cards Mobile Overrides */
+  .card {
+    border-radius: var(--radius-lg) !important;
+  }
+  
+  .card-header {
+    padding: var(--spacing-3) var(--spacing-4) !important;
+  }
+  
+  .card-body {
+    padding: var(--spacing-4) !important;
+  }
+  
+  .table-responsive {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Dashboard Widgets Mobile Overrides */
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-3) !important;
+  }
+  
+  .filter-group input, .filter-group select {
+    width: 100% !important;
+    margin-bottom: var(--spacing-2) !important;
+  }
+
+  .library-filters {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--spacing-2) !important;
+  }
+  
+  .library-filters .filter-group {
+    width: 100% !important;
+  }
+  
+  .lessons-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-4) !important;
+  }
+  
+  .assignments-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--spacing-4) !important;
+  }
+  
+  .assignment-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--spacing-3) !important;
+  }
+  
+  .assignment-card > div {
+    width: 100% !important;
+  }
+  
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: var(--spacing-3) !important;
+  }
+  
+  .page-header > div:last-child {
+    width: 100% !important;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .widget-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--spacing-4) !important;
+  }
+}
+
+.hide-on-desktop {
+  display: none;
+}

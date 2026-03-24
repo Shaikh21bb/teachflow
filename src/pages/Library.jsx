@@ -93,7 +93,10 @@ function Library() {
                 </div>
 
                 <div style={{ marginLeft: 'auto' }}>
-                    <Link to="/builder" className="btn btn-primary">+ {t('dashboard.createLesson')}</Link>
+                    <Link to="/builder" className="btn btn-primary hide-on-mobile">+ {t('dashboard.createLesson')}</Link>
+                    <Link to="/builder" className="fab-mobile hide-on-desktop">
+                        <span className="btn-icon">✚</span>
+                    </Link>
                 </div>
             </div>
 
