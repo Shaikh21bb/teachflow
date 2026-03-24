@@ -1,0 +1,105 @@
+/* ==========================================
+   Dark Mode Overrides
+   ========================================== */
+
+body.theme-dark {
+  /* Invert Neutral Colors */
+  --color-gray-50: #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #ffffff;
+
+  /* Adjust Primary backgrounds for dark mode readability */
+  --color-primary-50: rgba(37, 99, 235, 0.15);
+  --color-primary-100: rgba(37, 99, 235, 0.25);
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  
+  color-scheme: dark;
+}
+
+/* Explicit Background and Border Overrides */
+body.theme-dark {
+  background-color: var(--color-gray-50) !important;
+  color: var(--color-gray-900) !important;
+}
+
+body.theme-dark .card,
+body.theme-dark .topbar,
+body.theme-dark .sidebar,
+body.theme-dark .stat-card,
+body.theme-dark .lesson-card,
+body.theme-dark .assignment-card,
+body.theme-dark .widget {
+  background: var(--color-gray-100) !important;
+  border-color: var(--color-gray-200) !important;
+}
+
+body.theme-dark .table-wrapper,
+body.theme-dark table th,
+body.theme-dark table td,
+body.theme-dark tr {
+  border-color: var(--color-gray-200) !important;
+}
+
+body.theme-dark .input,
+body.theme-dark .filter-select {
+  background: var(--color-gray-50) !important;
+  border-color: var(--color-gray-200) !important;
+  color: var(--color-gray-900) !important;
+}
+
+body.theme-dark .input:focus,
+body.theme-dark .filter-select:focus {
+  border-color: var(--color-primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3) !important;
+}
+
+body.theme-dark .topbar-search {
+  background: var(--color-gray-50) !important;
+  border-color: var(--color-gray-200) !important;
+}
+
+body.theme-dark .topbar-actions .btn-ghost {
+  background: var(--color-gray-100) !important;
+  color: var(--color-gray-900) !important;
+  border-color: var(--color-gray-200) !important;
+}
+
+body.theme-dark .sidebar-link:hover,
+body.theme-dark .btn-ghost:hover {
+  background: var(--color-gray-200) !important;
+}
+
+body.theme-dark .btn-secondary {
+  background: var(--color-gray-100) !important;
+  border-color: var(--color-gray-200) !important;
+  color: var(--color-gray-900) !important;
+}
+
+body.theme-dark .btn-secondary:hover {
+  background: var(--color-gray-200) !important;
+}
+
+body.theme-dark .page-header,
+body.theme-dark .sidebar-header,
+body.theme-dark .widget-header {
+  border-color: var(--color-gray-200) !important;
+}
+
+/* Glassmorphism adjustments for Dark Mode */
+@media (max-width: 768px) {
+  body.theme-dark .sidebar,
+  body.theme-dark .header {
+    background: rgba(30, 41, 59, 0.85) !important;
+  }
+}

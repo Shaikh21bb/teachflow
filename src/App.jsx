@@ -12,27 +12,30 @@ import Register from './pages/Register'
 import AlFarabiBot from './pages/AlFarabiBot'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 
 function App() {
     return (
-        <LanguageProvider>
-            <AuthProvider>
-                <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<Landing />} />
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/builder" element={<ProtectedRoute><DashboardLayout><LessonBuilder /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/assignments" element={<ProtectedRoute><DashboardLayout><Assignments /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/classes" element={<ProtectedRoute><DashboardLayout><ClassDashboard /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
-                        <Route path="/alfarabi-bot" element={<ProtectedRoute><DashboardLayout><AlFarabiBot /></DashboardLayout></ProtectedRoute>} />
-                    </Routes>
-                </BrowserRouter>
-            </AuthProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+            <LanguageProvider>
+                <AuthProvider>
+                    <BrowserRouter>
+                        <Routes>
+                            <Route path="/" element={<Landing />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/builder" element={<ProtectedRoute><DashboardLayout><LessonBuilder /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/assignments" element={<ProtectedRoute><DashboardLayout><Assignments /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/classes" element={<ProtectedRoute><DashboardLayout><ClassDashboard /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/alfarabi-bot" element={<ProtectedRoute><DashboardLayout><AlFarabiBot /></DashboardLayout></ProtectedRoute>} />
+                        </Routes>
+                    </BrowserRouter>
+                </AuthProvider>
+            </LanguageProvider>
+        </ThemeProvider>
     )
 }
 
@@ -133,12 +136,15 @@ function DashboardLayout({ children }) {
                     </div>
 
                     <div className="topbar-actions">
+                        {/* Theme Toggle Button */}
+                        <ThemeToggleButton />
+
                         <button
                             onClick={toggleLanguage}
                             className="btn btn-ghost"
                             style={{
                                 fontWeight: 'bold',
-                                border: '1px solid #e2e8f0',
+                                border: '1px solid var(--color-gray-200)',
                                 padding: '6px 12px',
                                 borderRadius: '8px',
                                 marginRight: '10px'
@@ -231,7 +237,7 @@ function UserProfile() {
                         <button
                             className="btn btn-ghost btn-sm"
                             onClick={handleLogout}
-                            style={{ width: '100%', justifyContent: 'flex-start', marginTop: 'var(--spacing-2)' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', margin: 'var(--spacing-2) 0' }}
                         >
                             🚪 {language === 'kk' ? 'Шығу' : 'Выйти'}
                         </button>
@@ -240,6 +246,28 @@ function UserProfile() {
             )}
         </div>
     )
+}
+
+function ThemeToggleButton() {
+    const { theme, toggleTheme } = useTheme();
+    return (
+        <button
+            onClick={toggleTheme}
+            className="btn btn-ghost"
+            style={{
+                fontSize: '1.2rem',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                color: 'var(--color-gray-700)',
+                background: 'var(--color-gray-100)',
+                border: 'none',
+                cursor: 'pointer'
+            }}
+            aria-label="Toggle Theme"
+        >
+            {theme === 'dark' ? '🌙' : '☀️'}
+        </button>
+    );
 }
 
 export default App
