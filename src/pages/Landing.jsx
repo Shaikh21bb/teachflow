@@ -166,7 +166,7 @@ function Landing() {
                                 <div className="v3-mockup-dot green" />
                             </div>
                             <div className="v3-mockup-body">
-                                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80" alt="Platform Dashboard" style={{ filter: 'grayscale(30%) contrast(1.2)' }} />
+                                <img src="/dashboard-mockup-ru.png" alt="Platform Dashboard" style={{ filter: 'grayscale(10%) contrast(1.1)' }} />
                             </div>
                         </div>
                     </motion.div>
