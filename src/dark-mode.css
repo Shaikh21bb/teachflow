@@ -3,16 +3,16 @@
    ========================================== */
 
 .theme-dark {
-  /* Deep Carbon Dark Colors */
-  --color-gray-50: #0a0a0a;
-  --color-gray-100: #141414;
-  --color-gray-200: #222222;
-  --color-gray-300: #333333;
-  --color-gray-400: #444444;
-  --color-gray-500: #666666;
-  --color-gray-600: #888888;
-  --color-gray-700: #aaaaaa;
-  --color-gray-800: #dddddd;
+  /* Pure Carbon Black Colors */
+  --color-gray-50: #000000;
+  --color-gray-100: #0a0a0a;
+  --color-gray-200: #1a1a1a;
+  --color-gray-300: #262626;
+  --color-gray-400: #404040;
+  --color-gray-500: #737373;
+  --color-gray-600: #a3a3a3;
+  --color-gray-700: #d4d4d4;
+  --color-gray-800: #e5e5e5;
   --color-gray-900: #ffffff;
 
   /* Adjust Primary backgrounds for dark mode readability */
