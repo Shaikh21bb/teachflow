@@ -58,8 +58,9 @@ function Landing() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
-        <div className="v2-landing-wrapper">
-            <div className="v2-bg-glow" />
+        <div className="v3-landing-wrapper">
+            <div className="v3-grid-bg" />
+            <div className="v3-bg-glow" />
 
             {/* Header */}
             <header className="v2-header">
@@ -149,6 +150,41 @@ function Landing() {
                             </Link>
                         </motion.div>
                     </motion.div>
+
+                    {/* V3 Hero Mockup (Cinematic App Preview) */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 100, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 1, delay: 0.8, type: "spring", bounce: 0.2 }}
+                        className="v3-hero-mockup-wrapper"
+                    >
+                        <div className="v3-mockup-glow" />
+                        <div className="v3-mockup-glass">
+                            <div className="v3-mockup-header">
+                                <div className="v3-mockup-dot red" />
+                                <div className="v3-mockup-dot yellow" />
+                                <div className="v3-mockup-dot green" />
+                            </div>
+                            <div className="v3-mockup-body">
+                                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80" alt="Platform Dashboard" style={{ filter: 'grayscale(30%) contrast(1.2)' }} />
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* Infinite Marquee */}
+            <section className="v3-marquee-container">
+                <div className="v3-marquee-content">
+                    {[...Array(2)].map((_, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '3rem' }}>
+                            <div className="v3-marquee-item"><CheckCircle2 size={18} color="#8b5cf6" /> Нам доверяют 5000+ учителей</div>
+                            <div className="v3-marquee-item"><Users size={18} color="#8b5cf6" /> 150K+ активных учеников</div>
+                            <div className="v3-marquee-item"><Globe2 size={18} color="#8b5cf6" /> Инновации в образовании</div>
+                            <div className="v3-marquee-item"><BrainCircuit size={18} color="#8b5cf6" /> AI-проверка домашних заданий</div>
+                            <div className="v3-marquee-item"><BarChart3 size={18} color="#8b5cf6" /> Мгновенные отчеты для школ</div>
+                        </div>
+                    ))}
                 </div>
             </section>
 

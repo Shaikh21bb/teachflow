@@ -1,0 +1,194 @@
+/* ==========================================
+   TeachFlow Landing V3 (Cinematic SaaS)
+   ========================================== */
+
+/* Dark Developer Grid Background */
+.v3-landing-wrapper {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.v3-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Base Top Ambient Glow */
+.v3-bg-glow {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0,0,0,0) 70%);
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(60px);
+}
+
+/* Hero Mockup (The App Preview) */
+.v3-hero-mockup-wrapper {
+  position: relative;
+  margin: 4rem auto 0;
+  max-width: 1000px;
+  width: 90%;
+  z-index: 10;
+  perspective: 1000px;
+}
+
+.v3-mockup-glow {
+  position: absolute;
+  inset: -20px;
+  background: conic-gradient(from 180deg at 50% 50%, #2a8af6 0deg, #a853ba 180deg, #e92a67 360deg);
+  filter: blur(40px);
+  opacity: 0.4;
+  z-index: -1;
+  border-radius: 16px;
+  animation: bg-spin 5s linear infinite;
+}
+
+.v3-mockup-glass {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.05);
+  overflow: hidden;
+  position: relative;
+}
+
+.v3-mockup-header {
+  height: 48px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+}
+
+.v3-mockup-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.v3-mockup-dot.red { background: #ff5f56; }
+.v3-mockup-dot.yellow { background: #ffbd2e; }
+.v3-mockup-dot.green { background: #27c93f; }
+
+.v3-mockup-body {
+  position: relative;
+  width: 100%;
+}
+
+.v3-mockup-body img {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0.9;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* Infinite Marquee */
+.v3-marquee-container {
+  width: 100%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 1rem 0;
+  display: flex;
+  white-space: nowrap;
+  position: relative;
+  z-index: 10;
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+}
+
+.v3-marquee-content {
+  display: flex;
+  gap: 3rem;
+  animation: scrollX 30s linear infinite;
+  padding-left: 3rem;
+}
+
+.v3-marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a3a3a3; /* color-gray-600 */
+  font-size: 1.1rem;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+}
+
+@keyframes scrollX {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Bento Laser Borders */
+.v2-bento-card, .v2-pricing-card {
+  position: relative;
+  background: #0a0a0a !important; /* Pure carbon */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.v2-bento-card:hover, .v2-pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.1);
+}
+
+.v2-bento-card::before, .v2-pricing-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--angle), transparent 70%, rgba(139, 92, 246, 0.8) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.v2-bento-card:hover::before, .v2-pricing-card:hover::before {
+  opacity: 1;
+  animation: border-spin 3s linear infinite;
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-spin {
+  from { --angle: 0deg; }
+  to { --angle: 360deg; }
+}
+
+@keyframes bg-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
