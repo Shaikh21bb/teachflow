@@ -2,7 +2,7 @@
    Dark Mode Overrides
    ========================================== */
 
-body.theme-dark {
+.theme-dark {
   /* Invert Neutral Colors */
   --color-gray-50: #0f172a;
   --color-gray-100: #1e293b;
@@ -28,78 +28,78 @@ body.theme-dark {
 }
 
 /* Explicit Background and Border Overrides */
-body.theme-dark {
+.theme-dark {
   background-color: var(--color-gray-50) !important;
   color: var(--color-gray-900) !important;
 }
 
-body.theme-dark .card,
-body.theme-dark .topbar,
-body.theme-dark .sidebar,
-body.theme-dark .stat-card,
-body.theme-dark .lesson-card,
-body.theme-dark .assignment-card,
-body.theme-dark .widget {
+.theme-dark .card,
+.theme-dark .topbar,
+.theme-dark .sidebar,
+.theme-dark .stat-card,
+.theme-dark .lesson-card,
+.theme-dark .assignment-card,
+.theme-dark .widget {
   background: var(--color-gray-100) !important;
   border-color: var(--color-gray-200) !important;
 }
 
-body.theme-dark .table-wrapper,
-body.theme-dark table th,
-body.theme-dark table td,
-body.theme-dark tr {
+.theme-dark .table-wrapper,
+.theme-dark table th,
+.theme-dark table td,
+.theme-dark tr {
   border-color: var(--color-gray-200) !important;
 }
 
-body.theme-dark .input,
-body.theme-dark .filter-select {
+.theme-dark .input,
+.theme-dark .filter-select {
   background: var(--color-gray-50) !important;
   border-color: var(--color-gray-200) !important;
   color: var(--color-gray-900) !important;
 }
 
-body.theme-dark .input:focus,
-body.theme-dark .filter-select:focus {
+.theme-dark .input:focus,
+.theme-dark .filter-select:focus {
   border-color: var(--color-primary-500) !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3) !important;
 }
 
-body.theme-dark .topbar-search {
+.theme-dark .topbar-search {
   background: var(--color-gray-50) !important;
   border-color: var(--color-gray-200) !important;
 }
 
-body.theme-dark .topbar-actions .btn-ghost {
+.theme-dark .topbar-actions .btn-ghost {
   background: var(--color-gray-100) !important;
   color: var(--color-gray-900) !important;
   border-color: var(--color-gray-200) !important;
 }
 
-body.theme-dark .sidebar-link:hover,
-body.theme-dark .btn-ghost:hover {
+.theme-dark .sidebar-link:hover,
+.theme-dark .btn-ghost:hover {
   background: var(--color-gray-200) !important;
 }
 
-body.theme-dark .btn-secondary {
+.theme-dark .btn-secondary {
   background: var(--color-gray-100) !important;
   border-color: var(--color-gray-200) !important;
   color: var(--color-gray-900) !important;
 }
 
-body.theme-dark .btn-secondary:hover {
+.theme-dark .btn-secondary:hover {
   background: var(--color-gray-200) !important;
 }
 
-body.theme-dark .page-header,
-body.theme-dark .sidebar-header,
-body.theme-dark .widget-header {
+.theme-dark .page-header,
+.theme-dark .sidebar-header,
+.theme-dark .widget-header {
   border-color: var(--color-gray-200) !important;
 }
 
 /* Glassmorphism adjustments for Dark Mode */
 @media (max-width: 768px) {
-  body.theme-dark .sidebar,
-  body.theme-dark .header {
+  .theme-dark .sidebar,
+  .theme-dark .header {
     background: rgba(30, 41, 59, 0.85) !important;
   }
 }
