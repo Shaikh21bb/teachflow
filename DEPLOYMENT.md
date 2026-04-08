@@ -1,4 +1,4 @@
-# Инструкция по профессиональному деплою TeachFlow (Urpaq.ai)
+# Инструкция по профессиональному деплою Urpaq.ai
 
 Этот проект подготовлен для раздельного деплоя: **Фронтенд на Vercel** и **Бэкенд на Render/Railway**.
 
@@ -13,7 +13,7 @@
    - `JWT_SECRET`: Любая длинная случайная строка
    - `GEMINI_API_KEY`: Ваш ключ от Google AI
    - `FRONTEND_URL`: Ссылка на ваш фронтенд (получите на шаге 2)
-   - `DATABASE_PATH`: `/opt/render/project/src/server/db/teachflow.db` (Для работы SQLite на Render нужно добавить Disk в настройках, иначе данные будут стираться при перезагрузке).
+   - `DATABASE_PATH`: `/opt/render/project/src/server/db/urpaq.db` (Для работы SQLite на Render нужно добавить Disk в настройках, иначе данные будут стираться при перезагрузке).
 
 ## 2. Фронтенд (Сайт) — Vercel.com
 1. Создайте аккаунт на [Vercel.com](https://vercel.com/).
@@ -22,7 +22,7 @@
    - **Framework Preset**: Vite
    - **Root Directory**: `./` (корень проекта)
 4. **Environment Variables**:
-   - `VITE_API_URL`: Ссылка на ваш бэкенд (например, `https://teachflow-api.onrender.com/api`)
+   - `VITE_API_URL`: Ссылка на ваш бэкенд (например, `https://urpaq-api.onrender.com/api`)
 
 ---
 

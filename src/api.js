@@ -1,23 +1,23 @@
-// API utility functions for Urpaq.ai
-
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Generic fetch wrapper with error handling
-async function fetchAPI(endpoint, options = {}) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+function fetchAPI(endpoint, options = {}) {
+    const token = localStorage.getItem('auth_token');
+    const response = fetch(`${API_BASE}${endpoint}`, {
         headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...options.headers
         },
         ...options
     });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || 'API request failed');
-    }
-
-    return response.json();
+    return response.then(async res => {
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(error.error || 'API request failed');
+        }
+        return res.json();
+    });
 }
 
 // Lessons API
@@ -92,10 +92,35 @@ export const aiAPI = {
     getStatus: () => fetchAPI('/ai/status')
 };
 
+// Open Lessons API
+export const openLessonsAPI = {
+    getAll: () => fetchAPI('/open-lessons'),
+    getById: (id) => fetchAPI(`/open-lessons/${id}`),
+    generate: (data) => fetchAPI('/open-lessons/generate', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    create: (lesson) => fetchAPI('/open-lessons', {
+        method: 'POST',
+        body: JSON.stringify(lesson)
+    }),
+    update: (id, lesson) => fetchAPI(`/open-lessons/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(lesson)
+    }),
+    saveTeams: (id, teams) => fetchAPI(`/open-lessons/${id}/teams`, {
+        method: 'POST',
+        body: JSON.stringify({ teams })
+    }),
+    delete: (id) => fetchAPI(`/open-lessons/${id}`, { method: 'DELETE' })
+};
+
 export default {
     lessons: lessonsAPI,
     assignments: assignmentsAPI,
     classes: classesAPI,
     dashboard: dashboardAPI,
-    ai: aiAPI
+    ai: aiAPI,
+    openLessons: openLessonsAPI
 };
+

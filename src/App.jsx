@@ -10,6 +10,7 @@ import Reports from './pages/Reports'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AlFarabiBot from './pages/AlFarabiBot'
+import OpenLesson from './pages/OpenLesson'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -31,6 +32,7 @@ function App() {
                             <Route path="/classes" element={<ProtectedRoute><DashboardLayout><ClassDashboard /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/alfarabi-bot" element={<ProtectedRoute><DashboardLayout><AlFarabiBot /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/open-lessons" element={<ProtectedRoute><DashboardLayout><OpenLesson /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -66,6 +68,7 @@ function DashboardLayout({ children }) {
         { path: '/dashboard', icon: '🏠', label: t('nav.home') },
         { path: '/library', icon: '📚', label: t('nav.library') },
         { path: '/builder', icon: '🛠️', label: t('nav.builder') },
+        { path: '/open-lessons', icon: '🏛️', label: t('nav.openLessons') },
         { path: '/assignments', icon: '📋', label: t('nav.assignments') },
         { path: '/classes', icon: '👥', label: t('nav.classes') },
         { path: '/reports', icon: '📊', label: t('nav.reports') },

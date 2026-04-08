@@ -1,4 +1,4 @@
--- TeachFlow Full Database Schema
+-- Urpaq.ai Full Database Schema
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6,10 +6,13 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT DEFAULT 'teacher',
+    credits INTEGER DEFAULT 10,
+    subjects TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME,
     is_active INTEGER DEFAULT 1
 );
+
 
 CREATE TABLE IF NOT EXISTS classes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,4 +89,29 @@ CREATE TABLE IF NOT EXISTS saved_materials (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (lesson_id) REFERENCES lessons(id)
+);
+
+CREATE TABLE IF NOT EXISTS open_lessons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subject TEXT,
+    grade INTEGER,
+    topic TEXT,
+    objectives TEXT,
+    content TEXT,
+    class_id INTEGER,
+    user_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+);
+
+CREATE TABLE IF NOT EXISTS lesson_teams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    open_lesson_id INTEGER NOT NULL,
+    team_name TEXT NOT NULL,
+    student_ids TEXT DEFAULT '[]',
+    task TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (open_lesson_id) REFERENCES open_lessons(id) ON DELETE CASCADE
 );

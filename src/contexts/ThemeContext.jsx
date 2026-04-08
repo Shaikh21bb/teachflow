@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
     // Check localStorage or default to system preference, or default to 'light'
     const [theme, setTheme] = useState(() => {
-        const savedTheme = localStorage.getItem('teachflow_theme');
+        const savedTheme = localStorage.getItem('urpaq_theme');
         if (savedTheme) {
             return savedTheme;
         }
@@ -22,8 +22,7 @@ export function ThemeProvider({ children }) {
             root.classList.add('theme-dark');
         } else {
             root.classList.remove('theme-dark');
-        }
-        localStorage.setItem('teachflow_theme', theme);
+        }        localStorage.setItem('urpaq_theme', theme);
     }, [theme]);
 
     const toggleTheme = () => {

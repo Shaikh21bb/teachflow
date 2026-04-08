@@ -277,8 +277,10 @@ function Landing() {
                     whileInView="show"
                     viewport={{ once: true, margin: "-100px" }}
                     variants={fadeUpObj}
+                    style={{ textAlign: 'center', marginBottom: '3rem' }}
                 >
-                    <h2 className="v2-section-title font-outfit">{t('landing.pricing.title')}</h2>
+                    <h2 className="v2-section-title font-outfit" style={{ marginBottom: '1rem' }}>{t('landing.pricing.title')}</h2>
+                    <p style={{ color: '#94a3b8', fontSize: '1.125rem' }}>{t('landing.pricing.subtitle')}</p>
                 </motion.div>
 
                 <motion.div 
@@ -288,47 +290,55 @@ function Landing() {
                     variants={staggeredContainer}
                     className="v2-pricing-grid"
                 >
-                    {/* Free */}
                     <motion.div variants={fadeUpObj} className="v2-pricing-card">
                         <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.free.name')}</h3>
-                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
-                            0 ₸<span style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 400 }}>/{t('common.month').toLowerCase()}</span>
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
+                            {t('landing.pricing.free.price')}
+                        </div>
+                        <div style={{ color: '#8b5cf6', fontWeight: 600, marginBottom: '2rem' }}>
+                            {t('landing.pricing.free.credits')}
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> 5 {language === 'kk' ? 'сабақ жоспары/ай' : 'планов уроков/мес'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> 1 {language === 'kk' ? 'сынып' : 'класс'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Базалық аналитика' : 'Базовая аналитика'}</li>
+                            {t('landing.pricing.free.features', { returnObjects: true }).map((f, i) => (
+                                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {f}</li>
+                            ))}
                         </ul>
-                        <Link to="/register" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{t('common.create')}</Link>
+                        <Link to="/register" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{language === 'kk' ? 'Таңдау' : 'Выбрать'}</Link>
                     </motion.div>
 
                     {/* Pro */}
                     <motion.div variants={fadeUpObj} className="v2-pricing-card featured" style={{ position: 'relative' }}>
                         <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: '#8b5cf6', color: '#fff', padding: '6px 20px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 }}>{t('landing.pricing.pro.popular')}</div>
                         <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.pro.name')}</h3>
-                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', color: '#fff', fontFamily: 'Outfit, sans-serif' }}>
-                            5,980 ₸<span style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 400 }}>/{t('common.month').toLowerCase()}</span>
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', color: '#fff', fontFamily: 'Outfit, sans-serif' }}>
+                            {t('landing.pricing.pro.price')}
+                        </div>
+                        <div style={{ color: '#a78bfa', fontWeight: 600, marginBottom: '2rem' }}>
+                            {t('landing.pricing.pro.credits')}
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'Шексіз сабақ жоспарлары' : 'Безлимитные планы уроков'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'AI Көмекші (GPT-4)' : 'AI Помощник (GPT-4)'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? '10 сыныпқа дейін' : 'До 10 классов'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {language === 'kk' ? 'Толық аналитика' : 'Полная аналитика'}</li>
+                            {t('landing.pricing.pro.features', { returnObjects: true }).map((f, i) => (
+                                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#a78bfa" /> {f}</li>
+                            ))}
                         </ul>
-                        <Link to="/register" className="v2-btn v2-btn-primary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{t('common.add')}</Link>
+                        <Link to="/register" className="v2-btn v2-btn-primary" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{language === 'kk' ? 'Таңдау' : 'Выбрать'}</Link>
                     </motion.div>
 
-                    {/* School */}
+                    {/* Max */}
                     <motion.div variants={fadeUpObj} className="v2-pricing-card">
                         <h3 className="font-outfit" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{t('landing.pricing.school.name')}</h3>
-                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '2rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
-                            {language === 'kk' ? 'Келісімді' : 'Договорная'}
+                        <div style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif', color: '#fff' }}>
+                            {t('landing.pricing.school.price')}
+                        </div>
+                        <div style={{ color: '#8b5cf6', fontWeight: 600, marginBottom: '2rem' }}>
+                            {t('landing.pricing.school.credits')}
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, marginBottom: '3rem', display: 'flex', flexDirection: 'column', gap: '1rem', color: '#cbd5e1' }}>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Барлық мұғалімдерге доступ' : 'Доступ для всех учителей'}</li>
-                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Мектеп аналитикасы' : 'Аналитика школы'}</li>
+                            {t('landing.pricing.school.features', { returnObjects: true }).map((f, i) => (
+                                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CheckCircle2 size={20} color="#8b5cf6" /> {f}</li>
+                            ))}
                         </ul>
-                        <a href="https://wa.me/77771225784" target="_blank" rel="noreferrer" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>WhatsApp: +7 777 122 5784</a>
+                        <Link to="/register" className="v2-btn v2-btn-outline" style={{ display: 'block', textAlign: 'center', width: '100%' }}>{language === 'kk' ? 'Таңдау' : 'Выбрать'}</Link>
                     </motion.div>
                 </motion.div>
             </section>

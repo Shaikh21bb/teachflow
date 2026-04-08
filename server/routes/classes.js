@@ -1,17 +1,19 @@
 const express = require('express');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
+const { authenticateToken } = require('./auth');
 
 const router = express.Router();
 
 // GET all classes
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
     try {
         const classes = await getAll(`
       SELECT c.*, 
         (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) as student_count
       FROM classes c
+      WHERE c.user_id = ?
       ORDER BY c.name
-    `);
+    `, [req.user.userId]);
         res.json(classes);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -45,14 +47,14 @@ router.get('/:id/students', async (req, res) => {
 });
 
 // POST create class
-router.post('/', async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     try {
         const { name, subject, grade } = req.body;
 
         await runQuery(`
-      INSERT INTO classes (name, subject, grade)
-      VALUES (?, ?, ?)
-    `, [name, subject, grade]);
+      INSERT INTO classes (name, subject, grade, user_id)
+      VALUES (?, ?, ?, ?)
+    `, [name, subject, grade, req.user.userId]);
 
         const id = await getLastInsertId();
         const classInfo = await getOne('SELECT * FROM classes WHERE id = ?', [id]);

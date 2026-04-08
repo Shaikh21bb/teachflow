@@ -38,6 +38,45 @@ app.use(express.json());
 async function startServer() {
     await getDatabase();
 
+    // Migrate: add subjects column if missing (safe to run multiple times)
+    try {
+        await runQuery("ALTER TABLE users ADD COLUMN subjects TEXT DEFAULT '[]'");
+        console.log('✅ Migrated: added subjects column');
+    } catch (e) { /* Already exists */ }
+
+    // Migrate: add open_lessons table
+    try {
+        await runQuery(`CREATE TABLE IF NOT EXISTS open_lessons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            subject TEXT,
+            grade INTEGER,
+            topic TEXT,
+            objectives TEXT,
+            content TEXT,
+            class_id INTEGER,
+            user_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (class_id) REFERENCES classes(id)
+        )`);
+        console.log('✅ Migrated: open_lessons table');
+    } catch (e) { console.log('open_lessons table already exists') }
+
+    // Migrate: add lesson_teams table
+    try {
+        await runQuery(`CREATE TABLE IF NOT EXISTS lesson_teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            open_lesson_id INTEGER NOT NULL,
+            team_name TEXT NOT NULL,
+            student_ids TEXT DEFAULT '[]',
+            task TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (open_lesson_id) REFERENCES open_lessons(id) ON DELETE CASCADE
+        )`);
+        console.log('✅ Migrated: lesson_teams table');
+    } catch (e) { console.log('lesson_teams table already exists') }
+
 
     // Import routes after database is ready
     const lessonsRouter = require('./routes/lessons');
@@ -47,6 +86,7 @@ async function startServer() {
     const dashboardRouter = require('./routes/dashboard');
     const notificationsRouter = require('./routes/notifications');
     const aiRouter = require('./routes/ai');
+    const openLessonsRouter = require('./routes/open_lessons');
     const { ensureSheetHeaders } = require('./utils/googleSheets');
 
     // Initialize Google Sheets headers
@@ -60,6 +100,7 @@ async function startServer() {
     app.use('/api/dashboard', dashboardRouter);
     app.use('/api/notifications', notificationsRouter);
     app.use('/api/ai', aiRouter);
+    app.use('/api/open-lessons', openLessonsRouter);
 
 
     // Health check
@@ -81,7 +122,7 @@ async function startServer() {
     app.listen(PORT, () => {
         console.log(`
   ╔════════════════════════════════════════╗
-  ║     TeachFlow API Server v1.0          ║
+  ║     Urpaq.ai API Server v1.0           ║
   ╠════════════════════════════════════════╣
   ║  🚀 Server running on port ${PORT}         ║
   ║  📚 API: http://localhost:${PORT}/api     ║

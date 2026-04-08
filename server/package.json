@@ -1,7 +1,7 @@
 {
-    "name": "teachflow-server",
+    "name": "urpaq-ai-server",
     "version": "1.0.0",
-    "description": "TeachFlow Backend API",
+    "description": "Urpaq.ai Backend API",
     "main": "index.js",
     "scripts": {
         "start": "node index.js",

@@ -1,0 +1,4 @@
+#!/bin/bash
+export TURSO_DATABASE_URL="libsql://teachflow-shaikh21bb.aws-ap-northeast-1.turso.io"
+export TURSO_AUTH_TOKEN="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzQyNTY3NTYsImlkIjoiMDE5ZDE5ZjAtNmEwMS03OWJlLThiMzEtZWEyYjIwNGY3YjRjIiwicmlkIjoiY2JkNjU3NWMtOTM1Zi00NmYyLTkxNzEtOWI1YjMxZGQ1OTY1In0.3Q9Pvi87WsNVSqDEccVTV07c9d4XwYCgKp4Awnll-nqlPFnWiZYEIeml3XnHAjXgI5g2qBfwrB0xtT9O-Bh3Bw"
+node server/db/seed-turso.js

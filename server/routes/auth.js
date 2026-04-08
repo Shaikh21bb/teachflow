@@ -12,7 +12,7 @@ const JWT_EXPIRES_IN = '24h';
 router.post('/register', async (req, res) => {
     try {
         console.log('Registration request received:', req.body);
-        const { name, email, password } = req.body;
+        const { name, email, password, subjects = [] } = req.body;
 
         // Validation
         if (!name || !email || !password) {
@@ -55,9 +55,10 @@ router.post('/register', async (req, res) => {
         // Insert user
         console.log('Inserting user into database...');
         try {
+            const subjectsJson = JSON.stringify(Array.isArray(subjects) ? subjects : []);
             await runQuery(
-                'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-                [name, email, passwordHash, 'teacher']
+                'INSERT INTO users (name, email, password_hash, role, subjects) VALUES (?, ?, ?, ?, ?)',
+                [name, email, passwordHash, 'teacher', subjectsJson]
             );
         } catch (insertError) {
             console.error('Insert error:', insertError);
@@ -164,7 +165,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
     try {
         const user = await getOne(
-            'SELECT id, name, email, role, created_at, last_login FROM users WHERE id = ?',
+            'SELECT id, name, email, role, subjects, credits, created_at, last_login FROM users WHERE id = ?',
             [req.user.userId]
         );
 
@@ -172,9 +173,29 @@ router.get('/me', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
+        // Parse subjects JSON
+        try {
+            user.subjects = JSON.parse(user.subjects || '[]');
+        } catch {
+            user.subjects = [];
+        }
+
         res.json({ user });
     } catch (error) {
         console.error('Get user error:', error);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Update user subjects
+router.put('/subjects', authenticateToken, async (req, res) => {
+    try {
+        const { subjects } = req.body;
+        const subjectsJson = JSON.stringify(Array.isArray(subjects) ? subjects : []);
+        await runQuery('UPDATE users SET subjects = ? WHERE id = ?', [subjectsJson, req.user.userId]);
+        res.json({ success: true, subjects: subjects });
+    } catch (error) {
+        console.error('Update subjects error:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });

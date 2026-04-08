@@ -49,12 +49,12 @@ export function AuthProvider({ children }) {
         }
     }
 
-    async function register(name, email, password) {
+    async function register(name, email, password, subjects = []) {
         try {
             const response = await fetch(`${API_BASE}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password })
+                body: JSON.stringify({ name, email, password, subjects })
             })
 
             const data = await response.json()
