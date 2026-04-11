@@ -97,7 +97,7 @@ export default function LessonBuilderNew() {
                 setUploadedFiles(prev => prev.map(f =>
                     f.tempId === tempId ? { ...f, status: 'error' } : f
                 ))
-                showToast(e.message.includes('VITE_CLOUDINARY') ? 'Добавьте VITE_CLOUDINARY_CLOUD_NAME в .env' : `Ошибка загрузки ${file.name}`, 'error')
+                showToast(e.message, 'error')
             } finally {
                 setUploadProgress(p => { const n = { ...p }; delete n[tempId]; return n })
             }

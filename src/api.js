@@ -138,7 +138,12 @@ export async function uploadToCloudinary(file, onProgress) {
             if (xhr.status === 200) {
                 resolve(JSON.parse(xhr.responseText));
             } else {
-                reject(new Error('Upload failed: ' + xhr.responseText));
+                let errMsg = xhr.responseText;
+                try {
+                    const json = JSON.parse(xhr.responseText);
+                    errMsg = json.error ? json.error.message : errMsg;
+                } catch(e) {}
+                reject(new Error('Cloudinary: ' + errMsg));
             }
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
