@@ -1,306 +1,590 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { lessonsAPI } from '../api'
-import { useLanguage } from '../contexts/LanguageContext'
+import { useState, useRef, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
+import { useAuth } from '../contexts/AuthContext'
 
-function LessonBuilder() {
-    const { t, language } = useLanguage()
+const SUBJECTS = ['Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский язык', 'Казахская литература', 'Русская литература', 'Физическая культура', 'Музыка', 'Рисование', 'Технология']
+const GRADES = Array.from({ length: 11 }, (_, i) => i + 1)
+const FILE_TYPES = { 'application/pdf': 'pdf', 'video/mp4': 'video', 'video/quicktime': 'video', 'image/jpeg': 'image', 'image/png': 'image', 'image/gif': 'image', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' }
+
+const STEPS = ['📋 Информация', '📁 Материалы', '👁 Превью']
+
+export default function LessonBuilderNew() {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const editId = searchParams.get('edit')
+    const { user } = useAuth()
+
+    const [step, setStep] = useState(0)
     const [saving, setSaving] = useState(false)
-    const [selectedBlock, setSelectedBlock] = useState(null)
-    const [lessonBlocks, setLessonBlocks] = useState([
-        { id: 1, type: 'introduction', title: language === 'kk' ? 'Кіріспе' : 'Введение', content: '' },
-    ])
-    const [lessonTitle, setLessonTitle] = useState(language === 'kk' ? 'Жаңа сабақ' : 'Новый урок')
-    const [lessonSubject, setLessonSubject] = useState('Математика')
-    const [lessonGrade, setLessonGrade] = useState(5)
-    const [lessonDuration, setLessonDuration] = useState(45)
+    const [toast, setToast] = useState(null)
+    const [aiLoading, setAiLoading] = useState(false)
 
-    const blockTypes = [
-        { id: 'introduction', name: language === 'kk' ? 'Кіріспе' : 'Введение', icon: '👋' },
-        { id: 'explanation', name: language === 'kk' ? 'Түсіндіру' : 'Объяснение', icon: '📖' },
-        { id: 'example', name: language === 'kk' ? 'Мысал' : 'Пример', icon: '💡' },
-        { id: 'exercise', name: language === 'kk' ? 'Жаттығу' : 'Упражнение', icon: '✏️' },
-        { id: 'quiz', name: language === 'kk' ? 'Тест' : 'Тест', icon: '❓' },
-        { id: 'discussion', name: language === 'kk' ? 'Талқылау' : 'Обсуждение', icon: '💬' },
-        { id: 'video', name: language === 'kk' ? 'Видео' : 'Видео', icon: '🎥' },
-        { id: 'image', name: language === 'kk' ? 'Сурет' : 'Изображение', icon: '🖼️' },
-        { id: 'homework', name: language === 'kk' ? 'Үй жұмысы' : 'ДЗ', icon: '📝' },
-        { id: 'summary', name: language === 'kk' ? 'Қорытынды' : 'Итог', icon: '📋' },
-        { id: 'reflection', name: language === 'kk' ? 'Рефлексия' : 'Рефлексия', icon: '🤔' }
-    ]
+    // Form state
+    const [form, setForm] = useState({
+        title: '', subject: SUBJECTS[0], grade: 5, duration: 45,
+        description: '', content: '', file_type: 'text',
+        thumbnail_url: '', content_url: '', is_published: false
+    })
 
-    const addBlock = (type) => {
-        const newBlock = {
-            id: Date.now(),
-            type: type.id,
-            title: type.name,
-            content: ''
-        }
-        setLessonBlocks([...lessonBlocks, newBlock])
-        setSelectedBlock(newBlock.id)
+    // Files state
+    const [uploadedFiles, setUploadedFiles] = useState([])
+    const [uploadProgress, setUploadProgress] = useState({}) // { tempId: 0-100 }
+    const [dragging, setDragging] = useState(false)
+    const fileInputRef = useRef()
+    const thumbnailInputRef = useRef()
+
+    // YouTube
+    const [youtubeUrl, setYoutubeUrl] = useState('')
+    const [savedLessonId, setSavedLessonId] = useState(null)
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type })
+        setTimeout(() => setToast(null), 3500)
     }
 
-    const removeBlock = (id) => {
-        setLessonBlocks(lessonBlocks.filter(b => b.id !== id))
-        if (selectedBlock === id) setSelectedBlock(null)
+    // ─── Field update ───────────────────────────────
+    const setField = (key, value) => setForm(f => ({ ...f, [key]: value }))
+
+    // ─── Thumbnail upload ────────────────────────────
+    const handleThumbnailUpload = async (file) => {
+        if (!file) return
+        const tempId = 'thumb_' + Date.now()
+        setUploadProgress(p => ({ ...p, [tempId]: 0 }))
+        try {
+            const result = await uploadToCloudinary(file, (pct) => {
+                setUploadProgress(p => ({ ...p, [tempId]: pct }))
+            })
+            setField('thumbnail_url', result.secure_url)
+            showToast('Превью загружено!')
+        } catch (e) {
+            showToast(e.message.includes('VITE_CLOUDINARY') ? 'Настройте Cloudinary в .env' : 'Ошибка загрузки превью', 'error')
+        } finally {
+            setUploadProgress(p => { const n = { ...p }; delete n[tempId]; return n })
+        }
     }
 
-    async function handleSave() {
-        if (!lessonTitle.trim()) {
-            alert(language === 'kk' ? 'Сабақ атауын енгізіңіз' : 'Введите название урока')
-            return
-        }
+    // ─── File upload ─────────────────────────────────
+    const handleFileUpload = useCallback(async (files) => {
+        const arr = Array.from(files)
+        for (const file of arr) {
+            const tempId = 'file_' + Date.now() + Math.random()
+            const detectedType = FILE_TYPES[file.type] || 'text'
 
+            // Optimistic entry
+            setUploadedFiles(prev => [...prev, {
+                tempId, name: file.name, size: file.size,
+                type: detectedType, status: 'uploading', url: null
+            }])
+            setUploadProgress(p => ({ ...p, [tempId]: 0 }))
+
+            try {
+                const result = await uploadToCloudinary(file, (pct) => {
+                    setUploadProgress(p => ({ ...p, [tempId]: pct }))
+                })
+                setUploadedFiles(prev => prev.map(f =>
+                    f.tempId === tempId
+                        ? { ...f, status: 'done', url: result.secure_url, public_id: result.public_id }
+                        : f
+                ))
+                showToast(`Файл "${file.name}" загружен!`)
+                // Auto-set content_url if first video/pdf
+                if (['video', 'pdf'].includes(detectedType) && !form.content_url) {
+                    setField('content_url', result.secure_url)
+                    setField('file_type', detectedType)
+                }
+            } catch (e) {
+                setUploadedFiles(prev => prev.map(f =>
+                    f.tempId === tempId ? { ...f, status: 'error' } : f
+                ))
+                showToast(e.message.includes('VITE_CLOUDINARY') ? 'Добавьте VITE_CLOUDINARY_CLOUD_NAME в .env' : `Ошибка загрузки ${file.name}`, 'error')
+            } finally {
+                setUploadProgress(p => { const n = { ...p }; delete n[tempId]; return n })
+            }
+        }
+    }, [form.content_url])
+
+    const removeFile = (tempId) => {
+        setUploadedFiles(prev => prev.filter(f => f.tempId !== tempId))
+    }
+
+    const handleDrop = useCallback((e) => {
+        e.preventDefault()
+        setDragging(false)
+        handleFileUpload(e.dataTransfer.files)
+    }, [handleFileUpload])
+
+    // ─── Add YouTube link ────────────────────────────
+    const addYoutube = () => {
+        if (!youtubeUrl.trim()) return
+        const tempId = 'yt_' + Date.now()
+        setUploadedFiles(prev => [...prev, {
+            tempId, name: youtubeUrl, size: 0,
+            type: 'youtube', status: 'done', url: youtubeUrl
+        }])
+        if (!form.content_url) {
+            setField('content_url', youtubeUrl)
+            setField('file_type', 'youtube')
+        }
+        setYoutubeUrl('')
+        showToast('YouTube-ссылка добавлена!')
+    }
+
+    // ─── AI Lesson Plan ──────────────────────────────
+    const generatePlan = async () => {
+        if (!form.title && !form.subject) { showToast('Введите название или тему', 'error'); return }
+        setAiLoading(true)
+        try {
+            const data = await aiAPI.lessonPlan({
+                topic: form.title || form.description,
+                subject: form.subject,
+                grade: form.grade,
+                duration: form.duration,
+                language: 'ru'
+            })
+            setField('content', data.plan)
+            showToast('🤖 План урока сгенерирован!')
+        } catch (e) {
+            showToast('Ошибка AI: ' + e.message, 'error')
+        } finally {
+            setAiLoading(false)
+        }
+    }
+
+    // ─── Save lesson ─────────────────────────────────
+    const saveDraft = async (publish = false) => {
+        if (!form.title.trim()) { showToast('Введите название урока', 'error'); return }
         setSaving(true)
         try {
-            await lessonsAPI.create({
-                title: lessonTitle,
-                subject: lessonSubject,
-                grade: lessonGrade,
-                duration: lessonDuration,
-                description: lessonBlocks[0]?.content || '',
-                content: JSON.stringify(lessonBlocks)
-            })
-            alert(language === 'kk' ? 'Сабақ сақталды!' : 'Урок сохранён!')
-            navigate('/library')
-        } catch (err) {
-            alert((language === 'kk' ? 'Сақтау қатесі: ' : 'Ошибка сохранения: ') + err.message)
+            const payload = { ...form, is_published: publish }
+            let lesson
+            if (savedLessonId || editId) {
+                lesson = await lessonsAPI.update(savedLessonId || editId, payload)
+            } else {
+                lesson = await lessonsAPI.create(payload)
+                setSavedLessonId(lesson.id)
+            }
+
+            // Save file records
+            const doneFiles = uploadedFiles.filter(f => f.status === 'done')
+            for (let i = 0; i < doneFiles.length; i++) {
+                const f = doneFiles[i]
+                try {
+                    await lessonFilesAPI.create({
+                        lesson_id: lesson.id,
+                        file_url: f.url,
+                        file_name: f.name,
+                        file_size: f.size,
+                        file_type: f.type,
+                        public_id: f.public_id,
+                        order_index: i
+                    })
+                } catch (fe) {
+                    console.warn('File record error:', fe.message)
+                }
+            }
+
+            showToast(publish ? '🎉 Урок опубликован!' : '✅ Черновик сохранён')
+            if (publish) {
+                setTimeout(() => navigate('/my-lessons'), 1200)
+            }
+        } catch (e) {
+            showToast('Ошибка сохранения: ' + e.message, 'error')
         } finally {
             setSaving(false)
         }
     }
 
+    const YoutubeEmbed = ({ url }) => {
+        const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)?.[1]
+        if (!videoId) return <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>Неверная YouTube ссылка</div>
+        return (
+            <iframe
+                src={`https://www.youtube.com/embed/${videoId}`}
+                style={{ width: '100%', height: '300px', border: 'none', borderRadius: '12px' }}
+                allowFullScreen
+            />
+        )
+    }
+
     return (
-        <div className="builder">
-            {/* Left Sidebar - Block Palette */}
-            <div className="builder-sidebar">
-                <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                    <h3 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: 'var(--spacing-3)' }}>
-                        {t('builder.blocksTitle')}
-                    </h3>
-                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-500)' }}>
-                        {t('builder.addBlock')}
+        <div style={{ maxWidth: '860px', margin: '0 auto', padding: '24px 16px' }}>
+            {/* Toast */}
+            {toast && (
+                <div style={{
+                    position: 'fixed', top: '80px', right: '24px', zIndex: 9999,
+                    background: toast.type === 'error' ? '#ef4444' : '#10b981',
+                    color: 'white', padding: '12px 20px', borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)', fontWeight: 500,
+                    animation: 'slideIn 0.3s ease'
+                }}>
+                    {toast.type === 'error' ? '❌ ' : '✅ '}{toast.message}
+                </div>
+            )}
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+                <button onClick={() => navigate('/my-lessons')} style={{
+                    background: 'none', border: '1px solid var(--color-gray-200,#e5e7eb)', borderRadius: '10px',
+                    padding: '8px 14px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-gray-600,#4b5563)'
+                }}>← Назад</button>
+                <div>
+                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>
+                        {editId ? '✏️ Редактирование урока' : '➕ Новый урок'}
+                    </h1>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.875rem', color: 'var(--color-gray-400,#9ca3af)' }}>
+                        Автор: {user?.name}
                     </p>
                 </div>
-
-                <div className="block-palette">
-                    {blockTypes.map(type => (
-                        <div
-                            key={type.id}
-                            className="block-item"
-                            onClick={() => addBlock(type)}
-                        >
-                            <span className="block-item-icon">{type.icon}</span>
-                            <span>{type.name}</span>
-                        </div>
-                    ))}
-                </div>
             </div>
 
-            {/* Canvas Area */}
-            <div className="builder-canvas">
-                <div className="canvas-area">
-                    {/* Lesson Header */}
-                    <div style={{
-                        background: 'white',
-                        borderRadius: 'var(--radius-xl)',
-                        padding: 'var(--spacing-6)',
-                        marginBottom: 'var(--spacing-6)'
+            {/* Step indicator */}
+            <div style={{ display: 'flex', gap: '0', marginBottom: '32px', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--color-gray-100,#f3f4f6)' }}>
+                {STEPS.map((s, i) => (
+                    <button key={i} onClick={() => setStep(i)} style={{
+                        flex: 1, padding: '14px', border: 'none', cursor: 'pointer', fontWeight: 600,
+                        fontSize: '0.875rem', transition: 'all 0.2s',
+                        background: step === i ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : i < step ? '#ede9fe' : 'white',
+                        color: step === i ? 'white' : i < step ? '#6366f1' : 'var(--color-gray-500,#6b7280)',
+                        borderRight: i < STEPS.length - 1 ? '1px solid var(--color-gray-100,#f3f4f6)' : 'none'
                     }}>
-                        <input
-                            type="text"
-                            value={lessonTitle}
-                            onChange={(e) => setLessonTitle(e.target.value)}
-                            style={{
-                                width: '100%',
-                                border: 'none',
-                                fontSize: 'var(--font-size-2xl)',
-                                fontWeight: 700,
-                                outline: 'none',
-                                marginBottom: 'var(--spacing-4)'
-                            }}
-                            placeholder={t('builder.lessonTitle')}
-                        />
+                        {i < step ? '✓ ' : ''}{s}
+                    </button>
+                ))}
+            </div>
 
-                        <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
-                            <select
-                                className="filter-select"
-                                value={lessonSubject}
-                                onChange={(e) => setLessonSubject(e.target.value)}
-                            >
-                                <option>Математика</option>
-                                <option>Физика</option>
-                                <option>Биология</option>
-                                <option>Английский язык</option>
-                                <option>Русский язык</option>
-                                <option>История</option>
-                                <option>Информатика</option>
-                            </select>
-
-                            <select
-                                className="filter-select"
-                                value={lessonGrade}
-                                onChange={(e) => setLessonGrade(parseInt(e.target.value))}
-                            >
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(g => (
-                                    <option key={g} value={g}>{g} {t('library.grade')}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                className="filter-select"
-                                value={lessonDuration}
-                                onChange={(e) => setLessonDuration(parseInt(e.target.value))}
-                            >
-                                <option value={15}>15 {t('library.minutes')}</option>
-                                <option value={30}>30 {t('library.minutes')}</option>
-                                <option value={45}>45 {t('library.minutes')}</option>
-                                <option value={60}>60 {t('library.minutes')}</option>
-                            </select>
-
-                            <div style={{ marginLeft: 'auto', display: 'flex', gap: 'var(--spacing-2)' }}>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                >
-                                    {saving ? `💾 ${t('common.saving')}` : `💾 ${t('common.save')}`}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Lesson Blocks */}
-                    {lessonBlocks.length === 0 ? (
-                        <div className="canvas-empty">
-                            <div className="canvas-empty-icon">📝</div>
-                            <h3>{language === 'kk' ? 'Сабақ құруды бастаңыз' : 'Начните создавать урок'}</h3>
-                            <p>{language === 'kk' ? 'Сол жақ панельден блоктарды қосыңыз' : 'Добавьте блоки из панели слева'}</p>
-                        </div>
-                    ) : (
-                        lessonBlocks.map((block, index) => (
-                            <div
-                                key={block.id}
-                                className={`canvas-block ${selectedBlock === block.id ? 'selected' : ''}`}
-                                onClick={() => setSelectedBlock(block.id)}
-                            >
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 'var(--spacing-4)'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
-                                        <span style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            background: 'var(--color-primary-100)',
-                                            borderRadius: 'var(--radius-md)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '1rem'
-                                        }}>
-                                            {blockTypes.find(t => t.id === block.type)?.icon || '📝'}
-                                        </span>
-                                        <span style={{ fontWeight: 600 }}>{block.title}</span>
-                                        <span className="badge badge-gray">{index + 1}</span>
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                                        <button
-                                            className="btn btn-ghost btn-sm"
-                                            onClick={(e) => { e.stopPropagation(); removeBlock(block.id) }}
-                                        >
-                                            🗑️
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <textarea
-                                    value={block.content}
-                                    onChange={(e) => {
-                                        setLessonBlocks(lessonBlocks.map(b =>
-                                            b.id === block.id ? { ...b, content: e.target.value } : b
-                                        ))
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        minHeight: '100px',
-                                        border: '1px solid var(--color-gray-200)',
-                                        borderRadius: 'var(--radius-lg)',
-                                        padding: 'var(--spacing-4)',
-                                        resize: 'vertical',
-                                        fontFamily: 'inherit',
-                                        fontSize: 'var(--font-size-sm)'
-                                    }}
-                                    placeholder={language === 'kk' ? 'Блок мазмұнын енгізіңіз...' : 'Введите содержимое блока...'}
+            {/* ─── STEP 0: INFO ──────────────────────────────── */}
+            {step === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <Card title="📋 Основная информация">
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                            <div style={{ gridColumn: '1/-1' }}>
+                                <Label>Название урока *</Label>
+                                <input
+                                    value={form.title}
+                                    onChange={e => setField('title', e.target.value)}
+                                    placeholder="Например: Квадратные уравнения — решение по формуле"
+                                    style={inputStyle}
                                 />
                             </div>
-                        ))
-                    )}
+                            <div>
+                                <Label>Предмет</Label>
+                                <select value={form.subject} onChange={e => setField('subject', e.target.value)} style={inputStyle}>
+                                    {SUBJECTS.map(s => <option key={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <Label>Класс</Label>
+                                <select value={form.grade} onChange={e => setField('grade', Number(e.target.value))} style={inputStyle}>
+                                    {GRADES.map(g => <option key={g} value={g}>{g} класс</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <Label>Длительность (мин)</Label>
+                                <input type="number" value={form.duration} onChange={e => setField('duration', Number(e.target.value))} min={5} max={180} style={inputStyle} />
+                            </div>
+                        </div>
+                    </Card>
 
-                    {/* Add Block Button */}
-                    <div
-                        style={{
-                            border: '2px dashed var(--color-gray-300)',
-                            borderRadius: 'var(--radius-xl)',
-                            padding: 'var(--spacing-8)',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all var(--transition-fast)'
-                        }}
-                        onClick={() => addBlock(blockTypes[0])}
-                    >
-                        <span style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)', display: 'block' }}>+</span>
-                        <span style={{ color: 'var(--color-gray-500)' }}>{t('builder.addBlock')}</span>
+                    <Card title="📝 Описание и план урока">
+                        <Label>Краткое описание</Label>
+                        <textarea
+                            value={form.description}
+                            onChange={e => setField('description', e.target.value)}
+                            placeholder="Чему научатся ученики, что нужно знать заранее..."
+                            rows={3}
+                            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', marginBottom: '8px' }}>
+                            <Label style={{ margin: 0 }}>Подробный план / содержание</Label>
+                            <button onClick={generatePlan} disabled={aiLoading} style={{
+                                background: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', color: 'white',
+                                border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 700, display: 'flex', gap: '6px', alignItems: 'center',
+                                opacity: aiLoading ? 0.7 : 1
+                            }}>
+                                {aiLoading ? '⟳ Генерирую...' : '🤖 AI: Сгенерировать план'}
+                            </button>
+                        </div>
+                        <textarea
+                            value={form.content}
+                            onChange={e => setField('content', e.target.value)}
+                            placeholder="Введите план урока вручную или нажмите «AI: Сгенерировать план»..."
+                            rows={8}
+                            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                        />
+                    </Card>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button onClick={() => setStep(1)} style={primaryBtn}>Далее →</button>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Right Sidebar - Properties */}
-            <div className="builder-properties">
-                {selectedBlock ? (
-                    <>
-                        <h3 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: 'var(--spacing-4)' }}>
-                            {language === 'kk' ? 'Блок баптаулары' : 'Свойства блока'}
-                        </h3>
-
-                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                            <label className="label">{language === 'kk' ? 'Тақырып' : 'Заголовок'}</label>
-                            <input
-                                type="text"
-                                className="input"
-                                value={lessonBlocks.find(b => b.id === selectedBlock)?.title || ''}
-                                onChange={(e) => {
-                                    setLessonBlocks(lessonBlocks.map(b =>
-                                        b.id === selectedBlock ? { ...b, title: e.target.value } : b
-                                    ))
+            {/* ─── STEP 1: FILES ─────────────────────────────── */}
+            {step === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Thumbnail */}
+                    <Card title="🖼️ Обложка урока">
+                        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                            <div
+                                onClick={() => thumbnailInputRef.current?.click()}
+                                style={{
+                                    width: '160px', height: '100px', borderRadius: '12px', flexShrink: 0,
+                                    background: form.thumbnail_url ? `url(${form.thumbnail_url}) center/cover` : 'var(--color-gray-100,#f3f4f6)',
+                                    border: '2px dashed var(--color-gray-200,#e5e7eb)', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
                                 }}
+                            >
+                                {!form.thumbnail_url && '🖼️'}
+                            </div>
+                            <div>
+                                <p style={{ margin: '0 0 8px', fontWeight: 600 }}>Загрузите обложку урока</p>
+                                <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>JPG, PNG до 5MB. Рекомендуется 16:9</p>
+                                <button onClick={() => thumbnailInputRef.current?.click()} style={{ ...primaryBtn, padding: '8px 16px', fontSize: '0.85rem' }}>
+                                    Выбрать изображение
+                                </button>
+                                <input ref={thumbnailInputRef} type="file" accept="image/*" hidden onChange={e => handleThumbnailUpload(e.target.files[0])} />
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* YouTube link */}
+                    <Card title="▶️ YouTube-ссылка">
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                                value={youtubeUrl}
+                                onChange={e => setYoutubeUrl(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && addYoutube()}
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                style={{ ...inputStyle, flex: 1, margin: 0 }}
                             />
+                            <button onClick={addYoutube} style={{ ...primaryBtn, padding: '10px 20px', whiteSpace: 'nowrap' }}>
+                                + Добавить
+                            </button>
+                        </div>
+                    </Card>
+
+                    {/* File Upload */}
+                    <Card title="📁 Файлы урока">
+                        <div
+                            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+                            onDragLeave={() => setDragging(false)}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                border: `2px dashed ${dragging ? '#6366f1' : 'var(--color-gray-200,#e5e7eb)'}`,
+                                borderRadius: '16px', padding: '40px 20px', textAlign: 'center',
+                                cursor: 'pointer', background: dragging ? '#ede9fe' : 'var(--color-gray-50,#f9fafb)',
+                                transition: 'all 0.2s', marginBottom: '16px'
+                            }}
+                        >
+                            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📂</div>
+                            <p style={{ margin: 0, fontWeight: 600 }}>Перетащите файлы сюда или нажмите для выбора</p>
+                            <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
+                                PDF, DOCX, MP4, JPG, PNG — до 100 MB каждый
+                            </p>
+                        </div>
+                        <input ref={fileInputRef} type="file" multiple hidden accept=".pdf,.docx,.mp4,.mov,.jpg,.jpeg,.png,.gif" onChange={e => handleFileUpload(e.target.files)} />
+
+                        {/* Uploaded files list */}
+                        {uploadedFiles.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {uploadedFiles.map(file => (
+                                    <div key={file.tempId} style={{
+                                        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px',
+                                        background: 'white', borderRadius: '12px', border: '1px solid var(--color-gray-100,#f3f4f6)',
+                                        boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+                                    }}>
+                                        <span style={{ fontSize: '1.4rem' }}>
+                                            {file.type === 'pdf' ? '📄' : file.type === 'video' ? '🎥' : file.type === 'youtube' ? '▶️' : file.type === 'image' ? '🖼️' : '📎'}
+                                        </span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {file.name}
+                                            </div>
+                                            {uploadProgress[file.tempId] !== undefined && (
+                                                <div style={{ marginTop: '4px' }}>
+                                                    <div style={{
+                                                        height: '4px', borderRadius: '2px',
+                                                        background: 'var(--color-gray-100,#f3f4f6)', overflow: 'hidden'
+                                                    }}>
+                                                        <div style={{
+                                                            height: '100%', borderRadius: '2px',
+                                                            background: 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+                                                            width: `${uploadProgress[file.tempId]}%`,
+                                                            transition: 'width 0.2s'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>{uploadProgress[file.tempId]}%</span>
+                                                </div>
+                                            )}
+                                            {file.status === 'done' && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>✅ Загружен</span>}
+                                            {file.status === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>❌ Ошибка</span>}
+                                        </div>
+                                        <button onClick={() => removeFile(file.tempId)} style={{
+                                            background: 'none', border: 'none', cursor: 'pointer',
+                                            color: '#9ca3af', fontSize: '1.1rem', padding: '4px', borderRadius: '6px',
+                                            flexShrink: 0
+                                        }}>✕</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </Card>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <button onClick={() => setStep(0)} style={ghostBtn}>← Назад</button>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => saveDraft(false)} disabled={saving} style={ghostBtn}>
+                                {saving ? '⟳ Сохраняю...' : '💾 Сохранить черновик'}
+                            </button>
+                            <button onClick={() => setStep(2)} style={primaryBtn}>Просмотр →</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── STEP 2: PREVIEW ───────────────────────────── */}
+            {step === 2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <Card title="👁 Предварительный просмотр">
+                        {/* Thumbnail */}
+                        {form.thumbnail_url && (
+                            <div style={{
+                                height: '220px', borderRadius: '14px', marginBottom: '20px',
+                                background: `url(${form.thumbnail_url}) center/cover`,
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
+                            }} />
+                        )}
+
+                        <h1 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 800 }}>{form.title || 'Название урока'}</h1>
+
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                            <span style={{ background: '#ede9fe', color: '#6366f1', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
+                                {form.subject}
+                            </span>
+                            <span style={{ background: '#e0f2fe', color: '#0891b2', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
+                                {form.grade} класс
+                            </span>
+                            <span style={{ background: '#fef9c3', color: '#854d0e', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
+                                ⏱ {form.duration} мин
+                            </span>
                         </div>
 
-                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                            <label className="label">{language === 'kk' ? 'Блок түрі' : 'Тип блока'}</label>
-                            <select className="filter-select" style={{ width: '100%' }}>
-                                {blockTypes.map(type => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.icon} {type.name}
-                                    </option>
-                                ))}
-                            </select>
+                        {form.description && (
+                            <p style={{ color: '#4b5563', lineHeight: 1.6, marginBottom: '16px' }}>{form.description}</p>
+                        )}
+
+                        {/* Content preview */}
+                        {form.content && (
+                            <div style={{
+                                background: 'var(--color-gray-50,#f9fafb)', borderRadius: '12px',
+                                padding: '16px', marginBottom: '16px', whiteSpace: 'pre-wrap',
+                                lineHeight: 1.7, fontSize: '0.9rem', maxHeight: '300px', overflow: 'auto',
+                                border: '1px solid var(--color-gray-100,#f3f4f6)'
+                            }}>
+                                {form.content}
+                            </div>
+                        )}
+
+                        {/* YouTube embed */}
+                        {uploadedFiles.filter(f => f.type === 'youtube').map(f => (
+                            <div key={f.tempId} style={{ marginBottom: '16px' }}>
+                                <h4 style={{ margin: '0 0 8px' }}>▶️ Видеоматериал</h4>
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${f.url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)?.[1]}`}
+                                    style={{ width: '100%', height: '280px', border: 'none', borderRadius: '12px' }}
+                                    allowFullScreen
+                                />
+                            </div>
+                        ))}
+
+                        {/* Other files list */}
+                        {uploadedFiles.filter(f => f.status === 'done' && f.type !== 'youtube').length > 0 && (
+                            <div>
+                                <h4 style={{ margin: '0 0 10px' }}>📎 Прикреплённые материалы</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {uploadedFiles.filter(f => f.status === 'done' && f.type !== 'youtube').map(f => (
+                                        <a key={f.tempId} href={f.url} target="_blank" rel="noreferrer" style={{
+                                            display: 'flex', gap: '10px', alignItems: 'center',
+                                            padding: '10px 14px', background: 'white', borderRadius: '10px',
+                                            textDecoration: 'none', color: '#374151', fontWeight: 500, fontSize: '0.875rem',
+                                            border: '1px solid var(--color-gray-100,#f3f4f6)',
+                                            transition: 'background 0.15s'
+                                        }}>
+                                            <span>{f.type === 'pdf' ? '📄' : f.type === 'video' ? '🎥' : '🖼️'}</span>
+                                            {f.name}
+                                            <span style={{ marginLeft: 'auto', color: '#6366f1' }}>↗</span>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </Card>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                        <button onClick={() => setStep(1)} style={ghostBtn}>← Назад</button>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => saveDraft(false)} disabled={saving} style={ghostBtn}>
+                                {saving ? '⟳' : '💾'} Сохранить черновик
+                            </button>
+                            <button onClick={() => saveDraft(true)} disabled={saving} style={{
+                                ...primaryBtn,
+                                background: 'linear-gradient(135deg,#10b981,#059669)',
+                                boxShadow: '0 4px 12px rgba(16,185,129,0.35)'
+                            }}>
+                                {saving ? '⟳ Публикую...' : '🚀 Опубликовать'}
+                            </button>
                         </div>
-                    </>
-                ) : (
-                    <div style={{ textAlign: 'center', color: 'var(--color-gray-400)', paddingTop: 'var(--spacing-8)' }}>
-                        <span style={{ fontSize: '2rem', marginBottom: 'var(--spacing-4)', display: 'block' }}>👆</span>
-                        <p>{language === 'kk' ? 'Өңдеу үшін блокты таңдаңыз' : 'Выберите блок для редактирования'}</p>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            <style>{`
+                @keyframes slideIn { from { transform:translateX(20px);opacity:0 } to { transform:translateX(0);opacity:1 } }
+            `}</style>
         </div>
     )
 }
 
-export default LessonBuilder
+// ─── Sub-components ──────────────
+function Card({ title, children }) {
+    return (
+        <div style={{
+            background: 'var(--color-white, white)', borderRadius: '20px',
+            padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            border: '1px solid var(--color-gray-100,#f3f4f6)'
+        }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: '1rem', fontWeight: 700 }}>{title}</h3>
+            {children}
+        </div>
+    )
+}
+
+function Label({ children, style }) {
+    return <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-gray-700,#374151)', ...style }}>{children}</label>
+}
+
+const inputStyle = {
+    width: '100%', padding: '10px 14px', borderRadius: '10px',
+    border: '1px solid var(--color-gray-200,#e5e7eb)',
+    background: 'var(--color-gray-50,#f9fafb)', fontSize: '0.9rem',
+    outline: 'none', boxSizing: 'border-box', marginBottom: '0',
+    color: 'var(--color-gray-900,#111827)', fontFamily: 'inherit'
+}
+
+const primaryBtn = {
+    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+    color: 'white', border: 'none', borderRadius: '12px',
+    padding: '12px 28px', cursor: 'pointer', fontWeight: 700,
+    fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(99,102,241,0.35)',
+    transition: 'transform 0.15s, box-shadow 0.15s'
+}
+
+const ghostBtn = {
+    background: 'none', color: 'var(--color-gray-600,#4b5563)',
+    border: '1px solid var(--color-gray-200,#e5e7eb)',
+    borderRadius: '12px', padding: '12px 20px', cursor: 'pointer',
+    fontWeight: 600, fontSize: '0.9rem'
+}

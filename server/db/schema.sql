@@ -1,4 +1,8 @@
--- Urpaq.ai Full Database Schema
+-- Urpaq.ai Full Database Schema v2.0
+
+-- ══════════════════════════════════════════
+-- CORE TABLES
+-- ══════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -6,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT DEFAULT 'teacher',
+    avatar_url TEXT,
     credits INTEGER DEFAULT 10,
     subjects TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -13,6 +18,125 @@ CREATE TABLE IF NOT EXISTS users (
     is_active INTEGER DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS teacher_profiles (
+    teacher_id INTEGER PRIMARY KEY,
+    bio TEXT,
+    subject_expertise TEXT DEFAULT '[]',
+    school TEXT,
+    city TEXT,
+    social_links TEXT DEFAULT '{}',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
+-- LESSONS
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS lessons (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subject TEXT,
+    grade INTEGER,
+    duration INTEGER DEFAULT 45,
+    description TEXT,
+    content TEXT,
+    thumbnail_url TEXT,
+    content_url TEXT,
+    file_type TEXT DEFAULT 'text',
+    rating REAL DEFAULT 0,
+    ratings_count INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    views_count INTEGER DEFAULT 0,
+    downloads_count INTEGER DEFAULT 0,
+    is_published INTEGER DEFAULT 0,
+    is_archived INTEGER DEFAULT 0,
+    share_token TEXT,
+    user_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS lesson_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lesson_id INTEGER NOT NULL,
+    file_url TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    file_size INTEGER DEFAULT 0,
+    file_type TEXT,
+    public_id TEXT,
+    order_index INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
+-- CATEGORIES
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    parent_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS lesson_categories (
+    lesson_id INTEGER NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (lesson_id, category_id),
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
+-- ANALYTICS
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS lesson_stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lesson_id INTEGER NOT NULL,
+    stat_date TEXT NOT NULL,
+    views INTEGER DEFAULT 0,
+    downloads INTEGER DEFAULT 0,
+    avg_watch_time INTEGER DEFAULT 0,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
+-- INTEGRATIONS
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS integrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    encrypted_token TEXT,
+    config TEXT DEFAULT '{}',
+    chat_id TEXT,
+    is_active INTEGER DEFAULT 1,
+    connected_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, type),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS webhooks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    source TEXT NOT NULL,
+    event_type TEXT,
+    payload TEXT,
+    processed INTEGER DEFAULT 0,
+    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- ══════════════════════════════════════════
+-- EXISTING TABLES (preserved)
+-- ══════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS classes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,24 +157,6 @@ CREATE TABLE IF NOT EXISTS students (
     status TEXT DEFAULT 'good',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS lessons (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    subject TEXT,
-    grade INTEGER,
-    duration INTEGER DEFAULT 45,
-    description TEXT,
-    content TEXT,
-    rating REAL DEFAULT 0,
-    ratings_count INTEGER DEFAULT 0,
-    likes INTEGER DEFAULT 0,
-    is_published INTEGER DEFAULT 0,
-    user_id INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS assignments (
@@ -115,3 +221,31 @@ CREATE TABLE IF NOT EXISTS lesson_teams (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (open_lesson_id) REFERENCES open_lessons(id) ON DELETE CASCADE
 );
+
+-- ══════════════════════════════════════════
+-- INDEXES
+-- ══════════════════════════════════════════
+
+CREATE INDEX IF NOT EXISTS idx_lessons_user_id ON lessons(user_id);
+CREATE INDEX IF NOT EXISTS idx_lessons_created_at ON lessons(created_at);
+CREATE INDEX IF NOT EXISTS idx_lessons_subject_grade ON lessons(subject, grade);
+CREATE INDEX IF NOT EXISTS idx_lessons_published ON lessons(is_published, is_archived);
+CREATE INDEX IF NOT EXISTS idx_lesson_files_lesson_id ON lesson_files(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_stats_lesson_date ON lesson_stats(lesson_id, stat_date);
+CREATE INDEX IF NOT EXISTS idx_integrations_user_type ON integrations(user_id, type);
+
+-- ══════════════════════════════════════════
+-- DEFAULT CATEGORIES SEED
+-- ══════════════════════════════════════════
+
+INSERT OR IGNORE INTO categories (id, name, slug) VALUES
+(1, 'Математика', 'math'),
+(2, 'Физика', 'physics'),
+(3, 'Химия', 'chemistry'),
+(4, 'Биология', 'biology'),
+(5, 'История', 'history'),
+(6, 'География', 'geography'),
+(7, 'Литература', 'literature'),
+(8, 'Язык', 'language'),
+(9, 'Информатика', 'cs'),
+(10, 'Английский', 'english');

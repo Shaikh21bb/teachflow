@@ -11,6 +11,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import AlFarabiBot from './pages/AlFarabiBot'
 import OpenLesson from './pages/OpenLesson'
+import MyLessons from './pages/MyLessons'
+import Integrations from './pages/Integrations'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -33,6 +35,8 @@ function App() {
                             <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/alfarabi-bot" element={<ProtectedRoute><DashboardLayout><AlFarabiBot /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/open-lessons" element={<ProtectedRoute><DashboardLayout><OpenLesson /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/my-lessons" element={<ProtectedRoute><DashboardLayout><MyLessons /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -66,7 +70,7 @@ function DashboardLayout({ children }) {
 
     const navItems = [
         { path: '/dashboard', icon: '🏠', label: t('nav.home') },
-        { path: '/library', icon: '📚', label: t('nav.library') },
+        { path: '/my-lessons', icon: '📚', label: 'Мои уроки' },
         { path: '/builder', icon: '🛠️', label: t('nav.builder') },
         { path: '/open-lessons', icon: '🏛️', label: t('nav.openLessons') },
         { path: '/assignments', icon: '📋', label: t('nav.assignments') },
@@ -109,10 +113,14 @@ function DashboardLayout({ children }) {
 
                     <div className="sidebar-section">
                         <div className="sidebar-section-title">{t('nav.other')}</div>
-                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
-                            <span className="sidebar-link-icon">🔗</span>
-                            <span>{t('nav.integrations')}</span>
-                        </a>
+                        <NavLink
+                            to="/integrations"
+                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                            onClick={handleNavClick}
+                        >
+                            <span className="sidebar-link-icon">🔌</span>
+                            <span>Интеграции</span>
+                        </NavLink>
                         <a href="#" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon">⚙️</span>
                             <span>{t('nav.settings')}</span>
