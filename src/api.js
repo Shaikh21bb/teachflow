@@ -110,7 +110,7 @@ export const integrationsAPI = {
 
 // Cloudinary direct upload (unsigned upload preset)
 export async function uploadToCloudinary(file, onProgress) {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dvb6l3wri';
     const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'urpaq_uploads';
 
     if (!cloudName) {
