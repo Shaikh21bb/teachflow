@@ -171,6 +171,21 @@ async function startServer() {
         console.log('Google Sheets skipped:', e.message);
     }
 
+    // Helper route for secure Cloudinary signed uploads
+    app.get('/api/cloudinary/signature', (req, res) => {
+        const timestamp = Math.round((new Date).getTime() / 1000);
+        const apiSecret = 'LWHK6PmsuK8c7dkAtTPGcxf72pU';
+        const apiKey = '278396287363825';
+        const cloudName = 'dvb6l3wri';
+        const folder = 'urpaq-lessons';
+        
+        const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+        const crypto = require('crypto');
+        const signature = crypto.createHash('sha1').update(strToSign).digest('hex');
+        
+        res.json({ signature, timestamp, apiKey, cloudName, folder });
+    });
+
     // API Routes
     app.use('/api/auth', authRouter);
     app.use('/api/lessons', lessonsRouter);

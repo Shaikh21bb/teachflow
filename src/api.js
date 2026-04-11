@@ -108,19 +108,20 @@ export const integrationsAPI = {
     disconnect: (type) => fetchAPI(`/integrations/${type}`, { method: 'DELETE' }),
 };
 
-// Cloudinary direct upload (unsigned upload preset)
+// Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
 export async function uploadToCloudinary(file, onProgress) {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dvb6l3wri';
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'urpaq_uploads';
+    // 1. Get secure signature from our backend
+    const sigRes = await fetch(`${API_BASE}/cloudinary/signature`);
+    if (!sigRes.ok) throw new Error('Signature failed');
+    const { signature, timestamp, apiKey, cloudName, folder } = await sigRes.json();
 
-    if (!cloudName) {
-        throw new Error('VITE_CLOUDINARY_CLOUD_NAME not configured');
-    }
-
+    // 2. Upload file securely
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    formData.append('folder', 'urpaq-lessons');
+    formData.append('folder', folder);
+    formData.append('api_key', apiKey);
+    formData.append('timestamp', timestamp);
+    formData.append('signature', signature);
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
