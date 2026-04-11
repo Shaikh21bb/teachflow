@@ -1,4 +1,11 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+let API_BASE = import.meta.env.VITE_API_URL || '/api';
+if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        API_BASE = 'http://localhost:3001/api';
+    } else {
+        API_BASE = 'https://teachflow-api-il63.onrender.com/api';
+    }
+}
 
 // Generic fetch wrapper with error handling
 function fetchAPI(endpoint, options = {}) {
