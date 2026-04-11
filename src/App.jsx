@@ -121,11 +121,11 @@ function DashboardLayout({ children }) {
                             <span className="sidebar-link-icon">🔌</span>
                             <span>Интеграции</span>
                         </NavLink>
-                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
+                        <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); alert('Настройки скоро будут доступны'); handleNavClick(); }}>
                             <span className="sidebar-link-icon">⚙️</span>
                             <span>{t('nav.settings')}</span>
                         </a>
-                        <a href="#" className="sidebar-link" onClick={handleNavClick}>
+                        <a href="https://wa.me/77771225784" target="_blank" rel="noopener noreferrer" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon">❓</span>
                             <span>{t('nav.help')}</span>
                         </a>
