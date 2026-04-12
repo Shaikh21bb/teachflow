@@ -78,19 +78,17 @@ async function chatWithAI(userMessage, conversationHistory = [], language = 'ru'
  * Chat using Google Gemini 1.5 Pro
  */
 async function chatWithGemini(userMessage, conversationHistory, language) {
+    let context = "";
+    if (conversationHistory && conversationHistory.length > 0) {
+        context = "Предыдущие сообщения беседы:\n" + conversationHistory.map(m => `${m.role === 'user' ? 'Учитель' : 'Фараби'}: ${m.content}`).join("\n") + "\n\n";
+    }
+
     const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
-        systemInstruction: SYSTEM_PROMPT
+        systemInstruction: SYSTEM_PROMPT + "\n\n" + context
     });
 
-    const chat = model.startChat({
-        history: conversationHistory.map(msg => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }],
-        }))
-    });
-
-    const result = await chat.sendMessage(userMessage);
+    const result = await model.generateContent(userMessage);
     const response = await result.response;
     return response.text();
 }
