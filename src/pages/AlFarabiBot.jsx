@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Plus, MessageSquare, Trash2, User, Bot } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const STORAGE_KEY = 'urpaq_bot_chats'
@@ -29,7 +30,7 @@ function AlFarabiBot() {
     const [isTyping, setIsTyping] = useState(false)
     const messagesEndRef = useRef(null)
 
-    const botAvatar = "👳‍♂️" // Placeholder
+    const botAvatar = <Bot size={24} /> // Placeholder
 
     // Load initial chat if history exists, or create new
     useEffect(() => {
@@ -193,7 +194,7 @@ function AlFarabiBot() {
                             borderRadius: '12px', cursor: 'pointer', fontWeight: 600, display: 'flex',
                             alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s'
                         }}>
-                             <span>➕</span> {language === 'kk' ? 'Жаңа чат' : 'Новый чат'}
+                             <Plus size={18} /> {language === 'kk' ? 'Жаңа чат' : 'Новый чат'}
                         </button>
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-2)' }}>
@@ -207,16 +208,17 @@ function AlFarabiBot() {
                                 <div style={{ 
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                     fontSize: '0.95rem', color: currentChatId === chat.id ? 'var(--color-primary-700)' : 'var(--color-gray-700)',
-                                    fontWeight: currentChatId === chat.id ? 500 : 400
+                                    fontWeight: currentChatId === chat.id ? 500 : 400,
+                                    display: 'flex', alignItems: 'center', gap: '8px'
                                 }}>
-                                    💬 {chat.title}
+                                    <MessageSquare size={16} /> {chat.title}
                                 </div>
                                 <button onClick={(e) => deleteChat(chat.id, e)} style={{
                                     background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
                                     opacity: currentChatId === chat.id ? 1 : 0.3, transition: 'opacity 0.2s',
-                                    fontSize: '1rem'
+                                    display: 'flex', alignItems: 'center'
                                 }} title="Удалить" className="delete-chat-btn">
-                                    🗑️
+                                    <Trash2 size={16} color="var(--color-gray-500)" />
                                 </button>
                             </div>
                         ))}
@@ -262,11 +264,10 @@ function AlFarabiBot() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '1.2rem',
                                     color: 'white',
                                     flexShrink: 0
                                 }}>
-                                    {msg.type === 'user' ? '👤' : botAvatar}
+                                    {msg.type === 'user' ? <User size={20} /> : botAvatar}
                                 </div>
                                 <div style={{
                                     background: msg.type === 'user' ? 'var(--color-primary-600)' : 'white',

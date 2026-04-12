@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { Calendar, ClipboardCheck, Users, CheckCircle, ClipboardList, ClipboardEdit, Zap, PenTool, BookOpen, Bell } from 'lucide-react'
 import { dashboardAPI, assignmentsAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -80,14 +81,14 @@ function Dashboard() {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">{t('dashboard.title')}, {user?.name || 'Пайдаланушы'}! 👋</h1>
+                <h1 className="page-title">{t('dashboard.title')}, {user?.name || 'Пайдаланушы'}!</h1>
                 <p className="page-subtitle">{t('dashboard.subtitle')}</p>
             </div>
 
             {/* Stats Cards */}
             <div className="stats-grid">
                 <div className="stat-card">
-                    <div className="stat-icon blue">📅</div>
+                    <div className="stat-icon blue" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Calendar size={24} /></div>
                     <div className="stat-info">
                         <h3>{stats.lessonsToday}</h3>
                         <p>{t('dashboard.lessonsToday')}</p>
@@ -95,7 +96,7 @@ function Dashboard() {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon green">📋</div>
+                    <div className="stat-icon green" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ClipboardCheck size={24} /></div>
                     <div className="stat-info">
                         <h3>{stats.activeAssignments}</h3>
                         <p>{t('dashboard.activeAssignments')}</p>
@@ -103,7 +104,7 @@ function Dashboard() {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon purple">👥</div>
+                    <div className="stat-icon purple" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={24} /></div>
                     <div className="stat-info">
                         <h3>{stats.totalStudents}</h3>
                         <p>{t('dashboard.totalStudents')}</p>
@@ -111,7 +112,7 @@ function Dashboard() {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon orange">✅</div>
+                    <div className="stat-icon orange" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={24} /></div>
                     <div className="stat-info">
                         <h3>{stats.pendingReviews}</h3>
                         <p>{t('dashboard.pendingReviews')}</p>
@@ -125,7 +126,7 @@ function Dashboard() {
                     {/* Upcoming Lessons */}
                     <div className="widget">
                         <div className="widget-header">
-                            <h3 className="widget-title">📅 {t('dashboard.upcomingLessons')}</h3>
+                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={20} /> {t('dashboard.upcomingLessons')}</h3>
                             <Link to="/builder" className="btn btn-sm btn-secondary">+ {t('dashboard.createLesson')}</Link>
                         </div>
                         <div className="widget-body">
@@ -148,7 +149,7 @@ function Dashboard() {
                     {/* Pending Reviews */}
                     <div className="widget">
                         <div className="widget-header">
-                            <h3 className="widget-title">📝 {t('dashboard.pendingReviews')}</h3>
+                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={20} /> {t('dashboard.pendingReviews')}</h3>
                             <Link to="/assignments" className="btn btn-sm btn-secondary">{t('common.all')} {t('nav.assignments').toLowerCase()}</Link>
                         </div>
                         <div className="widget-body">
@@ -158,13 +159,14 @@ function Dashboard() {
                                         width: '48px',
                                         height: '48px',
                                         background: 'var(--color-primary-100)',
+                                        color: 'var(--color-primary-600)',
                                         borderRadius: 'var(--radius-lg)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         fontSize: '1.25rem'
                                     }}>
-                                        📝
+                                        <ClipboardEdit size={24} />
                                     </div>
                                     <div className="lesson-info">
                                         <div className="lesson-name">{item.title}</div>
@@ -190,21 +192,21 @@ function Dashboard() {
                     {/* Quick Actions */}
                     <div className="widget">
                         <div className="widget-header">
-                            <h3 className="widget-title">⚡ {t('dashboard.quickActions')}</h3>
+                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Zap size={20} /> {t('dashboard.quickActions')}</h3>
                         </div>
                         <div className="widget-body">
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-3)' }}>
-                                <Link to="/builder" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-                                    📝 {t('dashboard.createLesson')}
+                                <Link to="/builder" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <PenTool size={18} /> {t('dashboard.createLesson')}
                                 </Link>
-                                <Link to="/assignments" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-                                    📋 {t('dashboard.newAssignment')}
+                                <Link to="/assignments" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <ClipboardList size={18} /> {t('dashboard.newAssignment')}
                                 </Link>
-                                <Link to="/library" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-                                    📚 {t('nav.library')}
+                                <Link to="/library" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <BookOpen size={18} /> {t('nav.library')}
                                 </Link>
-                                <Link to="/classes" className="btn btn-secondary" style={{ justifyContent: 'flex-start' }}>
-                                    👥 {t('classes.title')}
+                                <Link to="/classes" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <Users size={18} /> {t('classes.title')}
                                 </Link>
                             </div>
                         </div>
@@ -213,7 +215,7 @@ function Dashboard() {
                     {/* Notifications */}
                     <div className="widget">
                         <div className="widget-header">
-                            <h3 className="widget-title">🔔 {t('dashboard.notifications')}</h3>
+                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Bell size={20} /> {t('dashboard.notifications')}</h3>
                             <button className="btn btn-sm btn-ghost">{t('common.all')}</button>
                         </div>
                         <div className="widget-body">

@@ -1,8 +1,14 @@
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom'
 import { useState } from 'react'
+import { 
+    Home, BookOpen, LayoutTemplate, Library, 
+    ClipboardList, Users, BarChart, Bot, 
+    Plug, Settings, HelpCircle, Search, 
+    Bell, LogOut, Moon, Sun 
+} from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
-import Library from './pages/Library'
+import LibraryPage from './pages/Library'
 import LessonBuilder from './pages/LessonBuilder'
 import Assignments from './pages/Assignments'
 import ClassDashboard from './pages/ClassDashboard'
@@ -28,7 +34,7 @@ function App() {
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
                             <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
-                            <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/library" element={<ProtectedRoute><DashboardLayout><LibraryPage /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/builder" element={<ProtectedRoute><DashboardLayout><LessonBuilder /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/assignments" element={<ProtectedRoute><DashboardLayout><Assignments /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/classes" element={<ProtectedRoute><DashboardLayout><ClassDashboard /></DashboardLayout></ProtectedRoute>} />
@@ -69,14 +75,14 @@ function DashboardLayout({ children }) {
     const handleNavClick = () => setSidebarOpen(false)
 
     const navItems = [
-        { path: '/dashboard', icon: '🏠', label: t('nav.home') },
-        { path: '/my-lessons', icon: '📚', label: 'Мои уроки' },
-        { path: '/builder', icon: '🛠️', label: t('nav.builder') },
-        { path: '/open-lessons', icon: '🏛️', label: t('nav.openLessons') },
-        { path: '/assignments', icon: '📋', label: t('nav.assignments') },
-        { path: '/classes', icon: '👥', label: t('nav.classes') },
-        { path: '/reports', icon: '📊', label: t('nav.reports') },
-        { path: '/alfarabi-bot', icon: '👳‍♂️', label: t('nav.alfarabi') },
+        { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
+        { path: '/my-lessons', icon: <BookOpen size={20} />, label: 'Мои уроки' },
+        { path: '/builder', icon: <LayoutTemplate size={20} />, label: t('nav.builder') },
+        { path: '/open-lessons', icon: <Library size={20} />, label: t('nav.openLessons') },
+        { path: '/assignments', icon: <ClipboardList size={20} />, label: t('nav.assignments') },
+        { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
+        { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },
+        { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
     ]
 
     return (
@@ -118,15 +124,15 @@ function DashboardLayout({ children }) {
                             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                             onClick={handleNavClick}
                         >
-                            <span className="sidebar-link-icon">🔌</span>
+                            <span className="sidebar-link-icon"><Plug size={20} /></span>
                             <span>Интеграции</span>
                         </NavLink>
                         <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); alert('Настройки скоро будут доступны'); handleNavClick(); }}>
-                            <span className="sidebar-link-icon">⚙️</span>
+                            <span className="sidebar-link-icon"><Settings size={20} /></span>
                             <span>{t('nav.settings')}</span>
                         </a>
                         <a href="https://wa.me/77771225784" target="_blank" rel="noopener noreferrer" className="sidebar-link" onClick={handleNavClick}>
-                            <span className="sidebar-link-icon">❓</span>
+                            <span className="sidebar-link-icon"><HelpCircle size={20} /></span>
                             <span>{t('nav.help')}</span>
                         </a>
                     </div>
@@ -142,7 +148,7 @@ function DashboardLayout({ children }) {
                     </Link>
 
                     <div className="topbar-search">
-                        <span>🔍</span>
+                        <Search size={18} style={{ color: 'var(--color-gray-400)' }} />
                         <input type="text" placeholder={t('common.searchPlaceholder')} />
                     </div>
 
@@ -197,8 +203,8 @@ function UserProfile() {
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-                <div className="topbar-icon">
-                    <span>🔔</span>
+                <div className="topbar-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                    <Bell size={20} />
                 </div>
                 <div style={{
                     width: '36px',
@@ -248,9 +254,9 @@ function UserProfile() {
                         <button
                             className="btn btn-ghost btn-sm"
                             onClick={handleLogout}
-                            style={{ width: '100%', justifyContent: 'flex-start', margin: 'var(--spacing-2) 0' }}
+                            style={{ width: '100%', justifyContent: 'flex-start', margin: 'var(--spacing-2) 0', display: 'flex', alignItems: 'center', gap: '8px' }}
                         >
-                            🚪 {language === 'kk' ? 'Шығу' : 'Выйти'}
+                            <LogOut size={16} /> <span>{language === 'kk' ? 'Шығу' : 'Выйти'}</span>
                         </button>
                     </div>
                 </>
@@ -272,11 +278,14 @@ function ThemeToggleButton() {
                 color: 'var(--color-gray-700)',
                 background: 'var(--color-gray-100)',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center'
             }}
             aria-label="Toggle Theme"
         >
-            {theme === 'dark' ? '🌙' : '☀️'}
+            {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
     );
 }

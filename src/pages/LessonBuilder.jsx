@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,7 +8,7 @@ const SUBJECTS = ['Математика', 'Физика', 'Химия', 'Био�
 const GRADES = Array.from({ length: 11 }, (_, i) => i + 1)
 const FILE_TYPES = { 'application/pdf': 'pdf', 'video/mp4': 'video', 'video/quicktime': 'video', 'image/jpeg': 'image', 'image/png': 'image', 'image/gif': 'image', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' }
 
-const STEPS = ['📋 Информация', '📁 Материалы', '👁 Превью']
+const STEPS = ['Информация', 'Материалы', 'Превью']
 
 export default function LessonBuilderNew() {
     const navigate = useNavigate()
@@ -226,11 +227,12 @@ export default function LessonBuilderNew() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
                 <button onClick={() => navigate('/my-lessons')} style={{
                     background: 'none', border: '1px solid var(--color-gray-200,#e5e7eb)', borderRadius: '10px',
-                    padding: '8px 14px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-gray-600,#4b5563)'
+                    padding: '8px 14px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-gray-600,#4b5563)',
+                    display: 'flex', alignItems: 'center', gap: '6px'
                 }}>← Назад</button>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800 }}>
-                        {editId ? '✏️ Редактирование урока' : '➕ Новый урок'}
+                    <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {editId ? <><Edit size={24}/> Редактирование урока</> : <><Plus size={24}/> Новый урок</>}
                     </h1>
                     <p style={{ margin: '2px 0 0', fontSize: '0.875rem', color: 'var(--color-gray-400,#9ca3af)' }}>
                         Автор: {user?.name}
@@ -256,7 +258,7 @@ export default function LessonBuilderNew() {
             {/* ─── STEP 0: INFO ──────────────────────────────── */}
             {step === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <Card title="📋 Основная информация">
+                    <Card title={<><Info size={20} /> Основная информация</>}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div style={{ gridColumn: '1/-1' }}>
                                 <Label>Название урока *</Label>
@@ -286,7 +288,7 @@ export default function LessonBuilderNew() {
                         </div>
                     </Card>
 
-                    <Card title="📝 Описание и план урока">
+                    <Card title={<><LayoutList size={20} /> Описание и план урока</>}>
                         <Label>Краткое описание</Label>
                         <textarea
                             value={form.description}
@@ -303,7 +305,7 @@ export default function LessonBuilderNew() {
                                 fontSize: '0.8rem', fontWeight: 700, display: 'flex', gap: '6px', alignItems: 'center',
                                 opacity: aiLoading ? 0.7 : 1
                             }}>
-                                {aiLoading ? '⟳ Генерирую...' : '🤖 AI: Сгенерировать план'}
+                                {aiLoading ? <><Loader2 size={16} /> Генерирую...</> : <><Bot size={16} /> AI: Сгенерировать план</>}
                             </button>
                         </div>
                         <textarea
@@ -325,7 +327,7 @@ export default function LessonBuilderNew() {
             {step === 1 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* Thumbnail */}
-                    <Card title="🖼️ Обложка урока">
+                    <Card title={<><ImageIcon size={20} /> Обложка урока</>}>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                             <div
                                 onClick={() => thumbnailInputRef.current?.click()}
@@ -333,10 +335,10 @@ export default function LessonBuilderNew() {
                                     width: '160px', height: '100px', borderRadius: '12px', flexShrink: 0,
                                     background: form.thumbnail_url ? `url(${form.thumbnail_url}) center/cover` : 'var(--color-gray-100,#f3f4f6)',
                                     border: '2px dashed var(--color-gray-200,#e5e7eb)', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem'
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}
                             >
-                                {!form.thumbnail_url && '🖼️'}
+                                {!form.thumbnail_url && <ImageIcon size={32} color="var(--color-gray-400)" />}
                             </div>
                             <div>
                                 <p style={{ margin: '0 0 8px', fontWeight: 600 }}>Загрузите обложку урока</p>
@@ -350,7 +352,7 @@ export default function LessonBuilderNew() {
                     </Card>
 
                     {/* YouTube link */}
-                    <Card title="▶️ YouTube-ссылка">
+                    <Card title={<><Video size={20} /> YouTube-ссылка</>}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <input
                                 value={youtubeUrl}
@@ -366,7 +368,7 @@ export default function LessonBuilderNew() {
                     </Card>
 
                     {/* File Upload */}
-                    <Card title="📁 Файлы урока">
+                    <Card title={<><FolderUp size={20} /> Файлы урока</>}>
                         <div
                             onDragOver={e => { e.preventDefault(); setDragging(true) }}
                             onDragLeave={() => setDragging(false)}
@@ -379,7 +381,7 @@ export default function LessonBuilderNew() {
                                 transition: 'all 0.2s', marginBottom: '16px'
                             }}
                         >
-                            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📂</div>
+                            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}><FolderUp size={40} color="var(--color-gray-400)" /></div>
                             <p style={{ margin: 0, fontWeight: 600 }}>Перетащите файлы сюда или нажмите для выбора</p>
                             <p style={{ margin: '6px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
                                 PDF, DOCX, MP4, JPG, PNG — до 100 MB каждый
@@ -396,8 +398,8 @@ export default function LessonBuilderNew() {
                                         background: 'white', borderRadius: '12px', border: '1px solid var(--color-gray-100,#f3f4f6)',
                                         boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
                                     }}>
-                                        <span style={{ fontSize: '1.4rem' }}>
-                                            {file.type === 'pdf' ? '📄' : file.type === 'video' ? '🎥' : file.type === 'youtube' ? '▶️' : file.type === 'image' ? '🖼️' : '📎'}
+                                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                                            {file.type === 'pdf' ? <FileText size={24} color="#ef4444" /> : file.type === 'video' ? <Film size={24} color="#6366f1" /> : file.type === 'youtube' ? <Video size={24} color="#ef4444" /> : file.type === 'image' ? <ImageIcon size={24} color="#10b981" /> : <Paperclip size={24} color="#6b7280" />}
                                         </span>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -419,8 +421,8 @@ export default function LessonBuilderNew() {
                                                     <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>{uploadProgress[file.tempId]}%</span>
                                                 </div>
                                             )}
-                                            {file.status === 'done' && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>✅ Загружен</span>}
-                                            {file.status === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>❌ Ошибка</span>}
+                                            {file.status === 'done' && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Загружен</span>}
+                                            {file.status === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}><XCircle size={12} /> Ошибка</span>}
                                         </div>
                                         <button onClick={() => removeFile(file.tempId)} style={{
                                             background: 'none', border: 'none', cursor: 'pointer',
@@ -436,8 +438,8 @@ export default function LessonBuilderNew() {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <button onClick={() => setStep(0)} style={ghostBtn}>← Назад</button>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={() => saveDraft(false)} disabled={saving} style={ghostBtn}>
-                                {saving ? '⟳ Сохраняю...' : '💾 Сохранить черновик'}
+                            <button onClick={() => saveDraft(false)} disabled={saving} style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                {saving ? <Loader2 size={16} /> : <Save size={16} />} Сохранить черновик
                             </button>
                             <button onClick={() => setStep(2)} style={primaryBtn}>Просмотр →</button>
                         </div>
@@ -448,7 +450,7 @@ export default function LessonBuilderNew() {
             {/* ─── STEP 2: PREVIEW ───────────────────────────── */}
             {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <Card title="👁 Предварительный просмотр">
+                    <Card title={<><Eye size={20} /> Предварительный просмотр</>}>
                         {/* Thumbnail */}
                         {form.thumbnail_url && (
                             <div style={{
@@ -460,15 +462,15 @@ export default function LessonBuilderNew() {
 
                         <h1 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 800 }}>{form.title || 'Название урока'}</h1>
 
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
                             <span style={{ background: '#ede9fe', color: '#6366f1', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
                                 {form.subject}
                             </span>
                             <span style={{ background: '#e0f2fe', color: '#0891b2', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
                                 {form.grade} класс
                             </span>
-                            <span style={{ background: '#fef9c3', color: '#854d0e', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
-                                ⏱ {form.duration} мин
+                            <span style={{ background: '#fef9c3', color: '#854d0e', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Clock size={12} /> {form.duration} мин
                             </span>
                         </div>
 
@@ -491,7 +493,7 @@ export default function LessonBuilderNew() {
                         {/* YouTube embed */}
                         {uploadedFiles.filter(f => f.type === 'youtube').map(f => (
                             <div key={f.tempId} style={{ marginBottom: '16px' }}>
-                                <h4 style={{ margin: '0 0 8px' }}>▶️ Видеоматериал</h4>
+                                <h4 style={{ margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '6px' }}><Video size={16} color="#ef4444" /> Видеоматериал</h4>
                                 <iframe
                                     src={`https://www.youtube.com/embed/${f.url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)?.[1]}`}
                                     style={{ width: '100%', height: '280px', border: 'none', borderRadius: '12px' }}
@@ -503,7 +505,7 @@ export default function LessonBuilderNew() {
                         {/* Other files list */}
                         {uploadedFiles.filter(f => f.status === 'done' && f.type !== 'youtube').length > 0 && (
                             <div>
-                                <h4 style={{ margin: '0 0 10px' }}>📎 Прикреплённые материалы</h4>
+                                <h4 style={{ margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}><Paperclip size={16} /> Прикреплённые материалы</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {uploadedFiles.filter(f => f.status === 'done' && f.type !== 'youtube').map(f => (
                                         <a key={f.tempId} href={f.url} target="_blank" rel="noreferrer" style={{
@@ -513,7 +515,7 @@ export default function LessonBuilderNew() {
                                             border: '1px solid var(--color-gray-100,#f3f4f6)',
                                             transition: 'background 0.15s'
                                         }}>
-                                            <span>{f.type === 'pdf' ? '📄' : f.type === 'video' ? '🎥' : '🖼️'}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center' }}>{f.type === 'pdf' ? <FileText size={18} color="#ef4444" /> : f.type === 'video' ? <Film size={18} color="#6366f1" /> : <ImageIcon size={18} color="#10b981" />}</span>
                                             {f.name}
                                             <span style={{ marginLeft: 'auto', color: '#6366f1' }}>↗</span>
                                         </a>
@@ -526,15 +528,16 @@ export default function LessonBuilderNew() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                         <button onClick={() => setStep(1)} style={ghostBtn}>← Назад</button>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={() => saveDraft(false)} disabled={saving} style={ghostBtn}>
-                                {saving ? '⟳' : '💾'} Сохранить черновик
+                            <button onClick={() => saveDraft(false)} disabled={saving} style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                {saving ? <Loader2 size={16} /> : <Save size={16} />} Сохранить черновик
                             </button>
                             <button onClick={() => saveDraft(true)} disabled={saving} style={{
                                 ...primaryBtn,
+                                display: 'flex', alignItems: 'center', gap: '6px',
                                 background: 'linear-gradient(135deg,#10b981,#059669)',
                                 boxShadow: '0 4px 12px rgba(16,185,129,0.35)'
                             }}>
-                                {saving ? '⟳ Публикую...' : '🚀 Опубликовать'}
+                                {saving ? <Loader2 size={16} /> : <Rocket size={16} />} Опубликовать
                             </button>
                         </div>
                     </div>
@@ -556,7 +559,7 @@ function Card({ title, children }) {
             padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
             border: '1px solid var(--color-gray-100,#f3f4f6)'
         }}>
-            <h3 style={{ margin: '0 0 20px', fontSize: '1rem', fontWeight: 700 }}>{title}</h3>
+            <h3 style={{ margin: '0 0 20px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>{title}</h3>
             {children}
         </div>
     )
