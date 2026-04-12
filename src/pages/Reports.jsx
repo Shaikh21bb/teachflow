@@ -1,13 +1,43 @@
+import { useState, useEffect } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { reportsAPI } from '../api'
+import { Loader } from 'lucide-react'
 
 function Reports() {
     const { t, language } = useLanguage()
+    const [data, setData] = useState(null)
+    const [loading, setLoading] = useState(true)
 
-    const classStats = [
-        { class: '5А', subject: 'Математика', avgGrade: 4.3, completion: 87, students: 28 },
-        { class: '7Б', subject: 'Физика', avgGrade: 4.1, completion: 82, students: 26 },
-        { class: '6А', subject: language === 'kk' ? 'Ағылшын тілі' : 'Английский', avgGrade: 4.5, completion: 91, students: 25 },
-        { class: '9В', subject: 'Алгебра', avgGrade: 3.9, completion: 78, students: 24 },
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const res = await reportsAPI.getDashboard()
+                setData(res)
+            } catch (err) {
+                console.error(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchReports()
+    }, [])
+
+    if (loading) {
+        return (
+            <div style={{ textAlign: 'center', padding: '100px 20px', color: 'var(--color-gray-500)' }}>
+                <Loader size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+                <p>{language === 'kk' ? 'Есептер жүктелуде...' : 'Загрузка отчётов...'}</p>
+            </div>
+        )
+    }
+
+    if (!data) return null
+
+    const gradeDist = [
+        { grade: language === 'kk' ? '5 (Өте жақсы)' : '5 (Отлично)', percent: data.charts?.gradeDist?.['5'] || 0, color: 'var(--color-success-500)' },
+        { grade: language === 'kk' ? '4 (Жақсы)' : '4 (Хорошо)', percent: data.charts?.gradeDist?.['4'] || 0, color: 'var(--color-primary-500)' },
+        { grade: language === 'kk' ? '3 (Орташа)' : '3 (Удовл.)', percent: data.charts?.gradeDist?.['3'] || 0, color: 'var(--color-warning-500)' },
+        { grade: language === 'kk' ? '2 (Нашар)' : '2 (Неуд.)', percent: data.charts?.gradeDist?.['2'] || 0, color: 'var(--color-error-500)' },
     ]
 
     return (
@@ -33,7 +63,7 @@ function Reports() {
                 <div className="stat-card">
                     <div className="stat-icon blue">👥</div>
                     <div className="stat-info">
-                        <h3>103</h3>
+                        <h3>{data.totalStudents || 0}</h3>
                         <p>{t('dashboard.totalStudents')}</p>
                     </div>
                 </div>
@@ -41,7 +71,7 @@ function Reports() {
                 <div className="stat-card">
                     <div className="stat-icon green">⭐</div>
                     <div className="stat-info">
-                        <h3>4.2</h3>
+                        <h3>{data.avgGrade || 0}</h3>
                         <p>{t('classes.avgGrade')}</p>
                     </div>
                 </div>
@@ -49,7 +79,7 @@ function Reports() {
                 <div className="stat-card">
                     <div className="stat-icon purple">📊</div>
                     <div className="stat-info">
-                        <h3>85%</h3>
+                        <h3>{data.performance || 0}%</h3>
                         <p>{t('classes.performance')}</p>
                     </div>
                 </div>
@@ -57,8 +87,8 @@ function Reports() {
                 <div className="stat-card">
                     <div className="stat-icon orange">✅</div>
                     <div className="stat-info">
-                        <h3>234</h3>
-                        <p>{t('reports.completedTasks')}</p>
+                        <h3>{data.completedTasks || 0}</h3>
+                        <p>{language === 'kk' ? 'Орындалған тапсырмалар' : 'Выполненных заданий'}</p>
                     </div>
                 </div>
             </div>
@@ -77,24 +107,25 @@ function Reports() {
                                 height: '200px',
                                 marginBottom: '16px'
                             }}>
-                                {[65, 72, 68, 78, 82, 85, 87].map((value, i) => (
+                                {(data.charts?.performance || [0,0,0,0,0,0,0]).map((value, i) => (
                                     <div
                                         key={i}
+                                        title={`${value}%`}
                                         style={{
                                             width: '40px',
-                                            height: `${value * 2}px`,
+                                            height: `${Math.max(value * 2, 4)}px`,
                                             background: `linear-gradient(180deg, var(--color-primary-500) 0%, var(--color-secondary-500) 100%)`,
                                             borderRadius: '8px 8px 0 0',
                                             display: 'flex',
                                             alignItems: 'flex-start',
                                             justifyContent: 'center',
-                                            paddingTop: '8px',
+                                            paddingTop: value > 10 ? '8px' : '0',
                                             color: 'white',
-                                            fontSize: '12px',
+                                            fontSize: '11px',
                                             fontWeight: 600
                                         }}
                                     >
-                                        {value}%
+                                        {value > 0 ? `${value}%` : ''}
                                     </div>
                                 ))}
                             </div>
@@ -119,12 +150,7 @@ function Reports() {
                     <h3>🎯 {t('reports.gradeDistribution')}</h3>
                     <div style={{ padding: 'var(--spacing-6)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
-                            {[
-                                { grade: language === 'kk' ? '5 (Өте жақсы)' : '5 (Отлично)', percent: 35, color: 'var(--color-success-500)' },
-                                { grade: language === 'kk' ? '4 (Жақсы)' : '4 (Хорошо)', percent: 40, color: 'var(--color-primary-500)' },
-                                { grade: language === 'kk' ? '3 (Орташа)' : '3 (Удовл.)', percent: 20, color: 'var(--color-warning-500)' },
-                                { grade: language === 'kk' ? '2 (Нашар)' : '2 (Неуд.)', percent: 5, color: 'var(--color-error-500)' },
-                            ].map((item, i) => (
+                            {gradeDist.map((item, i) => (
                                 <div key={i}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '14px' }}>
                                         <span>{item.grade}</span>
@@ -167,7 +193,14 @@ function Reports() {
                         </tr>
                     </thead>
                     <tbody>
-                        {classStats.map((cls, i) => (
+                        {(data.classStats || []).length === 0 && (
+                            <tr>
+                                <td colSpan="6" style={{ padding: 24, textAlign: 'center', color: 'var(--color-gray-500)' }}>
+                                    {language === 'kk' ? 'Сыныптар жоқ' : 'Нет классов'}
+                                </td>
+                            </tr>
+                        )}
+                        {(data.classStats || []).map((cls, i) => (
                             <tr key={i} style={{ borderBottom: '1px solid var(--color-gray-100)' }}>
                                 <td style={{ padding: 'var(--spacing-4)', fontWeight: 600 }}>{cls.class}</td>
                                 <td style={{ padding: 'var(--spacing-4)' }}>{cls.subject}</td>

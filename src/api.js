@@ -128,6 +128,11 @@ export const quizzesAPI = {
     aiGenerate: (data) => fetchAPI('/quizzes/ai-generate', { method: 'POST', body: JSON.stringify(data) }),
 };
 
+// Reports API
+export const reportsAPI = {
+    getDashboard: () => fetchAPI('/reports'),
+};
+
 // Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
 export async function uploadToCloudinary(file, onProgress) {
     // 1. Get secure signature from our backend
@@ -182,4 +187,5 @@ export default {
     openLessons: openLessonsAPI,
     integrations: integrationsAPI,
     quizzes: quizzesAPI,
+    reports: reportsAPI,
 };

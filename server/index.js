@@ -192,6 +192,7 @@ async function startServer() {
     const integrationsRouter = require('./routes/integrations');
     const webhooksRouter = require('./routes/webhooks');
     const quizzesRouter = require('./routes/quizzes');
+    const reportsRouter = require('./routes/reports');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -229,6 +230,7 @@ async function startServer() {
     app.use('/api/integrations', integrationsRouter);
     app.use('/api/webhooks', webhooksRouter);
     app.use('/api/quizzes', quizzesRouter);
+    app.use('/api/reports', reportsRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {
