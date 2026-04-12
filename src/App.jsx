@@ -80,10 +80,10 @@ function DashboardLayout({ children }) {
 
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
-        { path: '/my-lessons', icon: <BookOpen size={20} />, label: 'Мои уроки' },
+        { path: '/my-lessons', icon: <BookOpen size={20} />, label: t('nav.myLessons') },
         { path: '/builder', icon: <LayoutTemplate size={20} />, label: t('nav.builder') },
         { path: '/open-lessons', icon: <Library size={20} />, label: t('nav.openLessons') },
-        { path: '/quizzes', icon: <FileQuestion size={20} />, label: 'Тесты' },
+        { path: '/quizzes', icon: <FileQuestion size={20} />, label: t('nav.quizzes') },
         { path: '/assignments', icon: <ClipboardList size={20} />, label: t('nav.assignments') },
         { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
         { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },

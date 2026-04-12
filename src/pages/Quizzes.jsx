@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { quizzesAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import {
     Plus, Trash2, Edit3, BarChart2, Sparkles,
     ChevronDown, ChevronUp, CheckCircle, XCircle,
@@ -38,6 +39,7 @@ const emptyQuestion = () => ({
 
 export default function Quizzes() {
     const { user } = useAuth()
+    const { language } = useLanguage()
     const [quizzes, setQuizzes] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -262,14 +264,16 @@ export default function Quizzes() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <div>
                     <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-gray-900)', margin: 0 }}>
-                        Тесты
+                        {language === 'kk' ? 'Тесттер' : 'Тесты'}
                     </h1>
                     <p style={{ color: 'var(--color-gray-500)', marginTop: 4, marginBottom: 0 }}>
-                        Создавайте тесты вручную или с помощью ИИ, отслеживайте результаты
+                        {language === 'kk' 
+                            ? 'Тесттерді қолмен немесе жасанды интеллект көмегімен жасаңыз' 
+                            : 'Создавайте тесты вручную или с помощью ИИ, отслеживайте результаты'}
                     </p>
                 </div>
                 <button className="btn btn-primary" onClick={openCreate} style={{ gap: 8, display: 'flex', alignItems: 'center' }}>
-                    <Plus size={18} /> Создать тест
+                    <Plus size={18} /> {language === 'kk' ? 'Тест жасау' : 'Создать тест'}
                 </button>
             </div>
 
@@ -277,9 +281,9 @@ export default function Quizzes() {
             {quizzes.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
                     {[
-                        { label: 'Всего тестов', value: quizzes.length, icon: <FileQuestion size={22} />, color: '#6366f1' },
-                        { label: 'Всего попыток', value: quizzes.reduce((a, q) => a + (q.attempts_count || 0), 0), icon: <Users size={22} />, color: '#22c55e' },
-                        { label: 'Всего вопросов', value: quizzes.reduce((a, q) => a + (q.questions?.length || 0), 0), icon: <BookOpen size={22} />, color: '#f59e0b' },
+                        { label: language === 'kk' ? 'Барлық тесттер' : 'Всего тестов', value: quizzes.length, icon: <FileQuestion size={22} />, color: '#6366f1' },
+                        { label: language === 'kk' ? 'Барлық әрекеттер' : 'Всего попыток', value: quizzes.reduce((a, q) => a + (q.attempts_count || 0), 0), icon: <Users size={22} />, color: '#22c55e' },
+                        { label: language === 'kk' ? 'Барлық сұрақтар' : 'Всего вопросов', value: quizzes.reduce((a, q) => a + (q.questions?.length || 0), 0), icon: <BookOpen size={22} />, color: '#f59e0b' },
                     ].map(s => (
                         <div key={s.label} className="stat-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
                             <div style={{ width: 48, height: 48, borderRadius: 12, background: s.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color }}>
@@ -298,19 +302,21 @@ export default function Quizzes() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: 60, color: 'var(--color-gray-500)' }}>
                     <Loader size={32} style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }} />
-                    <p>Загрузка тестов...</p>
+                    <p>{language === 'kk' ? 'Тесттер жүктелуде...' : 'Загрузка тестов...'}</p>
                 </div>
             ) : quizzes.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '80px 20px', background: 'var(--color-gray-100)', borderRadius: 20 }}>
                     <FileQuestion size={56} style={{ color: 'var(--color-gray-400)', marginBottom: 16 }} />
-                    <h3 style={{ color: 'var(--color-gray-600)', marginBottom: 8 }}>Нет тестов</h3>
-                    <p style={{ color: 'var(--color-gray-500)', marginBottom: 24 }}>Создайте первый тест вручную или с помощью ИИ</p>
-                    <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> Создать тест</button>
+                    <h3 style={{ color: 'var(--color-gray-600)', marginBottom: 8 }}>{language === 'kk' ? 'Тесттер жоқ' : 'Нет тестов'}</h3>
+                    <p style={{ color: 'var(--color-gray-500)', marginBottom: 24 }}>
+                        {language === 'kk' ? 'Алғашқы тестті қолмен немесе ИИ көмегімен жасаңыз' : 'Создайте первый тест вручную или с помощью ИИ'}
+                    </p>
+                    <button className="btn btn-primary" onClick={openCreate}><Plus size={16} /> {language === 'kk' ? 'Тест жасау' : 'Создать тест'}</button>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
                     {quizzes.map(quiz => (
-                        <QuizCard key={quiz.id} quiz={quiz}
+                        <QuizCard key={quiz.id} quiz={quiz} language={language}
                             onEdit={() => openEdit(quiz)}
                             onDelete={() => handleDelete(quiz.id)}
                             onTake={() => openTake(quiz)}
@@ -323,7 +329,7 @@ export default function Quizzes() {
 
             {/* ===== CREATE / EDIT MODAL ===== */}
             {(modal === 'create' || modal === 'edit') && (
-                <Modal title={modal === 'edit' ? 'Редактировать тест' : 'Создать тест'} onClose={closeModal} wide>
+                <Modal title={modal === 'edit' ? (language === 'kk' ? 'Тестті өңдеу' : 'Редактировать тест') : (language === 'kk' ? 'Тест жасау' : 'Создать тест')} onClose={closeModal} wide>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
                         <div style={{ gridColumn: '1/-1' }}>
                             <label className="label">Название теста *</label>
@@ -512,7 +518,7 @@ export default function Quizzes() {
 
 // ============== Sub-components ==============
 
-function QuizCard({ quiz, onEdit, onDelete, onTake, onCopyLink, onReport }) {
+function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onReport }) {
     const pct = quiz.questions?.length > 0 ? Math.round(((quiz.attempts_count || 0) / Math.max(1, quiz.attempts_count || 1)) * 100) : 0
     return (
         <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -521,20 +527,20 @@ function QuizCard({ quiz, onEdit, onDelete, onTake, onCopyLink, onReport }) {
                     <h3 style={{ margin: '0 0 6px', fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-gray-900)' }}>{quiz.title}</h3>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         {quiz.subject && <span className="badge badge-primary" style={{ fontSize: '0.75rem' }}>{quiz.subject}</span>}
-                        {quiz.grade && <span className="badge badge-gray" style={{ fontSize: '0.75rem' }}>{quiz.grade} кл.</span>}
+                        {quiz.grade && <span className="badge badge-gray" style={{ fontSize: '0.75rem' }}>{quiz.grade} {language === 'kk' ? 'сынып' : 'кл.'}</span>}
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={onEdit} style={iconBtn} title="Редактировать"><Edit3 size={15} /></button>
-                    <button onClick={onDelete} style={{ ...iconBtn, color: '#ef4444', background: '#ef444415' }} title="Удалить"><Trash2 size={15} /></button>
+                    <button onClick={onEdit} style={iconBtn} title={language === 'kk' ? 'Өңдеу' : 'Редактировать'}><Edit3 size={15} /></button>
+                    <button onClick={onDelete} style={{ ...iconBtn, color: '#ef4444', background: '#ef444415' }} title={language === 'kk' ? 'Жою' : 'Удалить'}><Trash2 size={15} /></button>
                 </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 {[
-                    { label: 'Вопросов', value: quiz.questions?.length || 0, icon: <FileQuestion size={14} /> },
-                    { label: 'Попыток', value: quiz.attempts_count || 0, icon: <Users size={14} /> },
-                    { label: 'Минут', value: quiz.time_limit || '∞', icon: <Clock size={14} /> },
+                    { label: language === 'kk' ? 'Сұрақтар' : 'Вопросов', value: quiz.questions?.length || 0, icon: <FileQuestion size={14} /> },
+                    { label: language === 'kk' ? 'Әрекеттер' : 'Попыток', value: quiz.attempts_count || 0, icon: <Users size={14} /> },
+                    { label: language === 'kk' ? 'Минут' : 'Минут', value: quiz.time_limit || '∞', icon: <Clock size={14} /> },
                 ].map(s => (
                     <div key={s.label} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--color-gray-100)', borderRadius: 10 }}>
                         <div style={{ color: 'var(--color-gray-400)', marginBottom: 4 }}>{s.icon}</div>
@@ -546,12 +552,12 @@ function QuizCard({ quiz, onEdit, onDelete, onTake, onCopyLink, onReport }) {
 
             <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn btn-primary" onClick={onTake} style={{ flex: 1, fontSize: '0.85rem', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <Eye size={15} /> Пройти
+                    <Eye size={15} /> {language === 'kk' ? 'Өту' : 'Пройти'}
                 </button>
                 <button className="btn btn-secondary" onClick={onReport} style={{ flex: 1, fontSize: '0.85rem', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <BarChart2 size={15} /> Отчёт
+                    <BarChart2 size={15} /> {language === 'kk' ? 'Есептер' : 'Отчёт'}
                 </button>
-                <button className="btn btn-secondary" onClick={onCopyLink} style={{ padding: '10px 12px' }} title="Скопировать ссылку">
+                <button className="btn btn-secondary" onClick={onCopyLink} style={{ padding: '10px 12px' }} title={language === 'kk' ? 'Сілтемені көшіру' : 'Скопировать ссылку'}>
                     <Share2 size={15} />
                 </button>
             </div>

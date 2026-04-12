@@ -16,6 +16,8 @@ export const translations = {
             settings: 'Баптаулар',
             help: 'Көмек',
             alfarabi: 'Әл-Фараби Бот',
+            quizzes: 'Тесттер',
+            myLessons: 'Менің сабақтарым',
         },
 
         // Common
@@ -227,6 +229,8 @@ export const translations = {
             settings: 'Настройки',
             help: 'Помощь',
             alfarabi: 'Аль-Фараби Бот',
+            quizzes: 'Тесты',
+            myLessons: 'Мои уроки',
         },
 
         // Common
