@@ -4,22 +4,23 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const SUBJECTS = [
-    { id: 'math', icon: '📐', ru: 'Математика', kk: 'Математика' },
-    { id: 'physics', icon: '⚛️', ru: 'Физика', kk: 'Физика' },
-    { id: 'chemistry', icon: '🧪', ru: 'Химия', kk: 'Химия' },
-    { id: 'biology', icon: '🌿', ru: 'Биология', kk: 'Биология' },
-    { id: 'history', icon: '🏛️', ru: 'История', kk: 'Тарих' },
-    { id: 'geography', icon: '🌍', ru: 'География', kk: 'География' },
-    { id: 'informatics', icon: '💻', ru: 'Информатика', kk: 'Информатика' },
-    { id: 'kazakh', icon: '🇰🇿', ru: 'Казахский язык', kk: 'Қазақ тілі' },
-    { id: 'russian', icon: '📖', ru: 'Русский язык', kk: 'Орыс тілі' },
-    { id: 'english', icon: '🇬🇧', ru: 'Английский язык', kk: 'Ағылшын тілі' },
-    { id: 'literature', icon: '📚', ru: 'Литература', kk: 'Әдебиет' },
-    { id: 'music', icon: '🎵', ru: 'Музыка', kk: 'Музыка' },
-    { id: 'art', icon: '🎨', ru: 'ИЗО', kk: 'Бейнелеу өнері' },
-    { id: 'pe', icon: '⚽', ru: 'Физкультура', kk: 'Дене тәрбиесі' },
-    { id: 'technology', icon: '🔧', ru: 'Технология', kk: 'Технология' },
-    { id: 'social', icon: '🤝', ru: 'Познание мира', kk: 'Дүниетану' },
+    { id: 'primary', ru: 'Бастауыш / Нач. классы', kk: 'Бастауыш сынып' },
+    { id: 'math', ru: 'Математика', kk: 'Математика' },
+    { id: 'physics', ru: 'Физика', kk: 'Физика' },
+    { id: 'chemistry', ru: 'Химия', kk: 'Химия' },
+    { id: 'biology', ru: 'Биология', kk: 'Биология' },
+    { id: 'history', ru: 'История', kk: 'Тарих' },
+    { id: 'geography', ru: 'География', kk: 'География' },
+    { id: 'informatics', ru: 'Информатика', kk: 'Информатика' },
+    { id: 'kazakh', ru: 'Казахский язык', kk: 'Қазақ тілі' },
+    { id: 'russian', ru: 'Русский язык', kk: 'Орыс тілі' },
+    { id: 'english', ru: 'Английский язык', kk: 'Ағылшын тілі' },
+    { id: 'literature', ru: 'Литература', kk: 'Әдебиет' },
+    { id: 'music', ru: 'Музыка', kk: 'Музыка' },
+    { id: 'art', ru: 'ИЗО', kk: 'Бейнелеу өнері' },
+    { id: 'pe', ru: 'Физкультура', kk: 'Дене тәрбиесі' },
+    { id: 'technology', ru: 'Технология', kk: 'Технология' },
+    { id: 'social', ru: 'Познание мира', kk: 'Дүниетану' },
 ]
 
 function Register() {
@@ -46,9 +47,11 @@ function Register() {
     }
 
     function toggleSubject(id) {
-        setSelectedSubjects(prev =>
-            prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-        )
+        setSelectedSubjects(prev => {
+            if (prev.includes(id)) return prev.filter(s => s !== id)
+            if (prev.length >= 2) return prev // max 2
+            return [...prev, id]
+        })
     }
 
     function handleStep1() {
@@ -231,14 +234,13 @@ function Register() {
                 {step === 2 && (
                     <>
                         <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>📚</div>
                             <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, marginBottom: '8px' }}>
                                 {language === 'kk' ? 'Пәндерді таңдаңыз' : 'Выберите предметы'}
                             </h2>
                             <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk'
-                                    ? 'Сіз оқытатын пәндерді белгілеңіз (бірнеше таңдауға болады)'
-                                    : 'Отметьте предметы, которые вы преподаёте (можно несколько)'}
+                                    ? 'Негізгі 2 пәніңізді таңдаңыз'
+                                    : 'Выберите до 2 предметов, которые вы преподаёте'}
                             </p>
                         </div>
 
@@ -250,11 +252,13 @@ function Register() {
                         }}>
                             {SUBJECTS.map(subj => {
                                 const isSelected = selectedSubjects.includes(subj.id)
+                                const isDisabled = !isSelected && selectedSubjects.length >= 2
                                 return (
                                     <button
                                         key={subj.id}
                                         type="button"
                                         onClick={() => toggleSubject(subj.id)}
+                                        disabled={isDisabled}
                                         style={{
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -267,20 +271,20 @@ function Register() {
                                                 : '2px solid var(--color-gray-200)',
                                             background: isSelected
                                                 ? 'var(--color-primary-50)'
-                                                : 'white',
-                                            cursor: 'pointer',
+                                                : isDisabled ? 'var(--color-gray-100)' : 'white',
+                                            cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                            opacity: isDisabled ? 0.45 : 1,
                                             transition: 'all 0.2s ease',
                                             transform: isSelected ? 'scale(1.03)' : 'scale(1)',
                                             boxShadow: isSelected ? '0 4px 12px rgba(99,102,241,0.25)' : 'none'
                                         }}
                                     >
-                                        <span style={{ fontSize: '1.5rem' }}>{subj.icon}</span>
                                         <span style={{
-                                            fontSize: '0.68rem',
+                                            fontSize: '0.72rem',
                                             fontWeight: isSelected ? 700 : 500,
                                             color: isSelected ? 'var(--color-primary-700)' : 'var(--color-gray-600)',
                                             textAlign: 'center',
-                                            lineHeight: 1.2
+                                            lineHeight: 1.3
                                         }}>
                                             {language === 'kk' ? subj.kk : subj.ru}
                                         </span>
@@ -308,8 +312,8 @@ function Register() {
                                 color: 'var(--color-primary-700)',
                                 fontWeight: 500
                             }}>
-                                ✅ {language === 'kk' ? 'Таңдалды' : 'Выбрано'}: {selectedSubjects.length}{' '}
-                                {language === 'kk' ? 'пән' : selectedSubjects.length === 1 ? 'предмет' : selectedSubjects.length < 5 ? 'предмета' : 'предметов'}
+                                {language === 'kk' ? 'Таңдалды' : 'Выбрано'}: {selectedSubjects.length} / 2
+                                {selectedSubjects.length === 2 && <span style={{ marginLeft: 8, color: '#22c55e' }}>— максимум достигнут</span>}
                             </div>
                         )}
 
@@ -321,8 +325,8 @@ function Register() {
                             <button className="btn btn-primary" onClick={handleSubmit}
                                 disabled={loading} style={{ flex: 2 }}>
                                 {loading
-                                    ? (language === 'kk' ? 'Күте тұрыңыз...' : 'Загрузка...')
-                                    : (language === 'kk' ? '🚀 Тіркелу' : '🚀 Зарегистрироваться')}
+                                    ? (language === 'kk' ? 'Күте тұрыңыз...' : 'Регистрация...')
+                                    : (language === 'kk' ? 'Тіркелу' : 'Зарегистрироваться')}
                             </button>
                         </div>
                     </>

@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react'
 import { quizzesAPI } from '../api'
+import { useAuth } from '../contexts/AuthContext'
 import {
-    Plus, Trash2, Edit3, BarChart2, Copy, Sparkles,
+    Plus, Trash2, Edit3, BarChart2, Sparkles,
     ChevronDown, ChevronUp, CheckCircle, XCircle,
     FileQuestion, Clock, Users, BookOpen, Loader, Share2, Eye
 } from 'lucide-react'
 
-const SUBJECTS = ['Математика', 'Физика', 'Химия', 'Биология', 'История', 'География', 'Информатика', 'Английский', 'Литература', 'Другое']
+const ALL_SUBJECTS = [
+    { id: 'primary', ru: 'Бастауыш / Нач. классы' },
+    { id: 'math', ru: 'Математика' },
+    { id: 'physics', ru: 'Физика' },
+    { id: 'chemistry', ru: 'Химия' },
+    { id: 'biology', ru: 'Биология' },
+    { id: 'history', ru: 'История' },
+    { id: 'geography', ru: 'География' },
+    { id: 'informatics', ru: 'Информатика' },
+    { id: 'kazakh', ru: 'Казахский язык' },
+    { id: 'russian', ru: 'Русский язык' },
+    { id: 'english', ru: 'Английский язык' },
+    { id: 'literature', ru: 'Литература' },
+    { id: 'music', ru: 'Музыка' },
+    { id: 'art', ru: 'ИЗО' },
+    { id: 'pe', ru: 'Физкультура' },
+    { id: 'technology', ru: 'Технология' },
+    { id: 'social', ru: 'Познание мира' },
+]
+
 const GRADES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
 
 const emptyQuestion = () => ({
@@ -17,12 +37,20 @@ const emptyQuestion = () => ({
 })
 
 export default function Quizzes() {
+    const { user } = useAuth()
     const [quizzes, setQuizzes] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [modal, setModal] = useState(null) // null | 'create' | 'edit' | 'take' | 'ai'
+    const [modal, setModal] = useState(null)
     const [activeQuiz, setActiveQuiz] = useState(null)
 
+    // Parse teacher's subjects from profile
+    const userSubjectIds = (() => {
+        try { return JSON.parse(user?.subjects || '[]') } catch { return [] }
+    })()
+    const SUBJECTS = userSubjectIds.length > 0
+        ? ALL_SUBJECTS.filter(s => userSubjectIds.includes(s.id)).map(s => s.ru)
+        : ALL_SUBJECTS.map(s => s.ru)
     // Form state
     const [form, setForm] = useState({
         title: '', subject: '', grade: '', description: '', time_limit: ''
@@ -358,7 +386,7 @@ export default function Quizzes() {
                         {aiQuestions.length > 0 && (
                             <div style={{ marginTop: 14, padding: 14, background: '#22c55e15', borderRadius: 10, border: '1px solid #22c55e30' }}>
                                 <div style={{ color: '#22c55e', fontWeight: 600, marginBottom: 8 }}>
-                                    ✅ ИИ сгенерировал {aiQuestions.length} вопросов!
+                                    ИИ сгенерировал {aiQuestions.length} вопросов!
                                 </div>
                                 <div style={{ display: 'flex', gap: 10 }}>
                                     <button className="btn btn-primary btn-sm" onClick={importAiQuestions}>
@@ -590,7 +618,7 @@ function QuizResult({ score, quiz, answers, onClose }) {
                 background: passed ? '#22c55e20' : '#ef444420', border: `4px solid ${passed ? '#22c55e' : '#ef4444'}` }}>
                 {passed ? <CheckCircle size={48} color="#22c55e" /> : <XCircle size={48} color="#ef4444" />}
             </div>
-            <h2 style={{ color: 'var(--color-gray-900)', margin: '0 0 8px' }}>{passed ? '🎉 Отлично!' : 'Попробуй ещё раз'}</h2>
+            <h2 style={{ color: 'var(--color-gray-900)', margin: '0 0 8px' }}>{passed ? 'Отличный результат!' : 'Попробуй ещё раз'}</h2>
             <div style={{ fontSize: '3rem', fontWeight: 900, color: passed ? '#22c55e' : '#ef4444', marginBottom: 8 }}>{pct}%</div>
             <p style={{ color: 'var(--color-gray-600)', marginBottom: 28 }}>
                 Правильных ответов: <b>{score.score}</b> из <b>{score.max}</b>
@@ -610,7 +638,7 @@ function QuizResult({ score, quiz, answers, onClose }) {
                                 </span>
                                 {!correct && <span style={{ color: '#22c55e', marginLeft: 16 }}>Правильно: {q.correct}</span>}
                             </div>
-                            {q.explanation && <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-500)', marginTop: 6 }}>💡 {q.explanation}</div>}
+                            {q.explanation && <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-500)', marginTop: 6 }}>Пояснение: {q.explanation}</div>}
                         </div>
                     )
                 })}
