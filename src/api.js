@@ -1,9 +1,14 @@
-let API_BASE = import.meta.env.VITE_API_URL || '/api';
-if (typeof window !== 'undefined') {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        API_BASE = 'http://localhost:3001/api';
+let API_BASE = import.meta.env.VITE_API_URL || '';
+if (!API_BASE) {
+    if (typeof window !== 'undefined') {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            API_BASE = 'http://localhost:3001/api';
+        } else {
+            // Fallback for production if VITE_API_URL is missing
+            API_BASE = '/api'; 
+        }
     } else {
-        API_BASE = 'https://teachflow-api-il63.onrender.com/api';
+        API_BASE = '/api';
     }
 }
 
