@@ -24,3 +24,4 @@ server/db/teachflow.db
 # Logs
 *.log
 npm-debug.log*
+.vercel

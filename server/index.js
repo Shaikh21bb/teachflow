@@ -18,6 +18,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     'https://teachflow-pi.vercel.app',
     'https://www.teachflow-pi.vercel.app',
+    'https://urpaq-edu.vercel.app',
     'https://urpaq.ai',
     'https://www.urpaq.ai',
     process.env.FRONTEND_URL
