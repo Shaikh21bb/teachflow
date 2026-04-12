@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
              FROM quizzes q
              WHERE q.user_id = ?
              ORDER BY q.created_at DESC`,
-            [req.user.id]
+            [req.user.userId]
         );
         res.json(quizzes.map(q => ({ ...q, questions: JSON.parse(q.questions || '[]') })));
     } catch (err) {
@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
         const result = await runQuery(
             `INSERT INTO quizzes (title, subject, grade, questions, time_limit, description, user_id)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [title, subject || '', grade || '', JSON.stringify(questions), time_limit || null, description || '', req.user.id]
+            [title, subject || '', grade || '', JSON.stringify(questions), time_limit || null, description || '', req.user.userId]
         );
         const quiz = await getOne('SELECT * FROM quizzes WHERE id = ?', [result.lastID]);
         res.status(201).json({ ...quiz, questions: JSON.parse(quiz.questions || '[]') });
@@ -108,7 +108,7 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { title, subject, grade, questions, time_limit, description, is_active } = req.body;
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
 
         await runQuery(
@@ -137,7 +137,7 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
     try {
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
         await runQuery('DELETE FROM quizzes WHERE id = ?', [req.params.id]);
         res.json({ success: true });
@@ -176,7 +176,7 @@ router.post('/:id/attempts', async (req, res) => {
  */
 router.get('/:id/attempts', async (req, res) => {
     try {
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
 
         const attempts = await getAll(
@@ -195,7 +195,7 @@ router.get('/:id/attempts', async (req, res) => {
  */
 router.get('/:id/report', async (req, res) => {
     try {
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.id]);
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
 
         const attempts = await getAll(
