@@ -4,7 +4,7 @@ import {
     Home, BookOpen, LayoutTemplate, Library, 
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
-    Bell, LogOut, Moon, Sun 
+    Bell, LogOut, Moon, Sun, FileQuestion
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -19,6 +19,8 @@ import AlFarabiBot from './pages/AlFarabiBot'
 import OpenLesson from './pages/OpenLesson'
 import MyLessons from './pages/MyLessons'
 import Integrations from './pages/Integrations'
+import Quizzes from './pages/Quizzes'
+import QuizReport from './pages/QuizReport'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -43,6 +45,8 @@ function App() {
                             <Route path="/open-lessons" element={<ProtectedRoute><DashboardLayout><OpenLesson /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/my-lessons" element={<ProtectedRoute><DashboardLayout><MyLessons /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -79,6 +83,7 @@ function DashboardLayout({ children }) {
         { path: '/my-lessons', icon: <BookOpen size={20} />, label: 'Мои уроки' },
         { path: '/builder', icon: <LayoutTemplate size={20} />, label: t('nav.builder') },
         { path: '/open-lessons', icon: <Library size={20} />, label: t('nav.openLessons') },
+        { path: '/quizzes', icon: <FileQuestion size={20} />, label: 'Тесты' },
         { path: '/assignments', icon: <ClipboardList size={20} />, label: t('nav.assignments') },
         { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
         { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },

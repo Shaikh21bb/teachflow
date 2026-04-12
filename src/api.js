@@ -115,6 +115,19 @@ export const integrationsAPI = {
     disconnect: (type) => fetchAPI(`/integrations/${type}`, { method: 'DELETE' }),
 };
 
+// Quizzes API
+export const quizzesAPI = {
+    getAll: () => fetchAPI('/quizzes'),
+    getById: (id) => fetchAPI(`/quizzes/${id}`),
+    create: (quiz) => fetchAPI('/quizzes', { method: 'POST', body: JSON.stringify(quiz) }),
+    update: (id, quiz) => fetchAPI(`/quizzes/${id}`, { method: 'PUT', body: JSON.stringify(quiz) }),
+    delete: (id) => fetchAPI(`/quizzes/${id}`, { method: 'DELETE' }),
+    submitAttempt: (quizId, attempt) => fetchAPI(`/quizzes/${quizId}/attempts`, { method: 'POST', body: JSON.stringify(attempt) }),
+    getAttempts: (quizId) => fetchAPI(`/quizzes/${quizId}/attempts`),
+    getReport: (quizId) => fetchAPI(`/quizzes/${quizId}/report`),
+    aiGenerate: (data) => fetchAPI('/quizzes/ai-generate', { method: 'POST', body: JSON.stringify(data) }),
+};
+
 // Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
 export async function uploadToCloudinary(file, onProgress) {
     // 1. Get secure signature from our backend
@@ -168,4 +181,5 @@ export default {
     ai: aiAPI,
     openLessons: openLessonsAPI,
     integrations: integrationsAPI,
+    quizzes: quizzesAPI,
 };

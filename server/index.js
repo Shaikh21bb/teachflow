@@ -114,6 +114,34 @@ async function runMigrations() {
             processed INTEGER DEFAULT 0,
             received_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
+        // v3 - Quiz System
+        `CREATE TABLE IF NOT EXISTS quizzes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            subject TEXT,
+            grade TEXT,
+            description TEXT DEFAULT '',
+            questions TEXT DEFAULT '[]',
+            time_limit INTEGER,
+            is_active INTEGER DEFAULT 1,
+            user_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE TABLE IF NOT EXISTS quiz_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id INTEGER NOT NULL,
+            student_name TEXT NOT NULL,
+            answers TEXT DEFAULT '[]',
+            score INTEGER DEFAULT 0,
+            max_score INTEGER DEFAULT 0,
+            time_spent INTEGER DEFAULT 0,
+            taken_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_quizzes_user_id ON quizzes(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_quiz_attempts_quiz_id ON quiz_attempts(quiz_id)`,
         // Indexes
         `CREATE INDEX IF NOT EXISTS idx_lessons_user_id ON lessons(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_lessons_created_at ON lessons(created_at)`,
@@ -163,6 +191,7 @@ async function startServer() {
     const openLessonsRouter = require('./routes/open_lessons');
     const integrationsRouter = require('./routes/integrations');
     const webhooksRouter = require('./routes/webhooks');
+    const quizzesRouter = require('./routes/quizzes');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -199,6 +228,7 @@ async function startServer() {
     app.use('/api/open-lessons', openLessonsRouter);
     app.use('/api/integrations', integrationsRouter);
     app.use('/api/webhooks', webhooksRouter);
+    app.use('/api/quizzes', quizzesRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {
