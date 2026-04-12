@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { getOne, getAll } = require('../db/database');
+const { authenticateToken } = require('../middleware/auth');
+
+router.use(authenticateToken);
 
 router.get('/', async (req, res) => {
     try {
