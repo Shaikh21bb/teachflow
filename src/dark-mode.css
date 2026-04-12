@@ -98,8 +98,28 @@
 
 /* Glassmorphism adjustments for Dark Mode */
 @media (max-width: 768px) {
-  .theme-dark .sidebar,
-  .theme-dark .header {
-    background: rgba(30, 41, 59, 0.85) !important;
+  .theme-dark .sidebar {
+    background: var(--color-gray-100) !important;
   }
+  .theme-dark .header {
+    background: rgba(5, 5, 5, 0.9) !important;
+  }
+}
+
+.theme-dark .sidebar-toggle-btn {
+  color: var(--color-gray-600) !important;
+}
+
+.theme-dark .sidebar-toggle-btn:hover {
+  background: var(--color-gray-200) !important;
+  color: var(--color-gray-900) !important;
+}
+
+.theme-dark .sidebar-logo-area {
+  color: var(--color-gray-900) !important;
+}
+
+.theme-dark .sidebar.collapsed .sidebar-link:hover::after {
+  background: var(--color-gray-700) !important;
+  color: var(--color-gray-50) !important;
 }

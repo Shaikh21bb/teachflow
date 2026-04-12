@@ -47,15 +47,6 @@ function Reports() {
                     <h1 className="page-title">{t('reports.title')}</h1>
                     <p className="page-subtitle">{t('reports.subtitle')}</p>
                 </div>
-                <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                    <select className="filter-select">
-                        <option>{t('reports.thisWeek')}</option>
-                        <option>{t('reports.thisMonth')}</option>
-                        <option>{t('reports.thisTerm')}</option>
-                        <option>{t('reports.thisYear')}</option>
-                    </select>
-                    <button className="btn btn-secondary">📥 {t('common.export')}</button>
-                </div>
             </div>
 
             {/* Overview Stats */}

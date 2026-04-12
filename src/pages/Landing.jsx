@@ -43,10 +43,10 @@ const TypewriterText = ({ text, delayOffset = 0.5 }) => {
   };
 
   return (
-    <motion.span style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "center" }} variants={container} initial="hidden" animate="show">
+    <motion.span style={{ display: "inline-flex", flexWrap: "wrap", justifyContent: "center", wordBreak: "break-word" }} variants={container} initial="hidden" animate="show">
       {characters.map((char, index) => (
-        <motion.span variants={child} key={index} style={{ display: 'inline-block' }}>
-          {char === " " ? "\u00A0" : char}
+        <motion.span variants={child} key={index} style={{ display: 'inline-block', whiteSpace: 'pre' }}>
+          {char}
         </motion.span>
       ))}
     </motion.span>
@@ -198,15 +198,15 @@ function Landing() {
                         variants={staggeredContainer}
                         style={{ display: 'flex', justifyContent: 'center', gap: '4rem', flexWrap: 'wrap' }}
                     >
-                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center', minWidth: '150px' }}>
                             <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>5000+</div>
                             <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.teachers')}</div>
                          </motion.div>
-                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center', minWidth: '150px' }}>
                             <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>150K+</div>
                             <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.students')}</div>
                          </motion.div>
-                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center' }}>
+                         <motion.div variants={fadeUpObj} style={{ textAlign: 'center', minWidth: '150px' }}>
                             <div style={{ fontSize: '3rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>98%</div>
                             <div style={{ color: '#94a3b8' }}>{t('landing.hero.stats.satisfaction')}</div>
                          </motion.div>

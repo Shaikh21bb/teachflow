@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
     Home, BookOpen, LayoutTemplate, Library, 
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
-    Bell, LogOut, Moon, Sun, FileQuestion
+    Bell, LogOut, Moon, Sun, FileQuestion,
+    PanelLeftClose, PanelLeftOpen, Menu, X
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -73,10 +74,28 @@ function ProtectedRoute({ children }) {
 function DashboardLayout({ children }) {
     const location = useLocation()
     const { t, language, toggleLanguage } = useLanguage()
-    const [sidebarOpen, setSidebarOpen] = useState(false)
 
-    // Close sidebar on navigation
-    const handleNavClick = () => setSidebarOpen(false)
+    // Mobile drawer state
+    const [mobileOpen, setMobileOpen] = useState(false)
+
+    // Desktop collapsible state - persist in localStorage
+    const [collapsed, setCollapsed] = useState(() => {
+        try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch { return false }
+    })
+
+    const toggleCollapsed = () => {
+        setCollapsed(prev => {
+            const next = !prev
+            try { localStorage.setItem('sidebarCollapsed', String(next)) } catch {}
+            return next
+        })
+    }
+
+    // Close mobile drawer on navigation
+    const handleNavClick = () => setMobileOpen(false)
+
+    // Close on route change
+    useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
@@ -90,20 +109,45 @@ function DashboardLayout({ children }) {
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
     ]
 
+    const otherItems = [
+        { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
+    ]
+
     return (
         <div className="dashboard">
             {/* Mobile overlay */}
-            <div
-                className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
-                onClick={() => setSidebarOpen(false)}
-            />
+            {mobileOpen && (
+                <div
+                    className="sidebar-overlay active"
+                    onClick={() => setMobileOpen(false)}
+                    style={{ zIndex: 998 }}
+                />
+            )}
 
-            <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+            {/* Sidebar */}
+            <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
                 <div className="sidebar-header">
-                    <Link to="/" className="logo" onClick={handleNavClick}>
-                        <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem' }}>AI</div>
-                        <span>Urpaq.ai</span>
+                    <Link to="/" className="sidebar-logo-area" onClick={handleNavClick}>
+                        <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem', flexShrink: 0 }}>AI</div>
+                        <span className="sidebar-logo-text">Urpaq.ai</span>
                     </Link>
+                    {/* Desktop collapse toggle */}
+                    <button
+                        className="sidebar-toggle-btn hide-on-mobile"
+                        onClick={toggleCollapsed}
+                        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        title={collapsed ? 'Развернуть' : 'Свернуть'}
+                    >
+                        {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                    </button>
+                    {/* Mobile close button */}
+                    <button
+                        className="sidebar-toggle-btn hide-on-desktop"
+                        onClick={() => setMobileOpen(false)}
+                        aria-label="Close menu"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
 
                 <nav className="sidebar-nav">
@@ -115,40 +159,78 @@ function DashboardLayout({ children }) {
                                 to={item.path}
                                 className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
                                 onClick={handleNavClick}
+                                data-label={item.label}
                             >
                                 <span className="sidebar-link-icon">{item.icon}</span>
-                                <span>{item.label}</span>
+                                <span className="sidebar-link-label">{item.label}</span>
                             </NavLink>
                         ))}
                     </div>
 
                     <div className="sidebar-section">
                         <div className="sidebar-section-title">{t('nav.other')}</div>
-                        <NavLink
-                            to="/integrations"
-                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                        {otherItems.map(item => (
+                            <NavLink
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                                onClick={handleNavClick}
+                                data-label={item.label}
+                            >
+                                <span className="sidebar-link-icon">{item.icon}</span>
+                                <span className="sidebar-link-label">{item.label}</span>
+                            </NavLink>
+                        ))}
+                        <a
+                            href="#"
+                            className="sidebar-link"
+                            data-label={t('nav.settings')}
+                            onClick={(e) => { e.preventDefault(); alert('Настройки скоро будут доступны'); handleNavClick(); }}
+                        >
+                            <span className="sidebar-link-icon"><Settings size={20} /></span>
+                            <span className="sidebar-link-label">{t('nav.settings')}</span>
+                        </a>
+                        <a
+                            href="https://wa.me/77771225784"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="sidebar-link"
+                            data-label={t('nav.help')}
                             onClick={handleNavClick}
                         >
-                            <span className="sidebar-link-icon"><Plug size={20} /></span>
-                            <span>Интеграции</span>
-                        </NavLink>
-                        <a href="#" className="sidebar-link" onClick={(e) => { e.preventDefault(); alert('Настройки скоро будут доступны'); handleNavClick(); }}>
-                            <span className="sidebar-link-icon"><Settings size={20} /></span>
-                            <span>{t('nav.settings')}</span>
-                        </a>
-                        <a href="https://wa.me/77771225784" target="_blank" rel="noopener noreferrer" className="sidebar-link" onClick={handleNavClick}>
                             <span className="sidebar-link-icon"><HelpCircle size={20} /></span>
-                            <span>{t('nav.help')}</span>
+                            <span className="sidebar-link-label">{t('nav.help')}</span>
                         </a>
                     </div>
                 </nav>
             </aside>
 
-            <main className="main-content">
+            <main className={`main-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
                 <header className="topbar">
-                    {/* Mobile Header Logo (Replaces Hamburger) */}
+                    {/* Mobile hamburger button */}
+                    <button
+                        className="hide-on-desktop mobile-menu-hamburger"
+                        onClick={() => setMobileOpen(true)}
+                        aria-label="Open menu"
+                        style={{
+                            display: 'none', // shown via CSS on mobile
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: 'var(--color-gray-100)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--color-gray-700)',
+                        }}
+                    >
+                        <Menu size={20} />
+                    </button>
+
+                    {/* Mobile logo */}
                     <Link to="/" className="mobile-header-logo hide-on-desktop" onClick={handleNavClick}>
-                        <div className="logo-icon" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>AI</div>
+                        <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>AI</div>
                         <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
                     </Link>
 
@@ -158,9 +240,7 @@ function DashboardLayout({ children }) {
                     </div>
 
                     <div className="topbar-actions">
-                        {/* Theme Toggle Button */}
                         <ThemeToggleButton />
-
                         <button
                             onClick={toggleLanguage}
                             className="btn btn-ghost"
@@ -174,8 +254,6 @@ function DashboardLayout({ children }) {
                         >
                             {language === 'kk' ? '🇰🇿 ҚАЗ' : '🇷🇺 РУС'}
                         </button>
-
-                        {/* User Profile Component */}
                         <UserProfile />
                     </div>
                 </header>

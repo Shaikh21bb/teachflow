@@ -962,6 +962,7 @@ a:hover {
   min-height: 100vh;
 }
 
+/* Sidebar - collapsible like ChatGPT */
 .sidebar {
   width: var(--sidebar-width);
   background: white;
@@ -973,17 +974,80 @@ a:hover {
   display: flex;
   flex-direction: column;
   z-index: 50;
+  transition: width var(--transition-slow), transform var(--transition-slow);
+  overflow: hidden;
+}
+
+/* Collapsed state on desktop */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+/* Toggle button */
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-gray-500);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
 }
 
 .sidebar-header {
-  padding: var(--spacing-5) var(--spacing-6);
+  padding: var(--spacing-5) var(--spacing-4);
   border-bottom: 1px solid var(--color-gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-height: 72px;
+}
+
+.sidebar-logo-area {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  text-decoration: none;
+  color: var(--color-gray-900);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity var(--transition-fast);
+}
+
+.sidebar.collapsed .sidebar-logo-area {
+  justify-content: center;
+}
+
+.sidebar-logo-text {
+  transition: opacity var(--transition-fast), max-width var(--transition-slow);
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .sidebar-logo-text {
+  opacity: 0;
+  max-width: 0;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-2);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-section {
@@ -997,19 +1061,34 @@ a:hover {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: var(--spacing-2) var(--spacing-3);
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity var(--transition-fast);
+}
+
+.sidebar.collapsed .sidebar-section-title {
+  opacity: 0;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-3);
   color: var(--color-gray-600);
   font-size: var(--font-size-sm);
   font-weight: 500;
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
   margin-bottom: var(--spacing-1);
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: var(--spacing-3);
 }
 
 .sidebar-link:hover {
@@ -1024,6 +1103,37 @@ a:hover {
 
 .sidebar-link-icon {
   font-size: var(--font-size-lg);
+  flex-shrink: 0;
+}
+
+.sidebar-link-label {
+  transition: opacity var(--transition-fast), max-width var(--transition-slow);
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar-link-label {
+  opacity: 0;
+  max-width: 0;
+}
+
+/* Tooltip on collapsed sidebar */
+.sidebar.collapsed .sidebar-link:hover::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-gray-900);
+  color: white;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: var(--shadow-md);
 }
 
 .main-content {
@@ -1031,6 +1141,11 @@ a:hover {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   background: var(--color-gray-50);
+  transition: margin-left var(--transition-slow);
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: 70px;
 }
 
 .topbar {
@@ -3273,5 +3388,55 @@ a:hover {
   }
   .v2-pricing-card {
     padding: 1.5rem;
+  }
+}
+
+/* ==========================================
+   Global Mobile Fixes
+   ========================================== */
+@media (max-width: 768px) {
+  html, body, #root {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+  }
+  
+  .container {
+    padding: 0 16px !important;
+  }
+
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .section {
+    padding: 60px 0 !important;
+  }
+
+  .features-grid, .steps, .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .hero-inner {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  .hero-title {
+    font-size: 2.2rem !important;
+  }
+  
+  .v3-hero-mockup-wrapper {
+    margin: 2rem auto 0 !important;
+    width: 100% !important;
+  }
+
+  .v3-marquee-content {
+    gap: 1.5rem !important;
+    padding-left: 1.5rem !important;
+  }
+  
+  .v3-marquee-item {
+    font-size: 0.9rem !important;
   }
 }
