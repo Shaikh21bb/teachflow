@@ -15,21 +15,24 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan('dev'));
 
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://teachflow-pi.vercel.app',
-    'https://www.teachflow-pi.vercel.app',
-    'https://urpaq-edu.vercel.app',
-    'https://urpaq.ai',
-    'https://www.urpaq.ai',
-    process.env.FRONTEND_URL
-].filter(Boolean);
+// Replaced static array with dynamic function in the cors config below
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        // Allow localhost and any vercel app subdomains
+        if (
+            origin.startsWith('http://localhost') || 
+            origin.endsWith('.vercel.app') || 
+            origin === 'https://urpaq.ai' || 
+            origin === 'https://www.urpaq.ai' ||
+            (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL)
+        ) {
             callback(null, true);
         } else {
+            console.log("CORS blocked origin:", origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
