@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { classesAPI, openLessonsAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useReactToPrint } from 'react-to-print'
 
 const SUBJECTS_MAP = {
     math: { ru: 'Математика', kk: 'Математика', icon: '📐' },
@@ -53,6 +54,8 @@ function OpenLesson() {
     // Teams state
     const [teams, setTeams] = useState([]) // [{team_name, student_ids, task}]
     const [classStudents, setClassStudents] = useState([])
+
+    const printRef = useRef(null)
 
     // User subjects from profile
     const userSubjectIds = user?.subjects || []
@@ -197,17 +200,27 @@ function OpenLesson() {
         } catch (e) { alert(e.message) }
     }
 
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: selectedLesson?.title || 'Lesson',
+    })
+
     // ===== RENDER =====
 
     // DETAIL VIEW
     if (view === 'detail' && selectedLesson) {
         return (
             <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <button className="btn btn-secondary" onClick={() => setView('list')}>← {L('Назад', 'Артқа')}</button>
-                    <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700 }}>{selectedLesson.title}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button className="btn btn-secondary no-print" onClick={() => setView('list')}>← {L('Назад', 'Артқа')}</button>
+                        <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700 }}>{selectedLesson.title}</h1>
+                    </div>
+                    <button onClick={handlePrint} className="btn btn-primary no-print" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        📄 {L('Скачать PDF', 'PDF жүктеу')}
+                    </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
+                <div ref={printRef} className="print-container" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
                     <div className="widget" style={{ padding: '24px' }}>
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                             {selectedLesson.subject && <span className="badge badge-primary">{selectedLesson.subject}</span>}
@@ -239,7 +252,7 @@ function OpenLesson() {
                                         <div style={{ fontWeight: 700, color: TEAM_COLORS[i % TEAM_COLORS.length], marginBottom: '8px' }}>
                                             {team.team_name}
                                         </div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        <div className="print-avoid-break" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                             {(team.student_ids || []).map(sid => (
                                                 <span key={sid} style={{
                                                     background: `${TEAM_COLORS[i % TEAM_COLORS.length]}20`,

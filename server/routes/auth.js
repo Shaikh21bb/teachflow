@@ -3,10 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { Resend } = require('resend');
 const { runQuery, getOne } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
 const { validate, registerSchema, loginSchema } = require('../middleware/validate');
 
+const resend = new Resend(process.env.RESEND_API_KEY);
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
 const ACCESS_TOKEN_TTL = '15m';
@@ -312,11 +314,34 @@ router.post('/forgot-password', validate(require('../middleware/validate').forgo
             [user.id, tokenHash, expiresAt]
         );
 
-        // TODO: Send robust email using Resend or SendGrid here
-        // For localized development/MVP we will print it to console
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}`;
-        console.log('\n🔒 [MOCK EMAIL] Password Reset requested for:', email);
-        console.log('🔗 URL:', resetLink, '\n');
+        // Send robust email using Resend
+        const resetLink = `${process.env.FRONTEND_URL || 'https://urpaq.ai'}/reset-password?token=${rawToken}`;
+        
+        if (process.env.RESEND_API_KEY) {
+            await resend.emails.send({
+                from: 'Urpaq Security <onboarding@resend.dev>', // change this when verified domain
+                to: email,
+                subject: 'Восстановление пароля в Urpaq.ai',
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <h2 style="color: #4f46e5;">Urpaq.ai</h2>
+                        <p>Здравствуйте!</p>
+                        <p>Мы получили запрос на сброс пароля для вашего аккаунта.</p>
+                        <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold;">
+                            Сбросить пароль
+                        </a>
+                        <p style="color: #6b7280; font-size: 14px;">Ссылка действительна в течение 15 минут.<br>Если вы не запрашивали сброс, просто проигнорируйте это письмо.</p>
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                        <p style="color: #9ca3af; font-size: 12px;">© 2026 Urpaq.ai Team. All rights reserved.</p>
+                    </div>
+                `
+            });
+            console.log('\n✉️ Password reset email sent via Resend to:', email);
+        } else {
+            console.log('\n🔒 [MOCK EMAIL] Password Reset requested for:', email);
+            console.log('🔗 URL:', resetLink, '\n');
+            console.log('⚠️ (Configure RESEND_API_KEY inside Render/vercel environment to send real emails)');
+        }
 
         res.json({ success: true, message: 'Инструкция отправлена на ваш email' });
     } catch (error) {

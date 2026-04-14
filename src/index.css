@@ -3440,3 +3440,67 @@ a:hover {
     font-size: 0.9rem !important;
   }
 }
+
+/* ==========================================================================
+   PRINT STYLES (For PDF Export)
+   ========================================================================== */
+@media print {
+    body {
+        background-color: white !important;
+        background-image: none !important;
+    }
+    
+    .no-print,
+    .sidebar,
+    .topbar,
+    button:not(.print-visible),
+    .dashboard-header .btn {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .page-content {
+        padding: 0 !important;
+    }
+    
+    .print-container {
+        padding: 0 !important;
+        color: black !important;
+    }
+    
+    .print-container h1, .print-container h2, .print-container h3 {
+        color: black !important;
+        page-break-after: avoid;
+    }
+    
+    .print-container .widget,
+    .print-container .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        page-break-inside: avoid;
+        background: white !important;
+        color: black !important;
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+    }
+    
+    .print-container .badge {
+        border: 1px solid #aaa !important;
+        background: none !important;
+        color: black !important;
+    }
+    
+    .print-container pre, 
+    .print-container code {
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+    }
+    
+    .print-avoid-break {
+        page-break-inside: avoid;
+    }
+}

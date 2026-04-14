@@ -3,6 +3,7 @@ import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Papercl
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { useReactToPrint } from 'react-to-print'
 
 const SUBJECTS = ['Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский язык', 'Казахская литература', 'Русская литература', 'Физическая культура', 'Музыка', 'Рисование', 'Технология']
 const GRADES = Array.from({ length: 11 }, (_, i) => i + 1)
@@ -38,6 +39,7 @@ export default function LessonBuilderNew() {
     // YouTube
     const [youtubeUrl, setYoutubeUrl] = useState('')
     const [savedLessonId, setSavedLessonId] = useState(null)
+    const printRef = useRef(null)
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
@@ -195,6 +197,11 @@ export default function LessonBuilderNew() {
             setSaving(false)
         }
     }
+
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: form.title || 'Lesson_Plan',
+    })
 
     const YoutubeEmbed = ({ url }) => {
         const videoId = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)?.[1]
@@ -450,6 +457,7 @@ export default function LessonBuilderNew() {
             {/* ─── STEP 2: PREVIEW ───────────────────────────── */}
             {step === 2 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div ref={printRef} className="print-container">
                     <Card title={<><Eye size={20} /> Предварительный просмотр</>}>
                         {/* Thumbnail */}
                         {form.thumbnail_url && (
@@ -524,10 +532,14 @@ export default function LessonBuilderNew() {
                             </div>
                         )}
                     </Card>
+                    </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                         <button onClick={() => setStep(1)} style={ghostBtn}>← Назад</button>
                         <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={handlePrint} className="no-print" style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', borderColor: '#10b981'}}>
+                                📄 Скачать PDF
+                            </button>
                             <button onClick={() => saveDraft(false)} disabled={saving} style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px'}}>
                                 {saving ? <Loader2 size={16} /> : <Save size={16} />} Сохранить черновик
                             </button>
