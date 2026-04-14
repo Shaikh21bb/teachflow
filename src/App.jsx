@@ -22,6 +22,9 @@ import MyLessons from './pages/MyLessons'
 import Integrations from './pages/Integrations'
 import Quizzes from './pages/Quizzes'
 import QuizReport from './pages/QuizReport'
+import SettingsPage from './pages/Settings'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -36,6 +39,8 @@ function App() {
                             <Route path="/" element={<Landing />} />
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/library" element={<ProtectedRoute><DashboardLayout><LibraryPage /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/builder" element={<ProtectedRoute><DashboardLayout><LessonBuilder /></DashboardLayout></ProtectedRoute>} />
@@ -48,6 +53,7 @@ function App() {
                             <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -181,15 +187,15 @@ function DashboardLayout({ children }) {
                                 <span className="sidebar-link-label">{item.label}</span>
                             </NavLink>
                         ))}
-                        <a
-                            href="#"
-                            className="sidebar-link"
+                        <NavLink
+                            to="/settings"
+                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                            onClick={handleNavClick}
                             data-label={t('nav.settings')}
-                            onClick={(e) => { e.preventDefault(); alert('Настройки скоро будут доступны'); handleNavClick(); }}
                         >
                             <span className="sidebar-link-icon"><Settings size={20} /></span>
                             <span className="sidebar-link-label">{t('nav.settings')}</span>
-                        </a>
+                        </NavLink>
                         <a
                             href="https://wa.me/77771225784"
                             target="_blank"

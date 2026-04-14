@@ -1,20 +1,25 @@
 const express = require('express');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
+const { authenticateToken } = require('../middleware/auth');
+const { validate, assignmentSchema } = require('../middleware/validate');
 
 const router = express.Router();
 
-// GET all assignments
+// All assignment routes require authentication
+router.use(authenticateToken);
+
+// GET all assignments (scoped to current teacher)
 router.get('/', async (req, res) => {
     try {
         const { status } = req.query;
-        const params = [];
+        const params = [req.user.userId];
 
         let sql = `
-      SELECT a.*, c.name as class_name 
-      FROM assignments a
-      LEFT JOIN classes c ON a.class_id = c.id
-      WHERE 1=1
-    `;
+            SELECT a.*, c.name as class_name
+            FROM assignments a
+            LEFT JOIN classes c ON a.class_id = c.id
+            WHERE a.user_id = ?
+        `;
 
         if (status && status !== 'all') {
             sql += ` AND a.status = ?`;
@@ -30,18 +35,22 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET single assignment
+// GET single assignment (must belong to current teacher)
 router.get('/:id', async (req, res) => {
     try {
-        const assignment = await getOne(`
-      SELECT a.*, c.name as class_name 
-      FROM assignments a
-      LEFT JOIN classes c ON a.class_id = c.id
-      WHERE a.id = ?
-    `, [parseInt(req.params.id)]);
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'Неверный ID задания' });
+
+        const assignment = await getOne(
+            `SELECT a.*, c.name as class_name
+             FROM assignments a
+             LEFT JOIN classes c ON a.class_id = c.id
+             WHERE a.id = ? AND a.user_id = ?`,
+            [id, req.user.userId]
+        );
 
         if (!assignment) {
-            return res.status(404).json({ error: 'Assignment not found' });
+            return res.status(404).json({ error: 'Задание не найдено' });
         }
         res.json(assignment);
     } catch (err) {
@@ -49,15 +58,25 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST create assignment
-router.post('/', async (req, res) => {
+// POST create assignment (with Zod validation)
+router.post('/', validate(assignmentSchema), async (req, res) => {
     try {
-        const { title, type, class_id, due_date, total } = req.body;
+        const { title, type, class_id, due_date } = req.body;
 
-        await runQuery(`
-      INSERT INTO assignments (title, type, class_id, due_date, total, submitted, status)
-      VALUES (?, ?, ?, ?, ?, 0, 'active')
-    `, [title, type || 'homework', parseInt(class_id), due_date, total || 0]);
+        // Verify class belongs to this teacher
+        const cls = await getOne(
+            'SELECT id FROM classes WHERE id = ? AND user_id = ?',
+            [class_id, req.user.userId]
+        );
+        if (!cls) {
+            return res.status(403).json({ error: 'Класс не найден или не принадлежит вам' });
+        }
+
+        await runQuery(
+            `INSERT INTO assignments (title, type, class_id, due_date, total, submitted, status, user_id)
+             VALUES (?, ?, ?, ?, 0, 0, 'active', ?)`,
+            [title, type, class_id, due_date || null, req.user.userId]
+        );
 
         const id = await getLastInsertId();
         const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [id]);
@@ -67,28 +86,51 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT update assignment
+// PUT update assignment (must belong to current teacher)
 router.put('/:id', async (req, res) => {
     try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'Неверный ID задания' });
+
+        const existing = await getOne(
+            'SELECT id FROM assignments WHERE id = ? AND user_id = ?',
+            [id, req.user.userId]
+        );
+        if (!existing) {
+            return res.status(404).json({ error: 'Задание не найдено' });
+        }
+
         const { title, type, class_id, due_date, submitted, total, status } = req.body;
 
-        await runQuery(`
-      UPDATE assignments 
-      SET title = ?, type = ?, class_id = ?, due_date = ?, submitted = ?, total = ?, status = ?
-      WHERE id = ?
-    `, [title, type, parseInt(class_id), due_date, submitted, total, status, parseInt(req.params.id)]);
+        await runQuery(
+            `UPDATE assignments
+             SET title = ?, type = ?, class_id = ?, due_date = ?, submitted = ?, total = ?, status = ?
+             WHERE id = ? AND user_id = ?`,
+            [title, type, parseInt(class_id, 10), due_date, submitted, total, status, id, req.user.userId]
+        );
 
-        const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [parseInt(req.params.id)]);
+        const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [id]);
         res.json(assignment);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// DELETE assignment
+// DELETE assignment (must belong to current teacher)
 router.delete('/:id', async (req, res) => {
     try {
-        await runQuery('DELETE FROM assignments WHERE id = ?', [parseInt(req.params.id)]);
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'Неверный ID задания' });
+
+        const existing = await getOne(
+            'SELECT id FROM assignments WHERE id = ? AND user_id = ?',
+            [id, req.user.userId]
+        );
+        if (!existing) {
+            return res.status(404).json({ error: 'Задание не найдено' });
+        }
+
+        await runQuery('DELETE FROM assignments WHERE id = ? AND user_id = ?', [id, req.user.userId]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

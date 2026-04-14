@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { getDatabase, getOne, getAll, runQuery } = require('./db/database');
+const { authLimiter, aiLimiter, generalLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,7 +35,12 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '2mb' }));
+
+// ──────────────────────────────────────────
+// Global rate limiting (DDoS protection)
+// ──────────────────────────────────────────
+app.use('/api/', generalLimiter);
 
 // ──────────────────────────────────────────
 // Run additive migrations (safe to re-run)
@@ -114,7 +120,30 @@ async function runMigrations() {
             processed INTEGER DEFAULT 0,
             received_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
-        // v3 - Quiz System
+        // v3 - Refresh Tokens
+        `CREATE TABLE IF NOT EXISTS refresh_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            expires_at DATETIME NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)`,
+        // v3 - Cleanup expired refresh tokens (safe, always runs)
+        `DELETE FROM refresh_tokens WHERE expires_at < datetime('now')`,
+        // v4 - Password Reset Tokens
+        `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            expires_at DATETIME NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash)`,
+        `DELETE FROM password_reset_tokens WHERE expires_at < datetime('now')`,
+        // v5 - Quiz System
         `CREATE TABLE IF NOT EXISTS quizzes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -204,28 +233,32 @@ async function startServer() {
 
     // Helper route for secure Cloudinary signed uploads
     app.get('/api/cloudinary/signature', (req, res) => {
-        const timestamp = Math.round((new Date).getTime() / 1000);
-        const apiSecret = 'LWHK6PmsuK8c7dkAtTPGcxf72pU';
-        const apiKey = '278396287363825';
-        const cloudName = 'dvb6l3wri';
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+        const apiKey = process.env.CLOUDINARY_API_KEY;
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
         const folder = 'urpaq-lessons';
-        
-        const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+
+        if (!apiSecret || !apiKey || !cloudName) {
+            return res.status(503).json({ error: 'Cloudinary не настроен на сервере' });
+        }
+
         const crypto = require('crypto');
+        const timestamp = Math.round((new Date).getTime() / 1000);
+        const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
         const signature = crypto.createHash('sha1').update(strToSign).digest('hex');
-        
+
         res.json({ signature, timestamp, apiKey, cloudName, folder });
     });
 
     // API Routes
-    app.use('/api/auth', authRouter);
+    app.use('/api/auth', authLimiter, authRouter);          // 🔒 10 req/15min per IP+email
     app.use('/api/lessons', lessonsRouter);
     app.use('/api/lesson-files', lessonFilesRouter);
     app.use('/api/assignments', assignmentsRouter);
     app.use('/api/classes', classesRouter);
     app.use('/api/dashboard', dashboardRouter);
     app.use('/api/notifications', notificationsRouter);
-    app.use('/api/ai', aiRouter);
+    app.use('/api/ai', aiLimiter, aiRouter);                // 🔒 30 req/hour per IP
     app.use('/api/open-lessons', openLessonsRouter);
     app.use('/api/integrations', integrationsRouter);
     app.use('/api/webhooks', webhooksRouter);

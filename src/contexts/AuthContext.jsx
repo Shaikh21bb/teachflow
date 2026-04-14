@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 const AuthContext = createContext()
 
@@ -12,13 +12,133 @@ export function useAuth() {
     return context
 }
 
+// ──────────────────────────────────────────
+// Token storage helpers
+// ──────────────────────────────────────────
+const storage = {
+    getToken: () => localStorage.getItem('auth_token'),
+    getRefreshToken: () => localStorage.getItem('auth_refresh_token'),
+    setTokens: (accessToken, refreshToken) => {
+        localStorage.setItem('auth_token', accessToken)
+        if (refreshToken) localStorage.setItem('auth_refresh_token', refreshToken)
+    },
+    clearTokens: () => {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_refresh_token')
+    },
+}
+
+// ──────────────────────────────────────────
+// Authenticated fetch with auto-refresh
+// ──────────────────────────────────────────
+let isRefreshing = false
+let refreshQueue = [] // Pending requests during refresh
+
+async function refreshAccessToken() {
+    const refreshToken = storage.getRefreshToken()
+    if (!refreshToken) throw new Error('No refresh token')
+
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+    })
+
+    if (!res.ok) {
+        throw new Error('Refresh failed')
+    }
+
+    const data = await res.json()
+    storage.setTokens(data.token, data.refreshToken)
+    return data.token
+}
+
+export async function authFetch(url, options = {}) {
+    const token = storage.getToken()
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+    }
+
+    let res = await fetch(url, { ...options, headers })
+
+    // Auto-refresh on TOKEN_EXPIRED
+    if (res.status === 401) {
+        const body = await res.clone().json().catch(() => ({}))
+        if (body.code === 'TOKEN_EXPIRED') {
+            if (!isRefreshing) {
+                isRefreshing = true
+                try {
+                    const newToken = await refreshAccessToken()
+                    isRefreshing = false
+                    // Retry all queued requests
+                    refreshQueue.forEach((cb) => cb(newToken))
+                    refreshQueue = []
+                    // Retry original request
+                    return fetch(url, {
+                        ...options,
+                        headers: { ...headers, Authorization: `Bearer ${newToken}` },
+                    })
+                } catch {
+                    isRefreshing = false
+                    refreshQueue.forEach((cb) => cb(null))
+                    refreshQueue = []
+                    storage.clearTokens()
+                    window.location.href = '/login'
+                    return res
+                }
+            } else {
+                // Queue this request until refresh completes
+                return new Promise((resolve) => {
+                    refreshQueue.push((newToken) => {
+                        if (newToken) {
+                            resolve(
+                                fetch(url, {
+                                    ...options,
+                                    headers: { ...headers, Authorization: `Bearer ${newToken}` },
+                                })
+                            )
+                        } else {
+                            resolve(res)
+                        }
+                    })
+                })
+            }
+        }
+    }
+
+    return res
+}
+
+// ──────────────────────────────────────────
+// Auth Provider
+// ──────────────────────────────────────────
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [token, setToken] = useState(localStorage.getItem('auth_token'))
+    const [token, setToken] = useState(storage.getToken)
+
+    const fetchUserInfo = useCallback(async () => {
+        try {
+            const res = await authFetch(`${API_BASE}/auth/me`)
+            if (res.ok) {
+                const data = await res.json()
+                setUser(data.user)
+            } else {
+                // Could not recover — log out
+                storage.clearTokens()
+                setToken(null)
+            }
+        } catch {
+            storage.clearTokens()
+            setToken(null)
+        } finally {
+            setLoading(false)
+        }
+    }, [])
 
     useEffect(() => {
-        // Check if user is already logged in
         if (token) {
             fetchUserInfo()
         } else {
@@ -26,41 +146,22 @@ export function AuthProvider({ children }) {
         }
     }, [token])
 
-    async function fetchUserInfo() {
-        try {
-            const response = await fetch(`${API_BASE}/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (response.ok) {
-                const data = await response.json()
-                setUser(data.user)
-            } else {
-                // Token invalid or expired
-                logout()
-            }
-        } catch (error) {
-            console.error('Failed to fetch user info:', error)
-            logout()
-        } finally {
-            setLoading(false)
-        }
-    }
-
     async function register(name, email, password, subjects = []) {
         try {
-            const response = await fetch(`${API_BASE}/auth/register`, {
+            const res = await fetch(`${API_BASE}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, subjects })
+                body: JSON.stringify({ name, email, password, subjects }),
             })
 
-            const data = await response.json()
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Ошибка регистрации')
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Ошибка регистрации')
+            // Auto-login after register
+            if (data.token) {
+                storage.setTokens(data.token, data.refreshToken)
+                setToken(data.token)
+                setUser(data.user)
             }
 
             return { success: true, message: data.message }
@@ -71,20 +172,16 @@ export function AuthProvider({ children }) {
 
     async function login(email, password) {
         try {
-            const response = await fetch(`${API_BASE}/auth/login`, {
+            const res = await fetch(`${API_BASE}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password }),
             })
 
-            const data = await response.json()
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Ошибка входа')
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Ошибка входа')
-            }
-
-            // Save token and user
-            localStorage.setItem('auth_token', data.token)
+            storage.setTokens(data.token, data.refreshToken)
             setToken(data.token)
             setUser(data.user)
 
@@ -94,19 +191,32 @@ export function AuthProvider({ children }) {
         }
     }
 
-    function logout() {
-        localStorage.removeItem('auth_token')
-        setToken(null)
-        setUser(null)
+    async function logout() {
+        try {
+            const refreshToken = storage.getRefreshToken()
+            // Revoke refresh token on server
+            await fetch(`${API_BASE}/auth/logout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken }),
+            })
+        } catch {
+            // Silent — always clear local storage regardless
+        } finally {
+            storage.clearTokens()
+            setToken(null)
+            setUser(null)
+        }
     }
 
     const value = {
         user,
         loading,
+        token,
         isAuthenticated: !!user,
         register,
         login,
-        logout
+        logout,
     }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

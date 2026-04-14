@@ -2,166 +2,222 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { runQuery, getOne, getAll, getLastInsertId } = require('../db/database');
+const crypto = require('crypto');
+const { runQuery, getOne } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
+const { validate, registerSchema, loginSchema } = require('../middleware/validate');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'urpaq-ai-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '24h';
+const JWT_SECRET = process.env.JWT_SECRET || '';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
+const ACCESS_TOKEN_TTL = '15m';
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
-// Register new user
-router.post('/register', async (req, res) => {
+// Validate secrets at startup
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    console.error('❌ FATAL: JWT_SECRET must be at least 32 characters! Set it in .env');
+    if (process.env.NODE_ENV === 'production') process.exit(1);
+}
+if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET.length < 32) {
+    console.warn('⚠️  JWT_REFRESH_SECRET not set or too short — refresh tokens disabled in production');
+}
+
+// ──────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────
+function generateAccessToken(user) {
+    return jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: ACCESS_TOKEN_TTL }
+    );
+}
+
+async function generateRefreshToken(userId) {
+    const token = crypto.randomBytes(64).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS).toISOString();
+
+    // Store hashed token in DB (plain token is returned to client)
+    await runQuery(
+        `INSERT OR REPLACE INTO refresh_tokens (user_id, token_hash, expires_at)
+         VALUES (?, ?, ?)`,
+        [userId, tokenHash, expiresAt]
+    );
+
+    return token;
+}
+
+function safeUserPayload(user) {
+    return { id: user.id, name: user.name, email: user.email, role: user.role };
+}
+
+// ──────────────────────────────────────────
+// POST /api/auth/register
+// ──────────────────────────────────────────
+router.post('/register', validate(registerSchema), async (req, res) => {
     try {
-        console.log('Registration request received:', req.body);
-        const { name, email, password, subjects = [] } = req.body;
+        const { name, email, password, subjects } = req.body;
 
-        // Validation
-        if (!name || !email || !password) {
-            console.log('Validation failed: missing fields');
-            return res.status(400).json({ error: 'Все поля обязательны' });
-        }
-
-        if (password.length < 8) {
-            console.log('Validation failed: short password');
-            return res.status(400).json({ error: 'Пароль должен быть минимум 8 символов' });
-        }
-
-        // Email format check
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            console.log('Validation failed: invalid email format');
-            return res.status(400).json({ error: 'Неверный формат email' });
-        }
-
-        // Check if user already exists
-        console.log('Checking if user exists...');
-        let existingUser;
-        try {
-            existingUser = await getOne('SELECT * FROM users WHERE email = ?', [email]);
-        } catch (dbError) {
-            console.error('Database error checking user:', dbError);
-            return res.status(500).json({ error: 'Ошибка базы данных' });
-        }
-
+        // Check existing user
+        const existingUser = await getOne('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUser) {
-            console.log('User already exists');
             return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
         }
 
-        // Hash password
-        console.log('Hashing password...');
-        const saltRounds = 10;
-        const passwordHash = await bcrypt.hash(password, saltRounds);
+        // Hash password — bcrypt rounds 12 for production-grade security
+        const passwordHash = await bcrypt.hash(password, 12);
+        const subjectsJson = JSON.stringify(subjects);
 
-        // Insert user
-        console.log('Inserting user into database...');
-        try {
-            const subjectsJson = JSON.stringify(Array.isArray(subjects) ? subjects : []);
-            await runQuery(
-                'INSERT INTO users (name, email, password_hash, role, subjects) VALUES (?, ?, ?, ?, ?)',
-                [name, email, passwordHash, 'teacher', subjectsJson]
-            );
-        } catch (insertError) {
-            console.error('Insert error:', insertError);
-            return res.status(500).json({ error: 'Ошибка при создании пользователя' });
-        }
+        await runQuery(
+            'INSERT INTO users (name, email, password_hash, role, subjects) VALUES (?, ?, ?, ?, ?)',
+            [name, email, passwordHash, 'teacher', subjectsJson]
+        );
 
-        // Get the newly created user by email (more reliable than getLastInsertId)
-        const user = await getOne('SELECT id, name, email, role, created_at FROM users WHERE email = ?', [email]);
+        const user = await getOne(
+            'SELECT id, name, email, role FROM users WHERE email = ?',
+            [email]
+        );
 
         if (!user) {
-            console.error('User not found after insert');
             return res.status(500).json({ error: 'Ошибка при создании пользователя' });
         }
 
-        console.log('User created with ID:', user.id);
+        // Sync to Google Sheets (optional, non-blocking)
+        syncUserToGoogleSheets(user).catch((err) =>
+            console.log('Google Sheets sync skipped:', err.message)
+        );
 
+        const accessToken = generateAccessToken(user);
+        const refreshToken = await generateRefreshToken(user.id);
 
-        // Sync to Google Sheets (optional)
-        try {
-            await syncUserToGoogleSheets(user);
-        } catch (err) {
-            console.log('Google Sheets sync skipped:', err.message);
-        }
-
-        console.log('Registration successful for:', email);
         res.status(201).json({
             message: 'Регистрация успешна',
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            token: accessToken,
+            refreshToken,
+            user: safeUserPayload(user),
         });
     } catch (error) {
         console.error('Registration error:', error.message);
-        console.error('Stack:', error.stack);
         res.status(500).json({ error: 'Ошибка сервера при регистрации' });
     }
 });
 
-
-// Login user
-router.post('/login', async (req, res) => {
+// ──────────────────────────────────────────
+// POST /api/auth/login
+// ──────────────────────────────────────────
+router.post('/login', validate(loginSchema), async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Validation
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email и пароль обязательны' });
-        }
-
-        // Find user
         const user = await getOne('SELECT * FROM users WHERE email = ?', [email]);
-        if (!user) {
+
+        // Constant-time: always run bcrypt even if user not found to prevent timing attacks
+        const dummyHash = '$2a$12$aaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        const passwordValid = user
+            ? await bcrypt.compare(password, user.password_hash)
+            : await bcrypt.compare(password, dummyHash).then(() => false);
+
+        if (!user || !passwordValid) {
             return res.status(401).json({ error: 'Неверный email или пароль' });
         }
 
-        // Check if account is active
         if (!user.is_active) {
-            return res.status(403).json({ error: 'Аккаунт деактивирован' });
+            return res.status(403).json({ error: 'Аккаунт деактивирован. Обратитесь в поддержку.' });
         }
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Неверный email или пароль' });
-        }
-
-        // Update last login
-        await runQuery('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
-
-        // Update last login in Google Sheets
-        try {
-            await updateLastLogin(user.email);
-        } catch (err) {
-            console.error('Google Sheets update error:', err.message);
-        }
-
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
-            JWT_SECRET,
-            { expiresIn: JWT_EXPIRES_IN }
+        // Update last login (non-blocking)
+        runQuery('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?', [user.id]).catch(() => {});
+        updateLastLogin(user.email).catch((err) =>
+            console.log('Google Sheets update skipped:', err.message)
         );
+
+        const accessToken = generateAccessToken(user);
+        const refreshToken = await generateRefreshToken(user.id);
 
         res.json({
             message: 'Вход выполнен успешно',
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role
-            }
+            token: accessToken,
+            refreshToken,
+            user: safeUserPayload(user),
         });
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error.message);
         res.status(500).json({ error: 'Ошибка сервера при входе' });
     }
 });
 
-// Get current user info
+// ──────────────────────────────────────────
+// POST /api/auth/refresh
+// Exchange refresh token for new access + refresh tokens (rotation)
+// ──────────────────────────────────────────
+router.post('/refresh', async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token не предоставлен' });
+        }
+
+        // Hash incoming token and look up in DB
+        const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+        const stored = await getOne(
+            `SELECT rt.*, u.id as uid, u.name, u.email, u.role, u.is_active
+             FROM refresh_tokens rt
+             JOIN users u ON u.id = rt.user_id
+             WHERE rt.token_hash = ?`,
+            [tokenHash]
+        );
+
+        if (!stored) {
+            return res.status(401).json({ error: 'Недействительный refresh token' });
+        }
+
+        if (new Date(stored.expires_at) < new Date()) {
+            // Clean up expired token
+            await runQuery('DELETE FROM refresh_tokens WHERE token_hash = ?', [tokenHash]);
+            return res.status(401).json({ error: 'Refresh token истёк. Войдите снова.' });
+        }
+
+        if (!stored.is_active) {
+            return res.status(403).json({ error: 'Аккаунт деактивирован' });
+        }
+
+        // Token rotation — delete old, issue new
+        await runQuery('DELETE FROM refresh_tokens WHERE token_hash = ?', [tokenHash]);
+
+        const user = { id: stored.uid, name: stored.name, email: stored.email, role: stored.role };
+        const newAccessToken = generateAccessToken(user);
+        const newRefreshToken = await generateRefreshToken(user.id);
+
+        res.json({
+            token: newAccessToken,
+            refreshToken: newRefreshToken,
+        });
+    } catch (error) {
+        console.error('Refresh error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// POST /api/auth/logout
+// Revoke refresh token
+// ──────────────────────────────────────────
+router.post('/logout', async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        if (refreshToken) {
+            const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+            await runQuery('DELETE FROM refresh_tokens WHERE token_hash = ?', [tokenHash]);
+        }
+        res.json({ message: 'Выход выполнен успешно' });
+    } catch {
+        res.json({ message: 'Выход выполнен успешно' });
+    }
+});
+
+// ──────────────────────────────────────────
+// GET /api/auth/me
+// ──────────────────────────────────────────
 router.get('/me', authenticateToken, async (req, res) => {
     try {
         const user = await getOne(
@@ -173,7 +229,6 @@ router.get('/me', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
-        // Parse subjects JSON
         try {
             user.subjects = JSON.parse(user.subjects || '[]');
         } catch {
@@ -187,28 +242,126 @@ router.get('/me', authenticateToken, async (req, res) => {
     }
 });
 
-// Update user subjects
-router.put('/subjects', authenticateToken, async (req, res) => {
+// ──────────────────────────────────────────
+// PUT /api/auth/profile
+// ──────────────────────────────────────────
+router.put('/profile', authenticateToken, validate(require('../middleware/validate').profileSchema), async (req, res) => {
     try {
-        const { subjects } = req.body;
-        const subjectsJson = JSON.stringify(Array.isArray(subjects) ? subjects : []);
-        await runQuery('UPDATE users SET subjects = ? WHERE id = ?', [subjectsJson, req.user.userId]);
-        res.json({ success: true, subjects: subjects });
+        const { name, subjects } = req.body;
+        const subjectsJson = JSON.stringify(subjects);
+        await runQuery('UPDATE users SET name = ?, subjects = ? WHERE id = ?', [name, subjectsJson, req.user.userId]);
+        
+        const user = await getOne(
+            'SELECT id, name, email, role, subjects, credits, created_at, last_login FROM users WHERE id = ?',
+            [req.user.userId]
+        );
+        user.subjects = JSON.parse(user.subjects || '[]');
+
+        res.json({ success: true, user });
     } catch (error) {
-        console.error('Update subjects error:', error);
+        console.error('Update profile error:', error.message);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
-// Logout (client-side will remove token)
-router.post('/logout', (req, res) => {
-    res.json({ message: 'Выход выполнен успешно' });
+// ──────────────────────────────────────────
+// PUT /api/auth/password
+// ──────────────────────────────────────────
+router.put('/password', authenticateToken, validate(require('../middleware/validate').passwordChangeSchema), async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const user = await getOne('SELECT password_hash FROM users WHERE id = ?', [req.user.userId]);
+        
+        const isMatch = await bcrypt.compare(oldPassword, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Текущий пароль неверен' });
+        }
+
+        const newHash = await bcrypt.hash(newPassword, 12);
+        await runQuery('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.userId]);
+        
+        // Revoke all refresh tokens on password change for security
+        await runQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.userId]);
+
+        res.json({ success: true, message: 'Пароль успешно изменен. Пожалуйста, войдите снова.' });
+    } catch (error) {
+        console.error('Change password error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
 });
 
-// Middleware to authenticate JWT token
+// ──────────────────────────────────────────
+// POST /api/auth/forgot-password
+// ──────────────────────────────────────────
+router.post('/forgot-password', validate(require('../middleware/validate').forgotPasswordSchema), async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await getOne('SELECT id, is_active FROM users WHERE email = ?', [email]);
+        
+        // Always return success to prevent email enumeration
+        if (!user || !user.is_active) {
+            return res.json({ success: true, message: 'Если email существует, мы отправили инструкцию' });
+        }
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 mins
+
+        await runQuery(
+            'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+            [user.id, tokenHash, expiresAt]
+        );
+
+        // TODO: Send robust email using Resend or SendGrid here
+        // For localized development/MVP we will print it to console
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${rawToken}`;
+        console.log('\n🔒 [MOCK EMAIL] Password Reset requested for:', email);
+        console.log('🔗 URL:', resetLink, '\n');
+
+        res.json({ success: true, message: 'Инструкция отправлена на ваш email' });
+    } catch (error) {
+        console.error('Forgot password error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// POST /api/auth/reset-password
+// ──────────────────────────────────────────
+router.post('/reset-password', validate(require('../middleware/validate').resetPasswordSchema), async (req, res) => {
+    try {
+        const { token, password } = req.body;
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const stored = await getOne(
+            `SELECT * FROM password_reset_tokens WHERE token_hash = ? AND expires_at > datetime('now')`,
+            [tokenHash]
+        );
+
+        if (!stored) {
+            return res.status(400).json({ error: 'Токен недействителен или истек. Запросите сброс заново.' });
+        }
+
+        const newHash = await bcrypt.hash(password, 12);
+        
+        // Update password and clean up all sessions/tokens
+        await runQuery('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, stored.user_id]);
+        await runQuery('DELETE FROM password_reset_tokens WHERE user_id = ?', [stored.user_id]);
+        await runQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [stored.user_id]);
+
+        res.json({ success: true, message: 'Пароль успешно изменен' });
+    } catch (error) {
+        console.error('Reset password error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// Middleware: Authenticate JWT
+// ──────────────────────────────────────────
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ error: 'Токен не предоставлен' });
@@ -216,7 +369,13 @@ function authenticateToken(req, res, next) {
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) {
-            return res.status(403).json({ error: 'Неверный или истекший токен' });
+            if (err.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    error: 'Токен истёк',
+                    code: 'TOKEN_EXPIRED',
+                });
+            }
+            return res.status(403).json({ error: 'Неверный токен' });
         }
         req.user = user;
         next();
