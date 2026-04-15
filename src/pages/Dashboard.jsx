@@ -28,14 +28,14 @@ function Dashboard() {
                     dashboardAPI.getStats(),
                     dashboardAPI.getNotifications(),
                     assignmentsAPI.getAll({ status: 'completed' }),
-                    fetch(`${API_BASE}/dashboard/upcoming-lessons`).then(r => r.json()).catch(() => [])
+                    dashboardAPI.getUpcomingLessons().catch(() => [])
                 ])
 
                 setStats(statsData)
                 setNotifications(notifData.map(n => ({
                     icon: n.icon,
                     type: n.type,
-                    text: n.text, // Normally this should come as a key or be localized on backend
+                    text: n.text,
                     time: getTimeAgo(n.created_at)
                 })))
                 setPendingReviews(assignmentsData.slice(0, 3).map(a => ({
@@ -43,19 +43,7 @@ function Dashboard() {
                     class: a.class_name,
                     count: a.submitted
                 })))
-
-                // Set upcoming lessons or use demo data if empty
-                if (upcomingData && upcomingData.length > 0) {
-                    setUpcomingLessons(upcomingData)
-                } else {
-                    // Demo data as fallback
-                    setUpcomingLessons([
-                        { time: '09:00', subject: language === 'kk' ? 'Математика' : 'Математика', class: '5А', color: 'math' },
-                        { time: '10:00', subject: language === 'kk' ? 'Физика' : 'Физика', class: '7Б', color: 'physics' },
-                        { time: '11:30', subject: language === 'kk' ? 'Алгебра' : 'Алгебра', class: '9В', color: 'math' },
-                        { time: '13:00', subject: language === 'kk' ? 'Ағылшын тілі' : 'Английский', class: '6А', color: 'english' },
-                    ])
-                }
+                setUpcomingLessons(upcomingData || [])
             } catch (err) {
                 console.error('Failed to fetch dashboard data:', err)
             } finally {
@@ -130,19 +118,24 @@ function Dashboard() {
                             <Link to="/builder" className="btn btn-sm btn-secondary">+ {t('dashboard.createLesson')}</Link>
                         </div>
                         <div className="widget-body">
-                            {upcomingLessons.map((lesson, index) => (
+                            {upcomingLessons.length > 0 ? upcomingLessons.map((lesson, index) => (
                                 <div key={index} className="upcoming-lesson">
                                     <div className="lesson-time">
-                                        <div className="lesson-time-hour">{lesson.time}</div>
+                                        <div className="lesson-time-hour">{new Date(lesson.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                     </div>
-                                    <div className={`lesson-color ${lesson.color}`}></div>
+                                    <div className={`lesson-color ${lesson.color || 'blue'}`}></div>
                                     <div className="lesson-info">
-                                        <div className="lesson-name">{lesson.subject}</div>
-                                        <div className="lesson-class">{language === 'kk' ? 'Сынып' : 'Класс'} {lesson.class}</div>
+                                        <div className="lesson-name">{lesson.title || lesson.subject}</div>
+                                        <div className="lesson-class">{language === 'kk' ? 'Сынып' : 'Класс'} {lesson.class_name || lesson.grade}</div>
                                     </div>
-                                    <button className="btn btn-sm btn-ghost">{language === 'kk' ? 'Ашу' : 'Открыть'} →</button>
+                                    <Link to={`/builder?id=${lesson.id}`} className="btn btn-sm btn-ghost">{language === 'kk' ? 'Ашу' : 'Открыть'} →</Link>
                                 </div>
-                            ))}
+                            )) : (
+                                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-gray-500)' }}>
+                                    <Calendar size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                                    <p>{language === 'kk' ? 'Әзірге сабақтар жоқ' : 'Пока нет уроков'}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -153,7 +146,7 @@ function Dashboard() {
                             <Link to="/assignments" className="btn btn-sm btn-secondary">{t('common.all')} {t('nav.assignments').toLowerCase()}</Link>
                         </div>
                         <div className="widget-body">
-                            {pendingReviews.map((item, index) => (
+                            {pendingReviews.length > 0 ? pendingReviews.map((item, index) => (
                                 <div key={index} className="upcoming-lesson">
                                     <div style={{
                                         width: '48px',
@@ -180,10 +173,15 @@ function Dashboard() {
                                         }}>
                                             {item.count} {language === 'kk' ? 'жұмыс' : 'работ'}
                                         </div>
-                                        <button className="btn btn-sm btn-primary">{t('common.search')}</button>
+                                        <Link to="/assignments" className="btn btn-sm btn-primary">{t('common.search')}</Link>
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-gray-500)' }}>
+                                    <ClipboardCheck size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                                    <p>{language === 'kk' ? 'Жаңа тексерулер жоқ' : 'Нет новых проверок'}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

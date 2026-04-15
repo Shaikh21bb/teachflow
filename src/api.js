@@ -85,6 +85,7 @@ export const classesAPI = {
 // Dashboard API
 export const dashboardAPI = {
     getStats: () => fetchAPI('/dashboard/stats'),
+    getUpcomingLessons: () => fetchAPI('/dashboard/upcoming-lessons'),
     getNotifications: () => fetchAPI('/notifications')
 };
 
