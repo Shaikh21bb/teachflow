@@ -316,9 +316,9 @@ export default function Landing() {
                         </h2>
                     </motion.div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    <div className="features-grid" style={{ display: 'grid', gap: '24px' }}>
                         
-                        <div className="premium-bento-card" style={{ gridColumn: 'span 2' }}>
+                        <div className="premium-bento-card bento-wide">
                             <div style={{ background: 'rgba(139, 92, 246, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BrainCircuit size={32} color="#8b5cf6" />
                             </div>
@@ -360,7 +360,7 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="premium-bento-card" style={{ gridColumn: 'span 2' }}>
+                        <div className="premium-bento-card bento-wide">
                             <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BookOpen size={32} color="#f59e0b" />
                             </div>
