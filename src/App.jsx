@@ -121,17 +121,8 @@ function DashboardLayout({ children }) {
 
     return (
         <div className="dashboard">
-            {/* Mobile overlay */}
-            {mobileOpen && (
-                <div
-                    className="sidebar-overlay active"
-                    onClick={() => setMobileOpen(false)}
-                    style={{ zIndex: 998 }}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+            {/* Desktop Sidebar (hidden on mobile via CSS) */}
+            <aside className={`sidebar ${collapsed ? 'collapsed' : ''} hide-on-mobile`}>
                 <div className="sidebar-header">
                     <Link to="/" className="sidebar-logo-area" onClick={handleNavClick}>
                         <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem', flexShrink: 0 }}>AI</div>
@@ -146,14 +137,7 @@ function DashboardLayout({ children }) {
                     >
                         {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
                     </button>
-                    {/* Mobile close button */}
-                    <button
-                        className="sidebar-toggle-btn hide-on-desktop"
-                        onClick={() => setMobileOpen(false)}
-                        aria-label="Close menu"
-                    >
-                        <X size={18} />
-                    </button>
+                    {/* Mobile close button (removed) */}
                 </div>
 
                 <nav className="sidebar-nav">
@@ -213,26 +197,7 @@ function DashboardLayout({ children }) {
 
             <main className={`main-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
                 <header className="topbar">
-                    {/* Mobile hamburger button */}
-                    <button
-                        className="hide-on-desktop mobile-menu-hamburger"
-                        onClick={() => setMobileOpen(true)}
-                        aria-label="Open menu"
-                        style={{
-                            display: 'none', // shown via CSS on mobile
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
-                            background: 'var(--color-gray-100)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'var(--color-gray-700)',
-                        }}
-                    >
-                        <Menu size={20} />
-                    </button>
+                    {/* Mobile hamburger button removed in favor of bottom nav */}
 
                     {/* Mobile logo */}
                     <Link to="/" className="mobile-header-logo hide-on-desktop" onClick={handleNavClick}>
@@ -264,12 +229,52 @@ function DashboardLayout({ children }) {
                     </div>
                 </header>
 
-                <div className="page-content">
+                <div className="page-content" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
                     {children}
                 </div>
             </main>
+
+            {/* PWA Mobile Bottom Navigation */}
+            <MobileBottomNav items={navItems} />
         </div>
     )
+}
+
+// PWA Mobile Bottom Navigation
+function MobileBottomNav({ items }) {
+    const { t, language } = useLanguage()
+    
+    // Choose 4 primary items for bottom nav (Home, Builder, Open Lessons, Bot)
+    // Plus a "Settings" link to replace the sidebar
+    const primaryItems = items.filter(i => 
+        ['/dashboard', '/builder', '/open-lessons', '/alfarabi-bot'].includes(i.path)
+    );
+
+    return (
+        <nav className="mobile-bottom-nav hide-on-desktop">
+            {primaryItems.map(item => (
+                <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+                >
+                    <div className="bottom-nav-icon">{item.icon}</div>
+                    <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
+                        {item.label}
+                    </span>
+                </NavLink>
+            ))}
+            <NavLink
+                to="/settings"
+                className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+            >
+                <div className="bottom-nav-icon"><Settings size={20} /></div>
+                <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
+                    {t('nav.settings') || (language === 'kk' ? 'Баптаулар' : 'Настройки')}
+                </span>
+            </NavLink>
+        </nav>
+    );
 }
 
 // User Profile Component
