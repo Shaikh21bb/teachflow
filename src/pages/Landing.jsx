@@ -104,7 +104,7 @@ export default function Landing() {
                             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                         >
                             <Globe2 size={16} />
-                            {language === 'kk' ? 'ҚАЗ' : 'РУС'}
+                            {language === 'kk' ? 'ҚАЗ/РУС' : 'РУС/ҚАЗ'}
                         </button>
                         <Link to="/login" style={{ color: '#a3a3a3', fontWeight: 600, transition: 'color 0.2s', textDecoration: 'none' }} onMouseEnter={e => e.target.style.color = 'white'} onMouseLeave={e => e.target.style.color = '#a3a3a3'}>
                             {language === 'kk' ? 'Кіру' : 'Вход'}
@@ -132,7 +132,7 @@ export default function Landing() {
                         transition={{ duration: 0.25 }}
                     >
                         <button onClick={toggleLanguage} className="v2-mobile-menu-item" style={{ color: 'white' }}>
-                            <Globe2 size={18} /> {language === 'kk' ? 'Тілді ауыстыру' : 'Сменить язык'}
+                            <Globe2 size={18} /> {language === 'kk' ? 'Орыс тіліне ауысу' : 'Ауысу Қазақ тіліне'}
                         </button>
                         <Link to="/login" className="v2-mobile-menu-item" style={{ color: 'white' }} onClick={() => setMobileMenuOpen(false)}>
                             {language === 'kk' ? 'Кіру' : 'Вход'}
@@ -190,8 +190,12 @@ export default function Landing() {
                                     <BookOpen size={20} color="white" />
                                 </div>
                                 <div>
-                                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#fff' }}>Открытый урок по Химии</h4>
-                                    <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Сгенерирован</span>
+                                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#fff' }}>
+                                        {language === 'kk' ? 'Химиядан ашық сабақ' : 'Открытый урок по Химии'}
+                                    </h4>
+                                    <span style={{ fontSize: '0.75rem', color: '#10b981' }}>
+                                        {language === 'kk' ? 'Жасалған' : 'Сгенерирован'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="skeleton-line" />
@@ -199,7 +203,7 @@ export default function Landing() {
                             <div className="skeleton-line" style={{ width: '90%' }} />
                             <div className="skeleton-line" style={{ width: '60%' }} />
                             <button style={{ width: '100%', marginTop: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                                <FileText size={16} /> Скачать PDF
+                                <FileText size={16} /> {language === 'kk' ? 'PDF жүктеу' : 'Скачать PDF'}
                             </button>
                         </motion.div>
 
@@ -210,17 +214,21 @@ export default function Landing() {
                             className="floating-widget left"
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.85rem', color: '#a3a3a3', fontWeight: 600 }}>Генерация ИИ</span>
+                                <span style={{ fontSize: '0.85rem', color: '#a3a3a3', fontWeight: 600 }}>
+                                    {language === 'kk' ? 'ИИ генерациясы' : 'Генерация ИИ'}
+                                </span>
                                 <Sparkles size={16} color="#8b5cf6" />
                             </div>
                             <p style={{ fontSize: '0.85rem', color: '#e5e5e5', margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
-                                "Создай подробный план урока на тему Квадратные уравнения для 8 класса с игровыми элементами..."
+                                {language === 'kk' 
+                                    ? '"8 сыныпқа арналған Квадрат теңдеулер тақырыбында ойын элементтерімен толық сабақ жоспарын жаса..."'
+                                    : '"Создай подробный план урока на тему Квадратные уравнения для 8 класса с игровыми элементами..."'}
                             </p>
                         </motion.div>
 
                         <motion.div style={{ y: y2 }} className="floating-widget right">
                             <h4 style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Users size={16} color="#3b82f6" /> Команды (8А)
+                                <Users size={16} color="#3b82f6" /> {language === 'kk' ? 'Командалар (8А)' : 'Команды (8А)'}
                             </h4>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 {['Алихан', 'Дана', 'Ерасыл', 'Айнур'].map((n, i) => (
@@ -237,10 +245,10 @@ export default function Landing() {
                 <div className="v3-marquee-content">
                     {[...Array(2)].map((_, i) => (
                         <div key={i} style={{ display: 'flex', gap: '4rem' }}>
-                            <div className="v3-marquee-item"><CheckCircle2 size={24} color="#8b5cf6" /> Нам доверяют 5000+ учителей</div>
-                            <div className="v3-marquee-item"><Users size={24} color="#3b82f6" /> 150K+ активных учеников</div>
-                            <div className="v3-marquee-item"><Star size={24} color="#fbbf24" /> Одобрено Министерством</div>
-                            <div className="v3-marquee-item"><Zap size={24} color="#10b981" /> Идеально для NIS и БИЛ</div>
+                            <div className="v3-marquee-item"><CheckCircle2 size={24} color="#8b5cf6" /> {language === 'kk' ? 'Бізге 5000+ мұғалім сенеді' : 'Нам доверяют 5000+ учителей'}</div>
+                            <div className="v3-marquee-item"><Users size={24} color="#3b82f6" /> {language === 'kk' ? '150K+ белсенді оқушы' : '150K+ активных учеников'}</div>
+                            <div className="v3-marquee-item"><Star size={24} color="#fbbf24" /> {language === 'kk' ? 'Министрлік мақұлдаған' : 'Одобрено Министерством'}</div>
+                            <div className="v3-marquee-item"><Zap size={24} color="#10b981" /> {language === 'kk' ? 'NIS және БИЛ үшін мінсіз' : 'Идеально для NIS и БИЛ'}</div>
                         </div>
                     ))}
                 </div>
@@ -261,18 +269,36 @@ export default function Landing() {
                     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                         <div className="timeline-step">
                             <div className="timeline-icon"><BrainCircuit size={20} /></div>
-                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>1. Задайте нейросети тему</h3>
-                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>Просто введите тему, выберите класс и предмет. ИИ мгновенно поймет ваши нужды и соберет материалы (теорию, задачи, игровые элементы), соответствующие школьной программе.</p>
+                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>
+                                {language === 'kk' ? '1. Нейрожеліге тақырып беріңіз' : '1. Задайте нейросети тему'}
+                            </h3>
+                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>
+                                {language === 'kk' 
+                                    ? 'Жай ғана тақырыпты енгізіп, сынып пен пәнді таңдаңыз. ИИ сіздің қажеттіліктеріңізді бірден түсініп, мектеп бағдарламасына сәйкес материалдарды (теория, тапсырмалар, ойындар) жинайды.'
+                                    : 'Просто введите тему, выберите класс и предмет. ИИ мгновенно поймет ваши нужды и соберет материалы (теорию, задачи, игровые элементы), соответствующие школьной программе.'}
+                            </p>
                         </div>
                         <div className="timeline-step">
                             <div className="timeline-icon"><Layers size={20} /></div>
-                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>2. Распределите классы на команды</h3>
-                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>Добавьте учеников и разделите их на команды одним кликом. Задайте каждой команде свое уникальное задание для работы над проектом.</p>
+                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>
+                                {language === 'kk' ? '2. Сыныпты командаларға бөліңіз' : '2. Распределите классы на команды'}
+                            </h3>
+                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>
+                                {language === 'kk' 
+                                    ? 'Оқушыларды қосып, оларды бір басу арқылы топтарға бөліңіз. Жобамен жұмыс істеу үшін әр командаға өзінің қайталанбас тапсырмасын беріңіз.' 
+                                    : 'Добавьте учеников и разделите их на команды одним кликом. Задайте каждой команде свое уникальное задание для работы над проектом.'}
+                            </p>
                         </div>
                         <div className="timeline-step">
                             <div className="timeline-icon"><FileText size={20} /></div>
-                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>3. Скачайте чистый PDF</h3>
-                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>План урока красиво сверстан. Нажмите кнопку «Скачать PDF», распечатайте документ и идите на урок полностью подготовленными!</p>
+                            <h3 style={{ fontSize: '1.5rem', color: 'white', marginBottom: '0.5rem', fontFamily: 'Outfit, sans-serif' }}>
+                                {language === 'kk' ? '3. Таза PDF жүктеп алыңыз' : '3. Скачайте чистый PDF'}
+                            </h3>
+                            <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>
+                                {language === 'kk' 
+                                    ? 'Сабақ жоспары әдемі безендірілген. «PDF жүктеу» түймесін басып, құжатты басып шығарыңыз және сабаққа толықтай дайын болып барыңыз!' 
+                                    : 'План урока красиво сверстан. Нажмите кнопку «Скачать PDF», распечатайте документ и идите на урок полностью подготовленными!'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -285,7 +311,9 @@ export default function Landing() {
                         initial="hidden" whileInView="show" viewport={{ once: true, margin: "-100px" }} variants={fadeUpObj}
                         style={{ textAlign: 'center', marginBottom: '4rem' }}
                     >
-                        <h2 className="font-outfit" style={{ fontSize: '3rem', color: 'white', marginBottom: '1rem' }}>Возможности платформы</h2>
+                        <h2 className="font-outfit" style={{ fontSize: '3rem', color: 'white', marginBottom: '1rem' }}>
+                            {language === 'kk' ? 'Платформа мүмкіндіктері' : 'Возможности платформы'}
+                        </h2>
                     </motion.div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
@@ -294,9 +322,13 @@ export default function Landing() {
                             <div style={{ background: 'rgba(139, 92, 246, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BrainCircuit size={32} color="#8b5cf6" />
                             </div>
-                            <h3 className="font-outfit" style={{ fontSize: '2rem', color: 'white', marginBottom: '16px' }}>AI Конструктор уроков</h3>
+                            <h3 className="font-outfit" style={{ fontSize: '2rem', color: 'white', marginBottom: '16px' }}>
+                                {language === 'kk' ? 'AI Сабақ конструкторы' : 'AI Конструктор уроков'}
+                            </h3>
                             <p style={{ color: '#a3a3a3', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '80%' }}>
-                                Забудьте о часах написания поурочных планов. Наш ИИ генерирует профессиональные планы, учитывая тайминг, цели и этапы урока. 
+                                {language === 'kk' 
+                                    ? 'Сабақ жоспарларын жазуға кететін сағаттарды ұмытыңыз. Біздің ИИ таймингті, сабақтың мақсаты мен кезеңдерін ескере отырып кәсіби жоспарлар жасайды.' 
+                                    : 'Забудьте о часах написания поурочных планов. Наш ИИ генерирует профессиональные планы, учитывая тайминг, цели и этапы урока.'}
                             </p>
                         </div>
 
@@ -304,9 +336,13 @@ export default function Landing() {
                             <div style={{ background: 'rgba(59, 130, 246, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BarChart3 size={32} color="#3b82f6" />
                             </div>
-                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: 'white', marginBottom: '16px' }}>Классы и Команды</h3>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: 'white', marginBottom: '16px' }}>
+                                {language === 'kk' ? 'Сыныптар мен Командалар' : 'Классы и Команды'}
+                            </h3>
                             <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>
-                                Заводите классы, добавляйте списки учеников и мгновенно делите их на группы для интерактивов и соревнований.
+                                {language === 'kk' 
+                                    ? 'Сыныптар ашыңыз, оқушылар тізімін қосыңыз және оларды интерактивті жарыстар үшін лезде топтарға бөліңіз.' 
+                                    : 'Заводите классы, добавляйте списки учеников и мгновенно делите их на группы для интерактивов и соревнований.'}
                             </p>
                         </div>
 
@@ -314,9 +350,13 @@ export default function Landing() {
                             <div style={{ background: 'rgba(16, 185, 129, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <FileText size={32} color="#10b981" />
                             </div>
-                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: 'white', marginBottom: '16px' }}>Экспорт в PDF</h3>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: 'white', marginBottom: '16px' }}>
+                                {language === 'kk' ? 'PDF форматына экспорттау' : 'Экспорт в PDF'}
+                            </h3>
                             <p style={{ color: '#a3a3a3', lineHeight: 1.6 }}>
-                                Подготовленные материалы в 1 клик скачиваются в формате PDF. Без лишних кнопок, меню и водяных знаков.
+                                {language === 'kk' 
+                                    ? 'Дайындалған материалдар 1 басу арқылы PDF форматында жүктеледі. Артық түймелерсіз, мәзірсіз және су белгілерісіз.' 
+                                    : 'Подготовленные материалы в 1 клик скачиваются в формате PDF. Без лишних кнопок, меню и водяных знаков.'}
                             </p>
                         </div>
 
@@ -324,9 +364,13 @@ export default function Landing() {
                             <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BookOpen size={32} color="#f59e0b" />
                             </div>
-                            <h3 className="font-outfit" style={{ fontSize: '2rem', color: 'white', marginBottom: '16px' }}>Облачная база знаний</h3>
+                            <h3 className="font-outfit" style={{ fontSize: '2rem', color: 'white', marginBottom: '16px' }}>
+                                {language === 'kk' ? 'Бұлтты білім базасы' : 'Облачная база знаний'}
+                            </h3>
                             <p style={{ color: '#a3a3a3', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '80%' }}>
-                                Храните свои уроки, прикрепляйте PDF, видео, YouTube-ролики. Всё всегда под рукой и доступно с любого устройства.
+                                {language === 'kk' 
+                                    ? 'Өз сабақтарыңызды сақтаңыз, PDF, бейне, YouTube роликтерін тіркеңіз. Барлығы әрқашан қол астында және кез келген құрылғыдан қолжетімді.' 
+                                    : 'Храните свои уроки, прикрепляйте PDF, видео, YouTube-ролики. Всё всегда под рукой и доступно с любого устройства.'}
                             </p>
                         </div>
 
@@ -338,10 +382,16 @@ export default function Landing() {
             <section id="pricing" style={{ padding: '100px 0', position: 'relative' }}>
                 <div className="container" style={{ position: 'relative', zIndex: 10 }}>
                     <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                        <h2 className="font-outfit" style={{ fontSize: '3rem', color: 'white', marginBottom: '1.5rem' }}>Инвестируйте в своё время</h2>
+                        <h2 className="font-outfit" style={{ fontSize: '3rem', color: 'white', marginBottom: '1.5rem' }}>
+                            {language === 'kk' ? 'Өз уақытыңызға инвестиция жасаңыз' : 'Инвестируйте в своё время'}
+                        </h2>
                         <div className="pricing-switcher">
-                            <button className={billingCycle === 'monthly' ? 'active' : ''} onClick={() => setBillingCycle('monthly')}>Ежемесячно</button>
-                            <button className={billingCycle === 'annually' ? 'active' : ''} onClick={() => setBillingCycle('annually')}>Ежегодно (-20%)</button>
+                            <button className={billingCycle === 'monthly' ? 'active' : ''} onClick={() => setBillingCycle('monthly')}>
+                                {language === 'kk' ? 'Ай сайын' : 'Ежемесячно'}
+                            </button>
+                            <button className={billingCycle === 'annually' ? 'active' : ''} onClick={() => setBillingCycle('annually')}>
+                                {language === 'kk' ? 'Жыл сайын (-20%)' : 'Ежегодно (-20%)'}
+                            </button>
                         </div>
                     </div>
 
@@ -349,40 +399,48 @@ export default function Landing() {
                         
                         {/* Free Tier */}
                         <div className="pricing-card-premium">
-                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '1rem' }}>Базовый</h3>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '1rem' }}>
+                                {language === 'kk' ? 'Базалық' : 'Базовый'}
+                            </h3>
                             <div style={{ fontSize: '3.5rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
-                                $0<span style={{ fontSize: '1rem', color: '#a3a3a3', fontWeight: 500 }}>/мес</span>
+                                $0<span style={{ fontSize: '1rem', color: '#a3a3a3', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
                             </div>
-                            <p style={{ color: '#a3a3a3', marginBottom: '2rem' }}>Для старта и знакомства с ИИ.</p>
+                            <p style={{ color: '#a3a3a3', marginBottom: '2rem' }}>
+                                {language === 'kk' ? 'ИИ-мен танысу және бастау үшін.' : 'Для старта и знакомства с ИИ.'}
+                            </p>
                             
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <li style={{ display: 'flex', gap: '12px', color: '#e5e5e5' }}><CheckCircle2 size={20} color="#a3a3a3" /> Создание 5 уроков/мес</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#e5e5e5' }}><CheckCircle2 size={20} color="#a3a3a3" /> PDF Экспорт с вотермаркой</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#a3a3a3', opacity: 0.5 }}>Хранилище файлов</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#e5e5e5' }}><CheckCircle2 size={20} color="#a3a3a3" /> {language === 'kk' ? 'Айына 5 сабақ жасау' : 'Создание 5 уроков/мес'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#e5e5e5' }}><CheckCircle2 size={20} color="#a3a3a3" /> {language === 'kk' ? 'Су белгісімен PDF экспорттау' : 'PDF Экспорт с вотермаркой'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#a3a3a3', opacity: 0.5 }}>{language === 'kk' ? 'Файлдар қоймасы' : 'Хранилище файлов'}</li>
                             </ul>
                             
-                            <Link to="/register" className="secondary-btn" style={{ width: '100%' }}>Начать бесплатно</Link>
+                            <Link to="/register" className="secondary-btn" style={{ width: '100%' }}>
+                                {language === 'kk' ? 'Тегін бастау' : 'Начать бесплатно'}
+                            </Link>
                         </div>
 
                         {/* Pro Tier */}
                         <div className="pricing-card-premium featured">
                             <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', padding: '6px 24px', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)' }}>
-                                Выбор Учителей
+                                {language === 'kk' ? 'Мұғалімдер таңдауы' : 'Выбор Учителей'}
                             </div>
                             <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#fff', marginBottom: '1rem' }}>Pro</h3>
                             <div style={{ fontSize: '3.5rem', fontWeight: 800, color: '#fff', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
-                                {billingCycle === 'monthly' ? '$19' : '$15'}<span style={{ fontSize: '1rem', color: '#a3a3a3', fontWeight: 500 }}>/мес</span>
+                                {billingCycle === 'monthly' ? '$19' : '$15'}<span style={{ fontSize: '1rem', color: '#a3a3a3', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
                             </div>
-                            <p style={{ color: '#d8b4fe', marginBottom: '2rem' }}>Полная суперсила ИИ без ограничений.</p>
+                            <p style={{ color: '#d8b4fe', marginBottom: '2rem' }}>
+                                {language === 'kk' ? 'ИИ-дің толық суперкүші шектеусіз.' : 'Полная суперсила ИИ без ограничений.'}
+                            </p>
                             
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> Безлимитная ИИ-генерация</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> Экспорт в PDF (чистый)</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> 10GB облачного хранилища</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> Приоритетная ИИ-модель</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Шектеусіз ИИ генерациясы' : 'Безлимитная ИИ-генерация'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'PDF-ке экспорттау (таза)' : 'Экспорт в PDF (чистый)'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? '10GB бұлтты қойма' : '10GB облачного хранилища'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Басымдықтағы ИИ моделі' : 'Приоритетная ИИ-модель'}</li>
                             </ul>
                             
-                            <Link to="/register" className="premium-btn" style={{ width: '100%' }}><span>Перейти на Pro</span></Link>
+                            <Link to="/register" className="premium-btn" style={{ width: '100%' }}><span>{language === 'kk' ? 'Pro-ға өту' : 'Перейти на Pro'}</span></Link>
                         </div>
                     </div>
                 </div>
@@ -396,7 +454,7 @@ export default function Landing() {
                         <span className="font-outfit" style={{ fontWeight: 800, fontSize: '1.5rem', color: 'white' }}>Urpaq.ai</span>
                     </div>
                     <p style={{ color: '#a3a3a3', fontSize: '0.9rem' }}>
-                        &copy; 2026 Urpaq.ai. Творите магию на уроках.
+                        &copy; 2026 Urpaq.ai. {language === 'kk' ? 'Сабақтарыңызда сиқыр жасаңыз.' : 'Творите магию на уроках.'}
                     </p>
                 </div>
             </footer>
