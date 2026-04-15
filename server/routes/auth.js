@@ -8,7 +8,8 @@ const { runQuery, getOne } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
 const { validate, registerSchema, loginSchema } = require('../middleware/validate');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend safely - if no key is provided, emails will fail gracefully or log to console
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
 const ACCESS_TOKEN_TTL = '15m';
