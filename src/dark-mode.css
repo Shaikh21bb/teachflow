@@ -2,7 +2,7 @@
    Dark Mode Overrides
    ========================================== */
 
-.theme-dark {
+:root.theme-dark {
   /* Pure Carbon Black Colors */
   --color-gray-50: #000000;
   --color-gray-100: #050505;
