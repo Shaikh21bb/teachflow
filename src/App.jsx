@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion,
-    PanelLeftClose, PanelLeftOpen, Menu, X
+    PanelLeftClose, PanelLeftOpen, UserCircle2
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -23,6 +23,7 @@ import Integrations from './pages/Integrations'
 import Quizzes from './pages/Quizzes'
 import QuizReport from './pages/QuizReport'
 import SettingsPage from './pages/Settings'
+import ProfilePage from './pages/Profile'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
@@ -54,6 +55,7 @@ function App() {
                             <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/profile" element={<ProtectedRoute><DashboardLayout><ProfilePage /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -62,18 +64,10 @@ function App() {
     )
 }
 
-// Protected Route wrapper
 function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth()
-
-    if (loading) {
-        return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка...</div>
-    }
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />
-    }
-
+    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка...</div>
+    if (!isAuthenticated) return <Navigate to="/login" replace />
     return children
 }
 
@@ -81,10 +75,6 @@ function DashboardLayout({ children }) {
     const location = useLocation()
     const { t, language, toggleLanguage } = useLanguage()
 
-    // Mobile drawer state
-    const [mobileOpen, setMobileOpen] = useState(false)
-
-    // Desktop collapsible state - persist in localStorage
     const [collapsed, setCollapsed] = useState(() => {
         try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch { return false }
     })
@@ -96,12 +86,6 @@ function DashboardLayout({ children }) {
             return next
         })
     }
-
-    // Close mobile drawer on navigation
-    const handleNavClick = () => setMobileOpen(false)
-
-    // Close on route change
-    useEffect(() => { setMobileOpen(false) }, [location.pathname])
 
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
@@ -116,28 +100,25 @@ function DashboardLayout({ children }) {
     ]
 
     const otherItems = [
+        { path: '/profile', icon: <UserCircle2 size={20} />, label: t('nav.profile') },
         { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
     ]
 
     return (
         <div className="dashboard">
-            {/* Desktop Sidebar (hidden on mobile via CSS) */}
-            <aside className={`sidebar ${collapsed ? 'collapsed' : ''} hide-on-mobile`}>
+            <aside className={"sidebar " + (collapsed ? 'collapsed' : '') + " hide-on-mobile"}>
                 <div className="sidebar-header">
-                    <Link to="/" className="sidebar-logo-area" onClick={handleNavClick}>
+                    <Link to="/" className="sidebar-logo-area">
                         <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem', flexShrink: 0 }}>AI</div>
                         <span className="sidebar-logo-text">Urpaq.ai</span>
                     </Link>
-                    {/* Desktop collapse toggle */}
                     <button
                         className="sidebar-toggle-btn hide-on-mobile"
                         onClick={toggleCollapsed}
-                        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                        title={collapsed ? 'Развернуть' : 'Свернуть'}
+                        title={collapsed ? 'Открыть' : 'Свернуть'}
                     >
                         {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
                     </button>
-                    {/* Mobile close button (removed) */}
                 </div>
 
                 <nav className="sidebar-nav">
@@ -147,8 +128,7 @@ function DashboardLayout({ children }) {
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                                onClick={handleNavClick}
+                                className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
                                 data-label={item.label}
                             >
                                 <span className="sidebar-link-icon">{item.icon}</span>
@@ -163,8 +143,7 @@ function DashboardLayout({ children }) {
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                                onClick={handleNavClick}
+                                className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
                                 data-label={item.label}
                             >
                                 <span className="sidebar-link-icon">{item.icon}</span>
@@ -173,8 +152,7 @@ function DashboardLayout({ children }) {
                         ))}
                         <NavLink
                             to="/settings"
-                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-                            onClick={handleNavClick}
+                            className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
                             data-label={t('nav.settings')}
                         >
                             <span className="sidebar-link-icon"><Settings size={20} /></span>
@@ -186,7 +164,6 @@ function DashboardLayout({ children }) {
                             rel="noopener noreferrer"
                             className="sidebar-link"
                             data-label={t('nav.help')}
-                            onClick={handleNavClick}
                         >
                             <span className="sidebar-link-icon"><HelpCircle size={20} /></span>
                             <span className="sidebar-link-label">{t('nav.help')}</span>
@@ -195,12 +172,9 @@ function DashboardLayout({ children }) {
                 </nav>
             </aside>
 
-            <main className={`main-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
+            <main className={"main-content " + (collapsed ? 'sidebar-collapsed' : '')}>
                 <header className="topbar">
-                    {/* Mobile hamburger button removed in favor of bottom nav */}
-
-                    {/* Mobile logo */}
-                    <Link to="/" className="mobile-header-logo hide-on-desktop" onClick={handleNavClick}>
+                    <Link to="/" className="mobile-header-logo hide-on-desktop">
                         <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>AI</div>
                         <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
                     </Link>
@@ -223,7 +197,7 @@ function DashboardLayout({ children }) {
                                 marginRight: '10px'
                             }}
                         >
-                            {language === 'kk' ? '🇰🇿 ҚАЗ' : '🇷🇺 РУС'}
+                            {language === 'kk' ? 'KAZ' : 'RUS'}
                         </button>
                         <UserProfile />
                     </div>
@@ -234,55 +208,45 @@ function DashboardLayout({ children }) {
                 </div>
             </main>
 
-            {/* PWA Mobile Bottom Navigation */}
             <MobileBottomNav items={navItems} />
         </div>
     )
 }
 
-// PWA Mobile Bottom Navigation
 function MobileBottomNav({ items }) {
     const { t, language } = useLanguage()
-    
-    // Choose 4 primary items for bottom nav (Home, Builder, Open Lessons, Bot)
-    // Plus a "Settings" link to replace the sidebar
-    const primaryItems = items.filter(i => 
+    const primaryItems = items.filter(i =>
         ['/dashboard', '/builder', '/open-lessons', '/alfarabi-bot'].includes(i.path)
-    );
-
+    )
     return (
         <nav className="mobile-bottom-nav hide-on-desktop">
             {primaryItems.map(item => (
                 <NavLink
                     key={item.path}
                     to={item.path}
-                    className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+                    className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
                 >
                     <div className="bottom-nav-icon">{item.icon}</div>
-                    <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
-                        {item.label}
-                    </span>
+                    <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>{item.label}</span>
                 </NavLink>
             ))}
             <NavLink
-                to="/settings"
-                className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+                to="/profile"
+                className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
             >
-                <div className="bottom-nav-icon"><Settings size={20} /></div>
+                <div className="bottom-nav-icon"><UserCircle2 size={20} /></div>
                 <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
-                    {t('nav.settings') || (language === 'kk' ? 'Баптаулар' : 'Настройки')}
+                    {t('nav.profile')}
                 </span>
             </NavLink>
         </nav>
-    );
+    )
 }
 
-// User Profile Component
 function UserProfile() {
     const { user, logout } = useAuth()
     const { language } = useLanguage()
     const [showDropdown, setShowDropdown] = useState(false)
-
     if (!user) return null
 
     function handleLogout() {
@@ -301,15 +265,10 @@ function UserProfile() {
                     <Bell size={20} />
                 </div>
                 <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
+                    width: '36px', height: '36px', borderRadius: '50%',
                     background: 'var(--gradient-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: 600
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 600
                 }}>
                     {user.name ? user.name.charAt(0).toUpperCase() : '?'}
                 </div>
@@ -317,41 +276,45 @@ function UserProfile() {
 
             {showDropdown && (
                 <>
-                    <div
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            zIndex: 999
-                        }}
-                        onClick={() => setShowDropdown(false)}
-                    />
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setShowDropdown(false)} />
                     <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: 0,
-                        marginTop: 'var(--spacing-2)',
-                        background: 'white',
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-lg)',
-                        minWidth: '220px',
-                        padding: 'var(--spacing-2)',
-                        zIndex: 1000
+                        position: 'absolute', top: '100%', right: 0,
+                        marginTop: 'var(--spacing-2)', background: 'white',
+                        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
+                        minWidth: '220px', padding: 'var(--spacing-2)', zIndex: 1000
                     }}>
-                        <div style={{
-                            padding: 'var(--spacing-3)',
-                            borderBottom: '1px solid var(--color-gray-200)'
-                        }}>
+                        <div style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-gray-200)' }}>
                             <div style={{ fontWeight: 600, marginBottom: '4px' }}>{user.name}</div>
                             <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>{user.email}</div>
                         </div>
-
-                        <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={handleLogout}
-                            style={{ width: '100%', justifyContent: 'flex-start', margin: 'var(--spacing-2) 0', display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            <LogOut size={16} /> <span>{language === 'kk' ? 'Шығу' : 'Выйти'}</span>
-                        </button>
+                        <div style={{ padding: '4px' }}>
+                            <a
+                                href="/profile"
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    padding: '8px 12px', borderRadius: '8px',
+                                    color: 'var(--color-gray-700)', textDecoration: 'none',
+                                    fontSize: 'var(--font-size-sm)', fontWeight: 500
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                onClick={() => setShowDropdown(false)}
+                            >
+                                <UserCircle2 size={16} />
+                                {language === 'kk' ? 'Профилім' : 'Мой профиль'}
+                            </a>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={handleLogout}
+                                style={{
+                                    width: '100%', justifyContent: 'flex-start',
+                                    marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px'
+                                }}
+                            >
+                                <LogOut size={16} />
+                                <span>{language === 'kk' ? 'Шығу' : 'Выйти'}</span>
+                            </button>
+                        </div>
                     </div>
                 </>
             )}
@@ -360,28 +323,22 @@ function UserProfile() {
 }
 
 function ThemeToggleButton() {
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleTheme } = useTheme()
     return (
         <button
             onClick={toggleTheme}
             className="btn btn-ghost"
             style={{
-                fontSize: '1.2rem',
-                padding: '6px 10px',
-                borderRadius: '8px',
-                color: 'var(--color-gray-700)',
-                background: 'var(--color-gray-100)',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center'
+                fontSize: '1.2rem', padding: '6px 10px', borderRadius: '8px',
+                color: 'var(--color-gray-700)', background: 'var(--color-gray-100)',
+                border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}
             aria-label="Toggle Theme"
         >
             {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
-    );
+    )
 }
 
 export default App

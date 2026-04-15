@@ -268,8 +268,195 @@ router.put('/profile', authenticateToken, validate(require('../middleware/valida
 });
 
 // ──────────────────────────────────────────
-// PUT /api/auth/password
+// GET /api/auth/teacher-profile
 // ──────────────────────────────────────────
+router.get('/teacher-profile', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Get user base info
+        const user = await getOne(
+            'SELECT id, name, email, role, subjects, avatar_url FROM users WHERE id = ?',
+            [userId]
+        );
+        if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+
+        try { user.subjects = JSON.parse(user.subjects || '[]'); } catch { user.subjects = []; }
+
+        // Get or create teacher_profiles row
+        let profile = await getOne(
+            'SELECT * FROM teacher_profiles WHERE teacher_id = ?',
+            [userId]
+        );
+
+        if (!profile) {
+            await runQuery(
+                `INSERT OR IGNORE INTO teacher_profiles (teacher_id, bio, subject_expertise, school, city, social_links)
+                 VALUES (?, '', '[]', '', '', '{}')`,
+                [userId]
+            );
+            profile = await getOne('SELECT * FROM teacher_profiles WHERE teacher_id = ?', [userId]);
+        }
+
+        // Parse JSON fields
+        try { profile.subject_expertise = JSON.parse(profile.subject_expertise || '[]'); } catch { profile.subject_expertise = []; }
+        try { profile.social_links = JSON.parse(profile.social_links || '{}'); } catch { profile.social_links = {}; }
+
+        // Connections count
+        const followingCount = await getOne(
+            'SELECT COUNT(*) as count FROM user_connections WHERE follower_id = ?', [userId]
+        );
+        const followersCount = await getOne(
+            'SELECT COUNT(*) as count FROM user_connections WHERE following_id = ?', [userId]
+        );
+
+        res.json({
+            user,
+            profile: {
+                ...profile,
+                avatar_url: profile.avatar_url || user.avatar_url || null,
+            },
+            stats: {
+                following: followingCount?.count || 0,
+                followers: followersCount?.count || 0,
+            }
+        });
+    } catch (error) {
+        console.error('Get teacher profile error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// PUT /api/auth/teacher-profile
+// ──────────────────────────────────────────
+router.put('/teacher-profile', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const {
+            name, bio, school, city,
+            instagram_url, youtube_url, telegram_url, website_url,
+            avatar_url, subjects
+        } = req.body;
+
+        // Update users table
+        const subjectsJson = JSON.stringify(Array.isArray(subjects) ? subjects : []);
+        await runQuery(
+            'UPDATE users SET name = ?, subjects = ?, avatar_url = ? WHERE id = ?',
+            [name || '', subjectsJson, avatar_url || null, userId]
+        );
+
+        // Upsert teacher_profiles
+        await runQuery(
+            `INSERT INTO teacher_profiles (teacher_id, bio, school, city, instagram_url, youtube_url, telegram_url, website_url, avatar_url, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+             ON CONFLICT(teacher_id) DO UPDATE SET
+                bio = excluded.bio,
+                school = excluded.school,
+                city = excluded.city,
+                instagram_url = excluded.instagram_url,
+                youtube_url = excluded.youtube_url,
+                telegram_url = excluded.telegram_url,
+                website_url = excluded.website_url,
+                avatar_url = excluded.avatar_url,
+                updated_at = CURRENT_TIMESTAMP`,
+            [userId, bio || '', school || '', city || '',
+             instagram_url || null, youtube_url || null,
+             telegram_url || null, website_url || null,
+             avatar_url || null]
+        );
+
+        res.json({ success: true, message: 'Профиль жаңартылды' });
+    } catch (error) {
+        console.error('Update teacher profile error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// GET /api/auth/colleagues
+// List all teachers (excluding self), with connection status
+// ──────────────────────────────────────────
+const { getAll } = require('../db/database');
+
+router.get('/colleagues', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const search = (req.query.search || '').trim();
+
+        let query = `
+            SELECT 
+                u.id, u.name, u.email, u.subjects,
+                COALESCE(tp.avatar_url, u.avatar_url) as avatar_url,
+                tp.bio, tp.school, tp.city,
+                CASE WHEN uc.follower_id IS NOT NULL THEN 1 ELSE 0 END as is_following
+            FROM users u
+            LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+            LEFT JOIN user_connections uc ON uc.follower_id = ? AND uc.following_id = u.id
+            WHERE u.id != ? AND u.is_active = 1
+        `;
+        const params = [userId, userId];
+
+        if (search) {
+            query += ` AND (u.name LIKE ? OR u.email LIKE ? OR tp.school LIKE ?)`;
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        query += ` ORDER BY is_following DESC, u.name ASC LIMIT 100`;
+
+        const colleagues = await getAll(query, params);
+
+        const result = colleagues.map(c => {
+            let subjects = [];
+            try { subjects = JSON.parse(c.subjects || '[]'); } catch {}
+            return { ...c, subjects, is_following: c.is_following === 1 };
+        });
+
+        res.json({ colleagues: result });
+    } catch (error) {
+        console.error('Get colleagues error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// ──────────────────────────────────────────
+// POST /api/auth/colleagues/toggle
+// Toggle follow / unfollow a colleague
+// ──────────────────────────────────────────
+router.post('/colleagues/toggle', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { targetId } = req.body;
+
+        if (!targetId || targetId === userId) {
+            return res.status(400).json({ error: 'Жарамсыз сұраныс' });
+        }
+
+        const existing = await getOne(
+            'SELECT 1 FROM user_connections WHERE follower_id = ? AND following_id = ?',
+            [userId, targetId]
+        );
+
+        if (existing) {
+            await runQuery(
+                'DELETE FROM user_connections WHERE follower_id = ? AND following_id = ?',
+                [userId, targetId]
+            );
+            res.json({ success: true, action: 'unfollowed' });
+        } else {
+            await runQuery(
+                'INSERT OR IGNORE INTO user_connections (follower_id, following_id) VALUES (?, ?)',
+                [userId, targetId]
+            );
+            res.json({ success: true, action: 'followed' });
+        }
+    } catch (error) {
+        console.error('Toggle colleague error:', error.message);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+
 router.put('/password', authenticateToken, validate(require('../middleware/validate').passwordChangeSchema), async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;

@@ -174,6 +174,23 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_quizzes_user_id ON quizzes(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_quiz_attempts_quiz_id ON quiz_attempts(quiz_id)`,
+        // v6 - User Connections (colleagues/follow system)
+        `CREATE TABLE IF NOT EXISTS user_connections (
+            follower_id INTEGER NOT NULL,
+            following_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (follower_id, following_id),
+            FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_user_connections_follower ON user_connections(follower_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_user_connections_following ON user_connections(following_id)`,
+        // v6 - Extended teacher profile columns
+        `ALTER TABLE teacher_profiles ADD COLUMN instagram_url TEXT`,
+        `ALTER TABLE teacher_profiles ADD COLUMN youtube_url TEXT`,
+        `ALTER TABLE teacher_profiles ADD COLUMN telegram_url TEXT`,
+        `ALTER TABLE teacher_profiles ADD COLUMN website_url TEXT`,
+        `ALTER TABLE teacher_profiles ADD COLUMN avatar_url TEXT`,
         // Indexes
         `CREATE INDEX IF NOT EXISTS idx_lessons_user_id ON lessons(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_lessons_created_at ON lessons(created_at)`,
