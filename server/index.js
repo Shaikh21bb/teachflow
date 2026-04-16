@@ -315,6 +315,8 @@ async function startServer() {
     });
 }
 
-startServer().catch(console.error);
+if (require.main === module) {
+    startServer().catch(console.error);
+}
 
 module.exports = app;
