@@ -213,7 +213,7 @@ function ClassDashboard() {
                 // Empty state
                 <div style={{
                     textAlign: 'center', padding: '80px 40px',
-                    background: 'white', borderRadius: '20px',
+                    background: 'var(--color-bg-card, var(--color-white, white))', borderRadius: '20px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                 }}>
                     <div style={{ fontSize: '4rem', marginBottom: '16px' }}>👥</div>
@@ -450,7 +450,7 @@ function ClassDashboard() {
             {showAddStudent && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
                     onClick={() => setShowAddStudent(false)}>
-                    <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '420px' }}
+                    <div style={{ background: 'var(--color-bg-card, var(--color-white, white))', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '420px' }}
                         onClick={e => e.stopPropagation()}>
                         <h2 style={{ marginBottom: '24px', fontWeight: 700 }}>
                             {L('Добавить ученика', 'Оқушы қосу')}
@@ -510,7 +510,7 @@ function ClassDashboard() {
             {showAddClass && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
                     onClick={() => setShowAddClass(false)}>
-                    <div style={{ background: 'white', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '380px' }}
+                    <div style={{ background: 'var(--color-bg-card, var(--color-white, white))', borderRadius: '20px', padding: '28px', width: '100%', maxWidth: '380px' }}
                         onClick={e => e.stopPropagation()}>
                         <h2 style={{ marginBottom: '24px', fontWeight: 700 }}>
                             {L('Создать новый класс', 'Жаңа сынып жасау')}

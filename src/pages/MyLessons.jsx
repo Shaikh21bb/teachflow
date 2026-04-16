@@ -455,7 +455,7 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                 onClick={e => e.stopPropagation()}
                                 style={{
                                     position: 'absolute', top: '36px', right: 0, zIndex: 100,
-                                    background: 'white', borderRadius: '12px',
+                                    background: 'var(--color-bg-card, var(--color-white, white))', borderRadius: '12px',
                                     boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                                     minWidth: '180px', padding: '6px',
                                     border: '1px solid var(--color-gray-100, #f3f4f6)'
