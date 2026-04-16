@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check } from 'lucide-react'
+import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
@@ -197,6 +197,21 @@ export default function LessonBuilderNew() {
             setSaving(false)
         }
     }
+    const handleDelete = async () => {
+        const idToDelete = savedLessonId || editId;
+        if (!idToDelete) return;
+        if (window.confirm('Вы уверены, что хотите удалить этот урок? Это действие необратимо.')) {
+            try {
+                setSaving(true);
+                await lessonsAPI.delete(idToDelete);
+                showToast('Урок успешно удален!');
+                setTimeout(() => navigate('/my-lessons'), 1000);
+            } catch (e) {
+                showToast('Ошибка при удалении: ' + e.message, 'error');
+                setSaving(false);
+            }
+        }
+    };
 
     const handlePrint = useReactToPrint({
         content: () => printRef.current,
@@ -237,7 +252,7 @@ export default function LessonBuilderNew() {
                     padding: '8px 14px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-gray-600,#4b5563)',
                     display: 'flex', alignItems: 'center', gap: '6px'
                 }}>← Назад</button>
-                <div>
+                <div style={{ flex: 1 }}>
                     <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {editId ? <><Edit size={24}/> Редактирование урока</> : <><Plus size={24}/> Новый урок</>}
                     </h1>
@@ -245,52 +260,99 @@ export default function LessonBuilderNew() {
                         Автор: {user?.name}
                     </p>
                 </div>
+                {(savedLessonId || editId) && (
+                    <button onClick={handleDelete} disabled={saving} style={{
+                        background: '#fee2e2', color: '#ef4444', border: 'none',
+                        padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
+                        fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
+                        transition: 'background 0.2s'
+                    }}>
+                        {saving ? <Loader2 size={18} /> : <Trash2 size={18} />} 
+                        <span className="hide-on-mobile">Удалить</span>
+                    </button>
+                )}
             </div>
 
             {/* Step indicator */}
-            <div style={{ display: 'flex', gap: '0', marginBottom: '32px', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--color-gray-100,#f3f4f6)' }}>
+            <div className="step-tabs" style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                marginBottom: '32px', 
+                padding: '8px',
+                background: 'var(--color-gray-100, #f3f4f6)',
+                borderRadius: '16px',
+            }}>
                 {STEPS.map((s, i) => (
-                    <button key={i} onClick={() => setStep(i)} style={{
-                        flex: 1, padding: '14px', border: 'none', cursor: 'pointer', fontWeight: 600,
-                        fontSize: '0.875rem', transition: 'all 0.2s',
-                        background: step === i ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : i < step ? '#ede9fe' : 'white',
-                        color: step === i ? 'white' : i < step ? '#6366f1' : 'var(--color-gray-500,#6b7280)',
-                        borderRight: i < STEPS.length - 1 ? '1px solid var(--color-gray-100,#f3f4f6)' : 'none'
-                    }}>
-                        {i < step ? '✓ ' : ''}{s}
+                    <button 
+                        key={i} 
+                        className={`step-tab ${step === i ? 'active' : ''}`}
+                        onClick={() => setStep(i)} 
+                        style={{
+                            flex: 1, 
+                            padding: '12px', 
+                            border: 'none', 
+                            cursor: 'pointer', 
+                            fontWeight: 600,
+                            fontSize: '0.875rem', 
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            background: step === i ? 'var(--color-white, #fff)' : 'transparent',
+                            color: step === i ? 'var(--color-primary-600)' : 'var(--color-gray-500)',
+                            boxShadow: step === i ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                        }}
+                    >
+                        <span style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: step === i ? 'var(--color-primary-600)' : i < step ? 'var(--color-success-500)' : 'var(--color-gray-300)',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 700
+                        }}>
+                            {i < step ? '✓' : i + 1}
+                        </span>
+                        <span className="hide-on-mobile">{s}</span>
                     </button>
                 ))}
             </div>
 
             {/* ─── STEP 0: INFO ──────────────────────────────── */}
             {step === 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="step-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <Card title={<><Info size={20} /> Основная информация</>}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="builder-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div style={{ gridColumn: '1/-1' }}>
                                 <Label>Название урока *</Label>
                                 <input
                                     value={form.title}
                                     onChange={e => setField('title', e.target.value)}
                                     placeholder="Например: Квадратные уравнения — решение по формуле"
-                                    style={inputStyle}
+                                    className="builder-input"
                                 />
                             </div>
                             <div>
                                 <Label>Предмет</Label>
-                                <select value={form.subject} onChange={e => setField('subject', e.target.value)} style={inputStyle}>
+                                <select value={form.subject} onChange={e => setField('subject', e.target.value)} className="builder-input">
                                     {SUBJECTS.map(s => <option key={s}>{s}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <Label>Класс</Label>
-                                <select value={form.grade} onChange={e => setField('grade', Number(e.target.value))} style={inputStyle}>
+                                <select value={form.grade} onChange={e => setField('grade', Number(e.target.value))} className="builder-input">
                                     {GRADES.map(g => <option key={g} value={g}>{g} класс</option>)}
                                 </select>
                             </div>
                             <div>
                                 <Label>Длительность (мин)</Label>
-                                <input type="number" value={form.duration} onChange={e => setField('duration', Number(e.target.value))} min={5} max={180} style={inputStyle} />
+                                <input type="number" value={form.duration} onChange={e => setField('duration', Number(e.target.value))} min={5} max={180} className="builder-input" />
                             </div>
                         </div>
                     </Card>
@@ -332,7 +394,7 @@ export default function LessonBuilderNew() {
 
             {/* ─── STEP 1: FILES ─────────────────────────────── */}
             {step === 1 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="step-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* Thumbnail */}
                     <Card title={<><ImageIcon size={20} /> Обложка урока</>}>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
@@ -381,11 +443,13 @@ export default function LessonBuilderNew() {
                             onDragLeave={() => setDragging(false)}
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
+                            className={`drag-area ${dragging ? 'drag-area-active' : ''}`}
                             style={{
                                 border: `2px dashed ${dragging ? '#6366f1' : 'var(--color-gray-200,#e5e7eb)'}`,
                                 borderRadius: '16px', padding: '40px 20px', textAlign: 'center',
-                                cursor: 'pointer', background: dragging ? '#ede9fe' : 'var(--color-gray-50,#f9fafb)',
-                                transition: 'all 0.2s', marginBottom: '16px'
+                                cursor: 'pointer', background: dragging ? 'var(--color-primary-50,#ede9fe)' : 'var(--color-bg-card, var(--color-gray-50,#f9fafb))',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', marginBottom: '16px',
+                                position: 'relative', overflow: 'hidden'
                             }}
                         >
                             <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}><FolderUp size={40} color="var(--color-gray-400)" /></div>
@@ -456,7 +520,7 @@ export default function LessonBuilderNew() {
 
             {/* ─── STEP 2: PREVIEW ───────────────────────────── */}
             {step === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="step-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div ref={printRef} className="print-container">
                     <Card title={<><Eye size={20} /> Предварительный просмотр</>}>
                         {/* Thumbnail */}
@@ -534,22 +598,21 @@ export default function LessonBuilderNew() {
                     </Card>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                        <button onClick={() => setStep(1)} style={ghostBtn}>← Назад</button>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={handlePrint} className="no-print" style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', borderColor: '#10b981'}}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                        <button onClick={() => setStep(1)} className="ghost-btn">← Назад</button>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={handlePrint} className="no-print ghost-btn" style={{ color: 'var(--color-success-600)', borderColor: 'var(--color-success-200)' }}>
                                 📄 Скачать PDF
                             </button>
-                            <button onClick={() => saveDraft(false)} disabled={saving} style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px'}}>
-                                {saving ? <Loader2 size={16} /> : <Save size={16} />} Сохранить черновик
+                            <button onClick={() => saveDraft(false)} disabled={saving} className="ghost-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Сохранить черновик
                             </button>
-                            <button onClick={() => saveDraft(true)} disabled={saving} style={{
-                                ...primaryBtn,
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                background: 'linear-gradient(135deg,#10b981,#059669)',
-                                boxShadow: '0 4px 12px rgba(16,185,129,0.35)'
+                            <button onClick={() => saveDraft(true)} disabled={saving} className="primary-btn" style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                background: 'linear-gradient(135deg, var(--color-success-500), var(--color-success-700))',
+                                boxShadow: '0 4px 15px rgba(34, 197, 94, 0.3)'
                             }}>
-                                {saving ? <Loader2 size={16} /> : <Rocket size={16} />} Опубликовать
+                                {saving ? <Loader2 size={16} className="spin" /> : <Rocket size={16} />} Опубликовать
                             </button>
                         </div>
                     </div>
@@ -557,7 +620,101 @@ export default function LessonBuilderNew() {
             )}
 
             <style>{`
-                @keyframes slideIn { from { transform:translateX(20px);opacity:0 } to { transform:translateX(0);opacity:1 } }
+                @keyframes slideIn { from { transform:translateX(20px);opacity:0; } to { transform:translateX(0);opacity:1; } }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+                
+                .step-content { 
+                    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+                }
+                
+                .drag-area-active { 
+                    animation: pulse-border 1.5s infinite; 
+                    transform: scale(1.01); 
+                    border-color: var(--color-primary-500) !important; 
+                    background: var(--color-primary-50) !important;
+                }
+                
+                .drag-area:hover:not(.drag-area-active) { 
+                    border-color: var(--color-primary-400) !important; 
+                    background: var(--color-gray-50) !important; 
+                    transform: translateY(-2px);
+                }
+                
+                .step-tab:hover:not(.active) {
+                    background: rgba(255,255,255,0.5) !important;
+                    color: var(--color-primary-500) !important;
+                }
+
+                .builder-card {
+                    backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
+                    background: var(--color-bg-card, rgba(255, 255, 255, 0.95)) !important;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .builder-card:hover {
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.06) !important;
+                    transform: translateY(-2px);
+                }
+
+                .builder-input {
+                    width: 100%; padding: 12px 16px; border-radius: 12px;
+                    border: 1px solid var(--color-gray-200, #e5e7eb);
+                    background: var(--color-gray-50, #f9fafb); fontSize: 0.9rem;
+                    outline: none; transition: all 0.2s; color: var(--color-gray-900);
+                    font-family: inherit;
+                }
+
+                .builder-input:focus {
+                    border-color: var(--color-primary-500) !important;
+                    box-shadow: 0 0 0 4px var(--color-primary-100) !important;
+                    background: var(--color-white, #fff) !important;
+                }
+
+                .primary-btn {
+                    background: var(--gradient-primary, linear-gradient(135deg, #2563eb, #7c3aed));
+                    color: white; border: none; borderRadius: 12px;
+                    padding: 12px 28px; cursor: pointer; fontWeight: 700;
+                    fontSize: 0.9rem; transition: all 0.2s;
+                    boxShadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+                }
+
+                .primary-btn:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                    boxShadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+                }
+
+                .ghost-btn {
+                    background: var(--color-white, #fff); color: var(--color-gray-600);
+                    border: 1px solid var(--color-gray-200);
+                    borderRadius: 12px; padding: 12px 24px; cursor: pointer;
+                    fontWeight: 600; fontSize: 0.9rem; transition: all 0.2s;
+                }
+
+                .ghost-btn:hover {
+                    background: var(--color-gray-50);
+                    border-color: var(--color-gray-300);
+                    transform: translateY(-1px);
+                }
+
+                .spin { animation: spin 1s linear infinite; }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+                @media (max-width: 600px) {
+                    .hide-on-mobile { display: none !important; }
+                    .builder-grid { grid-template-columns: 1fr !important; }
+                    .step-tabs { 
+                        flex-direction: row; 
+                        padding: 4px;
+                        gap: 4px;
+                    }
+                    .step-tab { 
+                        padding: 8px 4px !important;
+                        font-size: 0.75rem !important;
+                    }
+                }
             `}</style>
         </div>
     )
@@ -566,10 +723,10 @@ export default function LessonBuilderNew() {
 // ─── Sub-components ──────────────
 function Card({ title, children }) {
     return (
-        <div style={{
-            background: 'var(--color-white, white)', borderRadius: '20px',
-            padding: '24px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-            border: '1px solid var(--color-gray-100,#f3f4f6)'
+        <div className="builder-card" style={{
+            background: 'var(--color-bg-card, var(--color-white, white))', borderRadius: '24px',
+            padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+            border: '1px solid var(--color-gray-200, #f3f4f6)'
         }}>
             <h3 style={{ margin: '0 0 20px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>{title}</h3>
             {children}
@@ -578,28 +735,5 @@ function Card({ title, children }) {
 }
 
 function Label({ children, style }) {
-    return <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-gray-700,#374151)', ...style }}>{children}</label>
-}
-
-const inputStyle = {
-    width: '100%', padding: '10px 14px', borderRadius: '10px',
-    border: '1px solid var(--color-gray-200,#e5e7eb)',
-    background: 'var(--color-gray-50,#f9fafb)', fontSize: '0.9rem',
-    outline: 'none', boxSizing: 'border-box', marginBottom: '0',
-    color: 'var(--color-gray-900,#111827)', fontFamily: 'inherit'
-}
-
-const primaryBtn = {
-    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-    color: 'white', border: 'none', borderRadius: '12px',
-    padding: '12px 28px', cursor: 'pointer', fontWeight: 700,
-    fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(99,102,241,0.35)',
-    transition: 'transform 0.15s, box-shadow 0.15s'
-}
-
-const ghostBtn = {
-    background: 'none', color: 'var(--color-gray-600,#4b5563)',
-    border: '1px solid var(--color-gray-200,#e5e7eb)',
-    borderRadius: '12px', padding: '12px 20px', cursor: 'pointer',
-    fontWeight: 600, fontSize: '0.9rem'
+    return <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-gray-700)', ...style }}>{children}</label>
 }

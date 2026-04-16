@@ -314,7 +314,11 @@ router.get('/teacher-profile', authenticateToken, async (req, res) => {
             user,
             profile: {
                 ...profile,
-                avatar_url: profile.avatar_url || user.avatar_url || null,
+                instagram_url: profile.social_links?.instagram_url || '',
+                youtube_url: profile.social_links?.youtube_url || '',
+                telegram_url: profile.social_links?.telegram_url || '',
+                website_url: profile.social_links?.website_url || '',
+                avatar_url: user.avatar_url || null,
             },
             stats: {
                 following: followingCount?.count || 0,
@@ -347,23 +351,23 @@ router.put('/teacher-profile', authenticateToken, async (req, res) => {
         );
 
         // Upsert teacher_profiles
+        const socialLinksStr = JSON.stringify({
+            instagram_url: instagram_url || '',
+            youtube_url: youtube_url || '',
+            telegram_url: telegram_url || '',
+            website_url: website_url || ''
+        });
+
         await runQuery(
-            `INSERT INTO teacher_profiles (teacher_id, bio, school, city, instagram_url, youtube_url, telegram_url, website_url, avatar_url, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `INSERT INTO teacher_profiles (teacher_id, bio, school, city, social_links, updated_at)
+             VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
              ON CONFLICT(teacher_id) DO UPDATE SET
                 bio = excluded.bio,
                 school = excluded.school,
                 city = excluded.city,
-                instagram_url = excluded.instagram_url,
-                youtube_url = excluded.youtube_url,
-                telegram_url = excluded.telegram_url,
-                website_url = excluded.website_url,
-                avatar_url = excluded.avatar_url,
+                social_links = excluded.social_links,
                 updated_at = CURRENT_TIMESTAMP`,
-            [userId, bio || '', school || '', city || '',
-             instagram_url || null, youtube_url || null,
-             telegram_url || null, website_url || null,
-             avatar_url || null]
+            [userId, bio || '', school || '', city || '', socialLinksStr]
         );
 
         res.json({ success: true, message: 'Профиль жаңартылды' });

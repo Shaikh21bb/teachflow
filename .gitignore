@@ -20,6 +20,8 @@ Thumbs.db
 
 # Database (SQLite file - recreated on deploy)
 server/db/teachflow.db
+server/db/local.db
+server/db/*.db
 
 # Logs
 *.log
