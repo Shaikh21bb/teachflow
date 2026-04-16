@@ -18,10 +18,11 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Database (SQLite file - recreated on deploy)
-server/db/teachflow.db
-server/db/local.db
+# Database (SQLite files)
 server/db/*.db
+server/db/*.sqlite
+server/db/*.sqlitedb
+server/db/local.db
 
 # Logs
 *.log
