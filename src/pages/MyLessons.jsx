@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { lessonsAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { 
+    Plus, Search, LayoutGrid, List, MoreVertical, 
+    Share2, Edit3, Trash2, Archive, Copy, ExternalLink,
+    BookOpen, Users, Eye, Download, FileText, CheckCircle, Clock,
+    Loader2, Calendar
+} from 'lucide-react'
 
 const SUBJECTS = ['Все', 'Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский']
 const GRADES = ['Все', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
@@ -194,96 +200,112 @@ export default function MyLessons() {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>📚 Мои уроки</h1>
-                    <p style={{ margin: '4px 0 0', color: 'var(--color-gray-500, #6b7280)' }}>
-                        Привет, {user?.name}! Управляйте своими материалами
+                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: 'var(--color-gray-900)' }}>📚 Мои уроки</h1>
+                    <p style={{ margin: '4px 0 0', color: 'var(--color-gray-500)', fontSize: '1rem' }}>
+                        Привет, <span style={{ fontWeight: 700, color: 'var(--color-primary-600)' }}>{user?.name}</span>! Управляйте своими материалами
                     </p>
                 </div>
-                <Link to="/builder" style={{
-                    background: 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))',
-                    color: 'white', textDecoration: 'none', padding: '12px 24px',
-                    borderRadius: '12px', fontWeight: 700, fontSize: '0.95rem',
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
-                    transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                <Link to="/builder" className="primary-btn" style={{ 
+                    textDecoration: 'none', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '10px',
+                    padding: '14px 28px',
+                    background: 'var(--gradient-primary)',
+                    boxShadow: '0 8px 25px rgba(37, 99, 235, 0.25)'
                 }}>
-                    ➕ Создать урок
+                    <Plus size={20} /> Создать урок
                 </Link>
             </div>
 
             {/* Stats Cards */}
             {stats && (
                 <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                    gap: '16px', marginBottom: '28px'
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '20px', marginBottom: '40px'
                 }}>
                     {[
-                        { label: 'Всего уроков', value: stats.total_lessons, icon: '📚', color: '#6366f1' },
-                        { label: 'Опубликовано', value: stats.published, icon: '✅', color: '#10b981' },
-                        { label: 'Черновики', value: stats.drafts, icon: '📝', color: '#f59e0b' },
-                        { label: 'Просмотры', value: stats.total_views, icon: '👁', color: '#3b82f6' },
-                        { label: 'Загрузки', value: stats.total_downloads, icon: '⬇️', color: '#8b5cf6' },
+                        { label: 'Всего уроков', value: stats.total_lessons, icon: <BookOpen size={24} />, color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
+                        { label: 'Опубликовано', value: stats.published, icon: <CheckCircle size={24} />, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+                        { label: 'Черновики', value: stats.drafts, icon: <FileText size={24} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
+                        { label: 'Просмотры', value: stats.total_views, icon: <Eye size={24} />, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
                     ].map(card => (
-                        <div key={card.label} style={{
-                            background: 'var(--color-white, white)', borderRadius: '16px',
-                            padding: '20px 16px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                            border: '1px solid var(--color-gray-100, #f3f4f6)',
-                            textAlign: 'center', transition: 'transform 0.2s'
+                        <div key={card.label} className="builder-card" style={{
+                            padding: '24px',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '20px',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ fontSize: '1.8rem', marginBottom: '6px' }}>{card.icon}</div>
-                            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: card.color }}>{card.value ?? 0}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500, #6b7280)', marginTop: '4px' }}>{card.label}</div>
+                            <div style={{
+                                width: '56px', height: '56px', borderRadius: '16px',
+                                background: card.bg, color: card.color,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                {card.icon}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-gray-900)', lineHeight: '1.2' }}>{card.value ?? 0}</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--color-gray-500)', fontWeight: 500 }}>{card.label}</div>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
 
             {/* Filters */}
-            <div style={{
-                background: 'var(--color-white, white)', borderRadius: '16px', padding: '20px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '20px',
-                display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center'
+            <div className="builder-card" style={{
+                padding: '16px 20px',
+                marginBottom: '32px',
+                display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center'
             }}>
                 {/* Search */}
-                <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
-                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '1rem' }}>🔍</span>
+                <div style={{ position: 'relative', flex: '1 1 300px', minWidth: '240px' }}>
+                    <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-gray-400)' }} />
                     <input
                         type="text"
                         placeholder="Поиск по названию..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        style={{
-                            width: '100%', padding: '10px 12px 10px 36px', borderRadius: '10px',
-                            border: '1px solid var(--color-gray-200, #e5e7eb)', background: 'var(--color-gray-50, #f9fafb)',
-                            fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box'
-                        }}
+                        className="builder-input"
+                        style={{ paddingLeft: '44px' }}
                     />
                 </div>
 
-                <select value={subject} onChange={e => setSubject(e.target.value)} style={selectStyle}>
-                    {SUBJECTS.map(s => <option key={s} value={s === 'Все' ? '' : s}>{s}</option>)}
-                </select>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: '1 1 auto' }}>
+                    <select value={subject} onChange={e => setSubject(e.target.value)} className="builder-input" style={{ width: 'auto', minWidth: '140px' }}>
+                        {SUBJECTS.map(s => <option key={s} value={s === 'Все' ? '' : s}>{s}</option>)}
+                    </select>
 
-                <select value={grade} onChange={e => setGrade(e.target.value)} style={selectStyle}>
-                    {GRADES.map(g => <option key={g} value={g === 'Все' ? '' : g}>{g === 'Все' ? 'Все классы' : `${g} класс`}</option>)}
-                </select>
+                    <select value={grade} onChange={e => setGrade(e.target.value)} className="builder-input" style={{ width: 'auto', minWidth: '130px' }}>
+                        {GRADES.map(g => <option key={g} value={g === 'Все' ? '' : g}>{g === 'Все' ? 'Все классы' : `${g} класс`}</option>)}
+                    </select>
 
-                <select value={status} onChange={e => setStatus(e.target.value)} style={selectStyle}>
-                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                    <select value={status} onChange={e => setStatus(e.target.value)} className="builder-input" style={{ width: 'auto', minWidth: '160px' }}>
+                        {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                </div>
 
                 {/* View toggle */}
-                <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
-                    {['grid', 'list'].map(v => (
-                        <button key={v} onClick={() => setView(v)} style={{
+                <div style={{ display: 'flex', gap: '6px', background: 'var(--color-gray-100)', padding: '4px', borderRadius: '12px', marginLeft: 'auto' }}>
+                    {[
+                        { id: 'grid', icon: <LayoutGrid size={18} /> },
+                        { id: 'list', icon: <List size={18} /> }
+                    ].map(v => (
+                        <button key={v.id} onClick={() => setView(v.id)} style={{
                             padding: '8px 12px', border: 'none', borderRadius: '8px', cursor: 'pointer',
-                            background: view === v ? 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))' : 'var(--color-gray-100, #f3f4f6)',
-                            color: view === v ? 'white' : 'var(--color-gray-600, #4b5563)',
-                            fontSize: '1rem'
+                            background: view === v.id ? 'var(--color-white, white)' : 'transparent',
+                            color: view === v.id ? 'var(--color-primary-600)' : 'var(--color-gray-500)',
+                            boxShadow: view === v.id ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                            transition: 'all 0.2s',
+                            display: 'flex', alignItems: 'center'
                         }}>
-                            {v === 'grid' ? '⊞' : '☰'}
+                            {v.icon}
                         </button>
                     ))}
                 </div>
@@ -348,6 +370,44 @@ export default function MyLessons() {
             <style>{`
                 @keyframes slideIn { from { transform: translateX(20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
                 @keyframes spin { to { transform: rotate(360deg); } }
+                
+                .lesson-card-wrapper {
+                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .lesson-card-wrapper:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 12px 30px rgba(0,0,0,0.08) !important;
+                    border-color: var(--color-primary-200) !important;
+                }
+                
+                .builder-card {
+                    backdrop-filter: blur(8px);
+                    background: var(--color-bg-card, rgba(255, 255, 255, 0.95)) !important;
+                    border-radius: 20px;
+                    border: 1px solid var(--color-gray-100);
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                }
+                
+                .builder-input {
+                    width: 100%; padding: 12px 16px; border-radius: 12px;
+                    border: 1px solid var(--color-gray-200);
+                    background: var(--color-gray-50); fontSize: 0.9rem;
+                    outline: none; transition: all 0.2s; color: var(--color-gray-900);
+                }
+                .builder-input:focus {
+                    border-color: var(--color-primary-500);
+                    box-shadow: 0 0 0 4px var(--color-primary-100);
+                    background: white;
+                }
+                
+                .primary-btn {
+                    border: none; border-radius: 12px; cursor: pointer;
+                    font-weight: 700; transition: all 0.2s; color: white;
+                }
+                .primary-btn:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                }
             `}</style>
         </div>
     )
@@ -361,20 +421,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
     const statusLabel = lesson.is_archived ? '📦 Архив' : lesson.is_published ? '✅ Опубликован' : '📝 Черновик'
 
     return (
-        <div style={{
-            background: 'var(--color-white, white)',
-            borderRadius: '16px',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-            border: `1px solid var(--color-gray-100, #f3f4f6)`,
+        <div className="builder-card lesson-card-wrapper" style={{
             overflow: 'hidden',
-            transition: 'transform 0.2s, box-shadow 0.2s',
-            display: isGrid ? 'flex' : 'flex',
+            display: 'flex',
             flexDirection: isGrid ? 'column' : 'row',
             opacity: lesson.is_archived ? 0.75 : 1,
-        }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
-        >
+            padding: 0,
+            border: '1px solid var(--color-gray-100)',
+            height: '100%'
+        }}>
             {/* Thumbnail */}
             {isGrid && (
                 <div style={{
@@ -433,9 +488,9 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                 <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>⏱ {lesson.duration} мин</span>
                             )}
                         </div>
-                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--color-gray-400, #9ca3af)' }}>
-                            <span>👁 {lesson.views_count || 0}</span>
-                            <span>📅 {formatDate(lesson.created_at)}</span>
+                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--color-gray-500)', marginTop: '8px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={14} /> {lesson.views_count || 0}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> {formatDate(lesson.created_at)}</span>
                         </div>
                     </div>
 
@@ -444,11 +499,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                         <button
                             onClick={e => { e.stopPropagation(); setActionMenuId(actionMenuId === lesson.id ? null : lesson.id); }}
                             style={{
-                                width: '32px', height: '32px', borderRadius: '8px', border: 'none',
-                                background: 'var(--color-gray-100, #f3f4f6)', cursor: 'pointer',
-                                fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                width: '36px', height: '36px', borderRadius: '10px', border: 'none',
+                                background: 'var(--color-gray-100)', cursor: 'pointer',
+                                color: 'var(--color-gray-600)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                transition: 'all 0.2s'
                             }}
-                        >⋮</button>
+                        >
+                            <MoreVertical size={18} />
+                        </button>
 
                         {actionMenuId === lesson.id && (
                             <div
@@ -462,11 +521,11 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                 }}
                             >
                                 {[
-                                    { icon: '✏️', label: 'Редактировать', action: onEdit },
-                                    { icon: '📋', label: 'Дублировать', action: onDuplicate },
-                                    { icon: '🔗', label: 'Поделиться', action: onShare },
-                                    { icon: lesson.is_archived ? '📤' : '📦', label: lesson.is_archived ? 'Восстановить' : 'Архивировать', action: onArchive },
-                                    { icon: '🗑️', label: 'Удалить', action: onDelete, danger: true },
+                                    { icon: <Edit3 size={16} />, label: 'Редактировать', action: onEdit },
+                                    { icon: <Copy size={16} />, label: 'Дублировать', action: onDuplicate },
+                                    { icon: <Share2 size={16} />, label: 'Поделиться', action: onShare },
+                                    { icon: lesson.is_archived ? <ExternalLink size={16} /> : <Archive size={16} />, label: lesson.is_archived ? 'Восстановить' : 'Архивировать', action: onArchive },
+                                    { icon: <Trash2 size={16} />, label: 'Удалить', action: onDelete, danger: true },
                                 ].map(item => (
                                     <button
                                         key={item.label}
