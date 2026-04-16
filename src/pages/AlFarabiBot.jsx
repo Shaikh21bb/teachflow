@@ -179,7 +179,7 @@ function AlFarabiBot() {
                 {/* Sidebar History */}
                 <div className="chat-sidebar" style={{
                     width: '300px',
-                    background: 'white',
+                    background: 'var(--color-bg-card, var(--color-white, white))',
                     borderRadius: 'var(--radius-xl)',
                     border: '1px solid var(--color-gray-200)',
                     display: 'flex',
@@ -228,7 +228,7 @@ function AlFarabiBot() {
                 {/* Main Chat Interface */}
                 <div style={{
                     flex: 1,
-                    background: 'white',
+                    background: 'var(--color-bg-card, var(--color-white, white))',
                     borderRadius: 'var(--radius-xl)',
                     border: '1px solid var(--color-gray-200)',
                     display: 'flex',
@@ -244,7 +244,7 @@ function AlFarabiBot() {
                         display: 'flex',
                         flexDirection: 'column',
                         gap: 'var(--spacing-4)',
-                        background: '#f8fafc'
+                        background: 'var(--color-gray-50, #f8fafc)'
                     }}>
                         {messages.map(msg => (
                             <div
@@ -270,7 +270,7 @@ function AlFarabiBot() {
                                     {msg.type === 'user' ? <User size={20} /> : botAvatar}
                                 </div>
                                 <div style={{
-                                    background: msg.type === 'user' ? 'var(--color-primary-600)' : 'white',
+                                    background: msg.type === 'user' ? 'var(--color-primary-600)' : 'var(--color-bg-card, var(--color-white, white))',
                                     color: msg.type === 'user' ? 'white' : 'var(--color-gray-800)',
                                     padding: '12px 16px',
                                     borderRadius: '16px',
@@ -296,7 +296,7 @@ function AlFarabiBot() {
                                     {botAvatar}
                                 </div>
                                 <div style={{
-                                    background: 'white', padding: '12px 16px', borderRadius: '16px',
+                                    background: 'var(--color-bg-card, var(--color-white, white))', padding: '12px 16px', borderRadius: '16px',
                                     borderTopLeftRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px'
                                 }}>
                                     <span className="typing-dot">.</span>
@@ -311,7 +311,7 @@ function AlFarabiBot() {
                     {/* Input Area */}
                     <div style={{
                         padding: 'var(--spacing-4)',
-                        background: 'white',
+                        background: 'var(--color-bg-card, var(--color-white, white))',
                         borderTop: '1px solid var(--color-gray-100)'
                     }}>
                         <form onSubmit={handleSendMessage} style={{ position: 'relative' }}>
@@ -327,7 +327,7 @@ function AlFarabiBot() {
                                     borderRadius: '27px',
                                     border: '1px solid var(--color-gray-200)',
                                     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)',
-                                    background: '#f8fafc'
+                                    background: 'var(--color-gray-50, #f8fafc)'
                                 }}
                             />
                             <button

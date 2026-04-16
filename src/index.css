@@ -1268,7 +1268,7 @@ a:hover {
 }
 
 .stat-card {
-  background: white;
+  background: var(--color-bg-card, var(--color-white, white));
   border-radius: var(--radius-xl);
   padding: var(--spacing-6);
   display: flex;
@@ -1761,7 +1761,7 @@ a:hover {
    ========================================== */
 
 .chart-card {
-  background: white;
+  background: var(--color-bg-card, var(--color-white, white));
   border-radius: var(--radius-xl);
   padding: var(--spacing-6);
 }
