@@ -41,7 +41,8 @@ router.post('/', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [title, subject || '', grade || '', JSON.stringify(questions), time_limit || null, description || '', req.user.userId]
         );
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ?', [result.lastID]);
+        const quizId = await getLastInsertId();
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ?', [quizId]);
         res.status(201).json({ ...quiz, questions: JSON.parse(quiz.questions || '[]') });
     } catch (err) {
         console.error('Create quiz error:', err);
@@ -170,7 +171,7 @@ router.post('/:id/attempts', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?)`,
             [req.params.id, student_name, JSON.stringify(answers), score || 0, max_score || 0, time_spent || 0]
         );
-        res.status(201).json({ id: result.lastID, quiz_id: req.params.id, student_name, score, max_score });
+        res.status(201).json({ id: result.lastInsertRowid?.toString(), quiz_id: req.params.id, student_name, score, max_score });
     } catch (err) {
         console.error('Submit attempt error:', err);
         res.status(500).json({ error: 'Не удалось сохранить результат' });
