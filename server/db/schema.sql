@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS classes (
     subject TEXT,
     grade INTEGER,
     user_id INTEGER,
+    telegram_invite_code TEXT UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
@@ -155,6 +156,8 @@ CREATE TABLE IF NOT EXISTS students (
     class_id INTEGER,
     avg_grade REAL DEFAULT 0,
     status TEXT DEFAULT 'good',
+    telegram_chat_id TEXT,
+    telegram_username TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 );

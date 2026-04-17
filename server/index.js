@@ -197,6 +197,12 @@ async function runMigrations() {
         `CREATE INDEX IF NOT EXISTS idx_lessons_subject_grade ON lessons(subject, grade)`,
         `CREATE INDEX IF NOT EXISTS idx_lesson_files_lesson_id ON lesson_files(lesson_id)`,
         `CREATE INDEX IF NOT EXISTS idx_integrations_user_type ON integrations(user_id, type)`,
+        // v7 - Telegram student integration
+        `ALTER TABLE classes ADD COLUMN telegram_invite_code TEXT`,
+        `ALTER TABLE students ADD COLUMN telegram_chat_id TEXT`,
+        `ALTER TABLE students ADD COLUMN telegram_username TEXT`,
+        `CREATE INDEX IF NOT EXISTS idx_classes_invite_code ON classes(telegram_invite_code)`,
+        `CREATE INDEX IF NOT EXISTS idx_students_telegram ON students(telegram_chat_id)`,
         // Seed categories
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (1,'Математика','math')`,
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (2,'Физика','physics')`,
@@ -241,6 +247,7 @@ async function startServer() {
     const integrationsRouter = require('./routes/integrations');
     const webhooksRouter = require('./routes/webhooks');
     const quizzesRouter = require('./routes/quizzes');
+    const telegramRouter = require('./routes/telegram');
     const reportsRouter = require('./routes/reports');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
@@ -284,6 +291,8 @@ async function startServer() {
     app.use('/api/webhooks', webhooksRouter);
     app.use('/api/quizzes', quizzesRouter);
     app.use('/api/reports', reportsRouter);
+    app.use('/api/telegram', telegramRouter);
+    app.use('/api/webhooks/telegram', telegramRouter); // Webhook alias
 
     // Health check
     app.get('/api/health', (req, res) => {

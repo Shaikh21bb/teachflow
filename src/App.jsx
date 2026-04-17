@@ -24,6 +24,7 @@ import Quizzes from './pages/Quizzes'
 import QuizReport from './pages/QuizReport'
 import SettingsPage from './pages/Settings'
 import ProfilePage from './pages/Profile'
+import TelegramHub from './pages/TelegramHub'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
@@ -52,6 +53,7 @@ function App() {
                             <Route path="/open-lessons" element={<ProtectedRoute><DashboardLayout><OpenLesson /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/my-lessons" element={<ProtectedRoute><DashboardLayout><MyLessons /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/telegram" element={<ProtectedRoute><DashboardLayout><TelegramHub /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
@@ -101,6 +103,7 @@ function DashboardLayout({ children }) {
 
     const otherItems = [
         { path: '/profile', icon: <UserCircle2 size={20} />, label: t('nav.profile') },
+        { path: '/telegram', icon: <span style={{ fontSize: '1.1rem' }}>✈️</span>, label: language === 'kk' ? 'Telegram Hub' : 'Telegram Hub' },
         { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
     ]
 

@@ -139,6 +139,15 @@ export const reportsAPI = {
     getDashboard: () => fetchAPI('/reports'),
 };
 
+// Telegram API
+export const telegramAPI = {
+    getStatus: () => fetchAPI('/telegram/status'),
+    generateInviteCode: (classId) => fetchAPI(`/telegram/class/${classId}/invite-code`, { method: 'POST' }),
+    sendToClass: (class_id, message) => fetchAPI('/telegram/send-to-class', { method: 'POST', body: JSON.stringify({ class_id, message }) }),
+    sendToStudent: (student_id, message) => fetchAPI('/telegram/send-to-student', { method: 'POST', body: JSON.stringify({ student_id, message }) }),
+    getClassStudents: (classId) => fetchAPI(`/telegram/class/${classId}/students`),
+};
+
 // Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
 export async function uploadToCloudinary(file, onProgress) {
     // 1. Get secure signature from our backend
