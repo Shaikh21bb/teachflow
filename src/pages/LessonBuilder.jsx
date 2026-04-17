@@ -364,7 +364,8 @@ export default function LessonBuilderNew() {
                             onChange={e => setField('description', e.target.value)}
                             placeholder="Чему научатся ученики, что нужно знать заранее..."
                             rows={3}
-                            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                            className="builder-input"
+                            style={{ resize: 'vertical', fontFamily: 'inherit' }}
                         />
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', marginBottom: '8px' }}>
                             <Label style={{ margin: 0 }}>Подробный план / содержание</Label>
@@ -382,12 +383,13 @@ export default function LessonBuilderNew() {
                             onChange={e => setField('content', e.target.value)}
                             placeholder="Введите план урока вручную или нажмите «AI: Сгенерировать план»..."
                             rows={8}
-                            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                            className="builder-input"
+                            style={{ resize: 'vertical', fontFamily: 'inherit' }}
                         />
                     </Card>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button onClick={() => setStep(1)} style={primaryBtn}>Далее →</button>
+                        <button onClick={() => setStep(1)} className="primary-btn">Далее →</button>
                     </div>
                 </div>
             )}
@@ -412,7 +414,7 @@ export default function LessonBuilderNew() {
                             <div>
                                 <p style={{ margin: '0 0 8px', fontWeight: 600 }}>Загрузите обложку урока</p>
                                 <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>JPG, PNG до 5MB. Рекомендуется 16:9</p>
-                                <button onClick={() => thumbnailInputRef.current?.click()} style={{ ...primaryBtn, padding: '8px 16px', fontSize: '0.85rem' }}>
+                                <button onClick={() => thumbnailInputRef.current?.click()} className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
                                     Выбрать изображение
                                 </button>
                                 <input ref={thumbnailInputRef} type="file" accept="image/*" hidden onChange={e => handleThumbnailUpload(e.target.files[0])} />
@@ -428,9 +430,10 @@ export default function LessonBuilderNew() {
                                 onChange={e => setYoutubeUrl(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && addYoutube()}
                                 placeholder="https://www.youtube.com/watch?v=..."
-                                style={{ ...inputStyle, flex: 1, margin: 0 }}
+                                className="builder-input"
+                                style={{ flex: 1, margin: 0 }}
                             />
-                            <button onClick={addYoutube} style={{ ...primaryBtn, padding: '10px 20px', whiteSpace: 'nowrap' }}>
+                            <button onClick={addYoutube} className="primary-btn" style={{ padding: '10px 20px', whiteSpace: 'nowrap' }}>
                                 + Добавить
                             </button>
                         </div>
@@ -507,12 +510,12 @@ export default function LessonBuilderNew() {
                     </Card>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <button onClick={() => setStep(0)} style={ghostBtn}>← Назад</button>
+                        <button onClick={() => setStep(0)} className="ghost-btn">← Назад</button>
                         <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={() => saveDraft(false)} disabled={saving} style={{...ghostBtn, display: 'flex', alignItems: 'center', gap: '6px'}}>
+                            <button onClick={() => saveDraft(false)} disabled={saving} className="ghost-btn" style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
                                 {saving ? <Loader2 size={16} /> : <Save size={16} />} Сохранить черновик
                             </button>
-                            <button onClick={() => setStep(2)} style={primaryBtn}>Просмотр →</button>
+                            <button onClick={() => setStep(2)} className="primary-btn">Просмотр →</button>
                         </div>
                     </div>
                 </div>

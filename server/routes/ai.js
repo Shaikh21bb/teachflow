@@ -79,7 +79,13 @@ router.post('/quiz', authenticateToken, async (req, res) => {
         // Try to extract JSON from response
         let questions = [];
         try {
-            const jsonMatch = raw.match(/\[[\s\S]*\]/);
+            let cleanedRaw = raw;
+            if (cleanedRaw.includes('```json')) {
+                cleanedRaw = cleanedRaw.split('```json')[1].split('```')[0];
+            } else if (cleanedRaw.includes('```')) {
+                cleanedRaw = cleanedRaw.split('```')[1].split('```')[0];
+            }
+            const jsonMatch = cleanedRaw.match(/\[[\s\S]*\]/);
             if (jsonMatch) questions = JSON.parse(jsonMatch[0]);
         } catch {
             questions = [];
