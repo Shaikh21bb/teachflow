@@ -47,16 +47,19 @@ function Login() {
             }}>
                 {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-8)' }}>
-                    <h1 style={{
-                        fontSize: 'var(--font-size-3xl)',
-                        fontWeight: 800,
-                        background: 'var(--gradient-primary)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        marginBottom: 'var(--spacing-2)'
-                    }}>
-                        Urpaq.ai
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: 'var(--spacing-2)' }}>
+                        <img src="/logo.jpg" alt="Urpaq Logo" style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover' }} />
+                        <h1 style={{
+                            fontSize: 'var(--font-size-3xl)',
+                            fontWeight: 800,
+                            background: 'var(--gradient-primary)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            margin: 0
+                        }}>
+                            Urpaq.ai
+                        </h1>
+                    </div>
                     <p style={{ color: 'var(--color-gray-500)' }}>
                         {language === 'kk' ? 'Жүйеге кіру' : 'Вход в систему'}
                     </p>

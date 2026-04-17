@@ -92,7 +92,7 @@ export default function Landing() {
             <header className="v2-header" style={{ background: 'rgba(5,5,5,0.7)', borderBottomColor: 'rgba(255,255,255,0.05)' }}>
                 <div className="v2-header-inner">
                     <div className="logo white">
-                        <div className="logo-icon-ai text-white" style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>AI</div>
+                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai text-white" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
                         <span className="font-outfit" style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.5px' }}>Urpaq.ai</span>
                     </div>
 
@@ -450,7 +450,7 @@ export default function Landing() {
             <footer style={{ padding: '60px 0', borderTop: '1px solid rgba(255,255,255,0.05)', background: '#020202' }}>
                 <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
                     <div className="logo white">
-                        <div className="logo-icon-ai text-white" style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}>AI</div>
+                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai text-white" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover' }} />
                         <span className="font-outfit" style={{ fontWeight: 800, fontSize: '1.5rem', color: 'white' }}>Urpaq.ai</span>
                     </div>
                     <p style={{ color: '#a3a3a3', fontSize: '0.9rem' }}>

@@ -112,7 +112,7 @@ function DashboardLayout({ children }) {
             <aside className={"sidebar " + (collapsed ? 'collapsed' : '') + " hide-on-mobile"}>
                 <div className="sidebar-header">
                     <Link to="/" className="sidebar-logo-area">
-                        <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.9rem', flexShrink: 0 }}>AI</div>
+                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
                         <span className="sidebar-logo-text">Urpaq.ai</span>
                     </Link>
                     <button
@@ -178,7 +178,7 @@ function DashboardLayout({ children }) {
             <main className={"main-content " + (collapsed ? 'sidebar-collapsed' : '')}>
                 <header className="topbar">
                     <Link to="/" className="mobile-header-logo hide-on-desktop">
-                        <div className="logo-icon-ai" style={{ width: '32px', height: '32px', fontSize: '0.8rem' }}>AI</div>
+                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
                         <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
                     </Link>
 
