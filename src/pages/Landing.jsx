@@ -15,7 +15,9 @@ import {
   Zap,
   Play,
   Layers,
-  Star
+  Star,
+  ClipboardCheck,
+  MessageSquareText
 } from 'lucide-react';
 
 const staggeredContainer = {
@@ -360,6 +362,50 @@ export default function Landing() {
                             </p>
                         </div>
 
+                        <div className="premium-bento-card bento-wide auto-check-card">
+                            <div className="auto-check-content">
+                                <div>
+                                    <div style={{ background: 'rgba(236, 72, 153, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                                        <ClipboardCheck size={32} color="#ec4899" />
+                                    </div>
+                                    <h3 className="font-outfit" style={{ fontSize: '2rem', color: 'white', marginBottom: '16px' }}>
+                                        {language === 'kk' ? 'Автоматты Тексеру Жүйесі' : 'Система автоматической проверки'}
+                                    </h3>
+                                    <p style={{ color: '#a3a3a3', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '620px' }}>
+                                        {language === 'kk' 
+                                            ? 'Үй жұмысы мен тесттер қолмен тексерілмейді. AI қателерді дәл анықтайды, бағаны қояды және әр оқушыға жеке кері байланыс береді.' 
+                                            : 'Домашние задания и тесты больше не нужно проверять вручную. AI точно находит ошибки, выставляет оценку и дает каждому ученику персональную обратную связь.'}
+                                    </p>
+                                </div>
+
+                                <div className="auto-check-preview" aria-hidden="true">
+                                    <div className="auto-check-preview-header">
+                                        <span>{language === 'kk' ? 'Алгебра, 8А' : 'Алгебра, 8А'}</span>
+                                        <strong>92%</strong>
+                                    </div>
+                                    <div className="auto-check-answer">
+                                        <div>
+                                            <span className="answer-label">{language === 'kk' ? 'Қате табылды' : 'Найдена ошибка'}</span>
+                                            <p>x² - 5x + 6 = 0 → x = 2, 4</p>
+                                        </div>
+                                        <span className="answer-status">-1</span>
+                                    </div>
+                                    <div className="auto-check-feedback">
+                                        <MessageSquareText size={18} />
+                                        <p>
+                                            {language === 'kk'
+                                                ? 'Жақсы жұмыс. Соңғы түбірді қайта тексер: 2 және 3 болуы керек.'
+                                                : 'Хорошая работа. Перепроверь последний корень: должно быть 2 и 3.'}
+                                        </p>
+                                    </div>
+                                    <div className="auto-check-metrics">
+                                        <span>{language === 'kk' ? 'Баға: 5-' : 'Оценка: 5-'}</span>
+                                        <span>{language === 'kk' ? '3 сек' : '3 сек'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="premium-bento-card bento-wide">
                             <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '60px', height: '60px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
                                 <BookOpen size={32} color="#f59e0b" />
@@ -437,6 +483,7 @@ export default function Landing() {
                                 <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Шектеусіз ИИ генерациясы' : 'Безлимитная ИИ-генерация'}</li>
                                 <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'PDF-ке экспорттау (таза)' : 'Экспорт в PDF (чистый)'}</li>
                                 <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? '10GB бұлтты қойма' : '10GB облачного хранилища'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Үй жұмысы мен тесттерді AI тексеру' : 'AI-проверка домашних заданий и тестов'}</li>
                                 <li style={{ display: 'flex', gap: '12px', color: '#fff', fontWeight: 500 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Басымдықтағы ИИ моделі' : 'Приоритетная ИИ-модель'}</li>
                             </ul>
                             
