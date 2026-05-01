@@ -205,10 +205,11 @@ async function runMigrations() {
         `CREATE INDEX IF NOT EXISTS idx_students_telegram ON students(telegram_chat_id)`,
         // v8 - Student Portal
         `ALTER TABLE students ADD COLUMN password_hash TEXT`,
-        `ALTER TABLE students ADD COLUMN username TEXT UNIQUE`,
+        `ALTER TABLE students ADD COLUMN username TEXT`,
         `ALTER TABLE students ADD COLUMN avatar_color TEXT DEFAULT '#6366f1'`,
         `ALTER TABLE students ADD COLUMN xp INTEGER DEFAULT 0`,
         `ALTER TABLE students ADD COLUMN level INTEGER DEFAULT 1`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_students_username ON students(username) WHERE username IS NOT NULL`,
         `ALTER TABLE quiz_attempts ADD COLUMN student_id INTEGER REFERENCES students(id) ON DELETE SET NULL`,
         `CREATE TABLE IF NOT EXISTS quiz_assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
