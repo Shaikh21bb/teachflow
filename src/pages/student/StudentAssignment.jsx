@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardCheck, CheckCircle, AlertTriangle, Send } from 'lucide-react';
+import { API_BASE } from '../../api';
 
 export default function StudentAssignment() {
     const { id } = useParams();
@@ -19,7 +20,7 @@ export default function StudentAssignment() {
             return;
         }
 
-        fetch(`/api/student-portal/assignments/${id}`, {
+        fetch(`${API_BASE}/student-portal/assignments/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -57,7 +58,7 @@ export default function StudentAssignment() {
             setSubmitting(true);
             setError('');
             const token = localStorage.getItem('studentToken');
-            const res = await fetch(`/api/student-portal/assignments/${id}/submit`, {
+            const res = await fetch(`${API_BASE}/student-portal/assignments/${id}/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

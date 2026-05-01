@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut, Trophy, Star, Target, CheckCircle, Clock, ClipboardCheck } from 'lucide-react';
+import { API_BASE } from '../../api';
 
 export default function StudentDashboard() {
     const [data, setData] = useState(null);
@@ -15,7 +16,7 @@ export default function StudentDashboard() {
             return;
         }
 
-        fetch('/api/student-portal/dashboard', {
+        fetch(`${API_BASE}/student-portal/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())

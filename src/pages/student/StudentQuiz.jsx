@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, ArrowRight, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import { API_BASE } from '../../api';
 
 export default function StudentQuiz() {
     const { id } = useParams();
@@ -25,7 +26,7 @@ export default function StudentQuiz() {
             return;
         }
 
-        fetch(`/api/student-portal/quizzes/${id}`, {
+        fetch(`${API_BASE}/student-portal/quizzes/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -94,7 +95,7 @@ export default function StudentQuiz() {
         
         try {
             const token = localStorage.getItem('studentToken');
-            const res = await fetch(`/api/student-portal/quizzes/${id}/submit`, {
+            const res = await fetch(`${API_BASE}/student-portal/quizzes/${id}/submit`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

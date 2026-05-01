@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../api';
 
 const Pricing = () => {
     const { t, language } = useLanguage();
@@ -76,7 +77,7 @@ const Pricing = () => {
 
         setLoading(true);
         try {
-            const response = await fetch('/api/kaspi/create-order', {
+            const response = await fetch(`${API_BASE}/kaspi/create-order`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

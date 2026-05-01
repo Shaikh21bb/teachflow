@@ -1,4 +1,4 @@
-let API_BASE = import.meta.env.VITE_API_URL || '';
+export let API_BASE = import.meta.env.VITE_API_URL || '';
 if (!API_BASE) {
     if (typeof window !== 'undefined') {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

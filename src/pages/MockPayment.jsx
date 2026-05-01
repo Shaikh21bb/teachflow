@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, CreditCard, ArrowRight } from 'lucide-react';
+import { API_BASE } from '../api';
 
 const MockPayment = () => {
     const [searchParams] = useSearchParams();
@@ -14,7 +15,7 @@ const MockPayment = () => {
         setStatus('processing');
         try {
             // Call our webhook internally to simulate Kaspi notification
-            const response = await fetch('/api/kaspi/webhook', {
+            const response = await fetch(`${API_BASE}/kaspi/webhook`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ orderId, status: 'paid' })

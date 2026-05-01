@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Award, ArrowRight } from 'lucide-react';
+import { API_BASE } from '../../api';
 
 export default function StudentLogin() {
     const [username, setUsername] = useState('');
@@ -15,7 +16,7 @@ export default function StudentLogin() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/student/login', {
+            const res = await fetch(`${API_BASE}/student/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })

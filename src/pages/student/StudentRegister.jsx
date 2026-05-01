@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Award, ArrowRight } from 'lucide-react';
+import { API_BASE } from '../../api';
 
 export default function StudentRegister() {
     const [inviteCode, setInviteCode] = useState('');
@@ -17,7 +18,7 @@ export default function StudentRegister() {
         setLoading(true);
 
         try {
-            const res = await fetch('/api/student/register', {
+            const res = await fetch(`${API_BASE}/student/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ invite_code: inviteCode, name, username, password })
@@ -32,7 +33,7 @@ export default function StudentRegister() {
             }
 
             // Immediately login
-            const loginRes = await fetch('/api/student/login', {
+            const loginRes = await fetch(`${API_BASE}/student/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
