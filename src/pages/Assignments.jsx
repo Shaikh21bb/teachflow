@@ -9,10 +9,15 @@ function Assignments() {
     const [classes, setClasses] = useState([])
     const [loading, setLoading] = useState(true)
     const [showModal, setShowModal] = useState(false)
+    const [reviewModal, setReviewModal] = useState(null)
+    const [reviewLoading, setReviewLoading] = useState(false)
     const [newAssignment, setNewAssignment] = useState({
         title: '',
         type: 'homework',
         class_id: '',
+        instructions: '',
+        answer_key: '',
+        max_score: 100,
         due_date: ''
     })
 
@@ -46,13 +51,29 @@ function Assignments() {
             const selectedClass = classes.find(c => c.id === parseInt(newAssignment.class_id))
             await assignmentsAPI.create({
                 ...newAssignment,
+                class_id: parseInt(newAssignment.class_id, 10),
+                max_score: parseInt(newAssignment.max_score, 10) || 100,
                 total: selectedClass?.student_count || 0
             })
             setShowModal(false)
-            setNewAssignment({ title: '', type: 'homework', class_id: '', due_date: '' })
+            setNewAssignment({ title: '', type: 'homework', class_id: '', instructions: '', answer_key: '', max_score: 100, due_date: '' })
             fetchData()
         } catch (err) {
             alert(language === 'kk' ? 'Қате орын алды' : 'Ошибка создания')
+        }
+    }
+
+    async function openReview(assignment) {
+        try {
+            setReviewLoading(true)
+            setReviewModal({ assignment, submissions: [] })
+            const data = await assignmentsAPI.getSubmissions(assignment.id)
+            setReviewModal(data)
+        } catch (err) {
+            alert(language === 'kk' ? 'Нәтижелерді жүктеу мүмкін болмады' : 'Не удалось загрузить результаты')
+            setReviewModal(null)
+        } finally {
+            setReviewLoading(false)
         }
     }
 
@@ -168,7 +189,9 @@ function Assignments() {
                             </div>
 
                             <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                                <button className="btn btn-secondary btn-sm">{language === 'kk' ? 'Ашу' : 'Открыть'}</button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => openReview(assignment)}>
+                                    {language === 'kk' ? 'Тексеру' : 'Проверить'}
+                                </button>
                                 <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(assignment.id)}>🗑️</button>
                             </div>
                         </div>
@@ -229,6 +252,40 @@ function Assignments() {
                         </div>
 
                         <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                            <label className="label">{language === 'kk' ? 'Оқушыға нұсқаулық' : 'Инструкция для ученика'}</label>
+                            <textarea
+                                className="input"
+                                style={{ minHeight: '90px', resize: 'vertical' }}
+                                value={newAssignment.instructions}
+                                onChange={e => setNewAssignment({ ...newAssignment, instructions: e.target.value })}
+                                placeholder={language === 'kk' ? 'Мысалы: есептің шешу жолын толық жаз...' : 'Например: распиши решение полностью...'}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                            <label className="label">{language === 'kk' ? 'AI үшін дұрыс жауап/критерий' : 'Эталон/критерии для AI'}</label>
+                            <textarea
+                                className="input"
+                                style={{ minHeight: '90px', resize: 'vertical' }}
+                                value={newAssignment.answer_key}
+                                onChange={e => setNewAssignment({ ...newAssignment, answer_key: e.target.value })}
+                                placeholder={language === 'kk' ? 'Дұрыс жауап, негізгі ұғымдар немесе бағалау критерийлері' : 'Правильный ответ, ключевые понятия или критерии оценивания'}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                            <label className="label">{language === 'kk' ? 'Максималды балл' : 'Максимальный балл'}</label>
+                            <input
+                                type="number"
+                                min="1"
+                                max="1000"
+                                className="input"
+                                value={newAssignment.max_score}
+                                onChange={e => setNewAssignment({ ...newAssignment, max_score: e.target.value })}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
                             <label className="label">{language === 'kk' ? 'Сынып' : 'Класс'}</label>
                             <select
                                 className="filter-select"
@@ -257,6 +314,83 @@ function Assignments() {
                             <button className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('common.cancel')}</button>
                             <button className="btn btn-primary" onClick={handleCreate}>{t('common.create')}</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {reviewModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.55)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }} onClick={() => setReviewModal(null)}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 'var(--radius-xl)',
+                        padding: 'var(--spacing-8)',
+                        width: '100%',
+                        maxWidth: '900px',
+                        maxHeight: '85vh',
+                        overflow: 'auto'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start', marginBottom: 'var(--spacing-6)' }}>
+                            <div>
+                                <h2 style={{ marginBottom: '8px' }}>{reviewModal.assignment.title}</h2>
+                                <p style={{ color: 'var(--color-gray-500)', margin: 0 }}>
+                                    {language === 'kk' ? 'Оқушылар жіберген жауаптар және AI бағасы' : 'Ответы учеников и AI-оценка'}
+                                </p>
+                            </div>
+                            <button className="btn btn-secondary" onClick={() => setReviewModal(null)}>{language === 'kk' ? 'Жабу' : 'Закрыть'}</button>
+                        </div>
+
+                        {reviewLoading ? (
+                            <div style={{ padding: '40px', textAlign: 'center' }}>{t('common.loading')}</div>
+                        ) : reviewModal.submissions.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-gray-500)' }}>
+                                {language === 'kk' ? 'Әзірге оқушылар жауап жібермеді' : 'Ученики пока не отправили ответы'}
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+                                {reviewModal.submissions.map(sub => (
+                                    <div key={sub.id} className="card" style={{ padding: 'var(--spacing-5)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0 }}>{sub.student_name}</h3>
+                                                <p style={{ margin: '4px 0 0', color: 'var(--color-gray-500)', fontSize: '0.9rem' }}>
+                                                    {new Date(sub.submitted_at).toLocaleString(language === 'kk' ? 'kk-KZ' : 'ru-RU')}
+                                                </p>
+                                            </div>
+                                            <div style={{
+                                                background: 'rgba(16, 185, 129, 0.1)',
+                                                color: '#059669',
+                                                borderRadius: '12px',
+                                                padding: '8px 12px',
+                                                fontWeight: 800,
+                                                height: 'fit-content'
+                                            }}>
+                                                {sub.score}/{sub.max_score} · {language === 'kk' ? 'Баға' : 'Оценка'} {sub.grade_label}
+                                            </div>
+                                        </div>
+                                        <div style={{ whiteSpace: 'pre-wrap', background: 'var(--color-gray-50)', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+                                            {sub.answer_text}
+                                        </div>
+                                        <div style={{ color: 'var(--color-gray-700)', lineHeight: 1.6 }}>
+                                            <strong>{language === 'kk' ? 'AI кері байланысы:' : 'AI обратная связь:'}</strong> {sub.feedback}
+                                        </div>
+                                        {sub.mistakes?.length > 0 && (
+                                            <ul style={{ marginBottom: 0, color: 'var(--color-gray-600)' }}>
+                                                {sub.mistakes.map((m, idx) => <li key={idx}>{m}</li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

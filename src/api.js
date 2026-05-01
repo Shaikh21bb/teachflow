@@ -65,6 +65,7 @@ export const assignmentsAPI = {
         return fetchAPI(`/assignments${queryString ? `?${queryString}` : ''}`);
     },
     getById: (id) => fetchAPI(`/assignments/${id}`),
+    getSubmissions: (id) => fetchAPI(`/assignments/${id}/submissions`),
     create: (assignment) => fetchAPI('/assignments', { method: 'POST', body: JSON.stringify(assignment) }),
     update: (id, assignment) => fetchAPI(`/assignments/${id}`, { method: 'PUT', body: JSON.stringify(assignment) }),
     delete: (id) => fetchAPI(`/assignments/${id}`, { method: 'DELETE' })
@@ -132,6 +133,7 @@ export const quizzesAPI = {
     getAttempts: (quizId) => fetchAPI(`/quizzes/${quizId}/attempts`),
     getReport: (quizId) => fetchAPI(`/quizzes/${quizId}/report`),
     aiGenerate: (data) => fetchAPI('/quizzes/ai-generate', { method: 'POST', body: JSON.stringify(data) }),
+    assign: (quizId, data) => fetchAPI(`/quizzes/${quizId}/assign`, { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // Reports API

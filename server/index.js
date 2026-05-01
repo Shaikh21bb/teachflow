@@ -203,6 +203,23 @@ async function runMigrations() {
         `ALTER TABLE students ADD COLUMN telegram_username TEXT`,
         `CREATE INDEX IF NOT EXISTS idx_classes_invite_code ON classes(telegram_invite_code)`,
         `CREATE INDEX IF NOT EXISTS idx_students_telegram ON students(telegram_chat_id)`,
+        // v8 - Student Portal
+        `ALTER TABLE students ADD COLUMN password_hash TEXT`,
+        `ALTER TABLE students ADD COLUMN username TEXT UNIQUE`,
+        `ALTER TABLE students ADD COLUMN avatar_color TEXT DEFAULT '#6366f1'`,
+        `ALTER TABLE students ADD COLUMN xp INTEGER DEFAULT 0`,
+        `ALTER TABLE students ADD COLUMN level INTEGER DEFAULT 1`,
+        `ALTER TABLE quiz_attempts ADD COLUMN student_id INTEGER REFERENCES students(id) ON DELETE SET NULL`,
+        `CREATE TABLE IF NOT EXISTS quiz_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id INTEGER NOT NULL,
+            class_id INTEGER NOT NULL,
+            assigned_by INTEGER NOT NULL,
+            deadline TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+            FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+        )`,
         // Seed categories
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (1,'Математика','math')`,
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (2,'Физика','physics')`,
@@ -210,6 +227,48 @@ async function runMigrations() {
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (4,'Биология','biology')`,
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (5,'История','history')`,
         `INSERT OR IGNORE INTO categories (id, name, slug) VALUES (6,'Информатика','cs')`,
+        // v9 - Monetization & Kaspi
+        `ALTER TABLE users ADD COLUMN plan TEXT DEFAULT 'free'`,
+        `ALTER TABLE users ADD COLUMN billing_period_start DATETIME`,
+        `ALTER TABLE users ADD COLUMN billing_period_end DATETIME`,
+        `CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            currency TEXT DEFAULT 'KZT',
+            provider TEXT DEFAULT 'kaspi',
+            external_id TEXT,
+            status TEXT DEFAULT 'pending',
+            metadata TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_transactions_external_id ON transactions(external_id)`,
+        // v10 - Homework submissions and AI grading
+        `ALTER TABLE assignments ADD COLUMN instructions TEXT DEFAULT ''`,
+        `ALTER TABLE assignments ADD COLUMN answer_key TEXT DEFAULT ''`,
+        `ALTER TABLE assignments ADD COLUMN max_score INTEGER DEFAULT 100`,
+        `CREATE TABLE IF NOT EXISTS assignment_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            answer_text TEXT NOT NULL,
+            score INTEGER DEFAULT 0,
+            max_score INTEGER DEFAULT 100,
+            grade_label TEXT,
+            feedback TEXT,
+            mistakes TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'graded',
+            submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            graded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(assignment_id, student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+            FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment ON assignment_submissions(assignment_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student ON assignment_submissions(student_id)`,
     ];
 
     for (const sql of migrations) {
@@ -249,6 +308,9 @@ async function startServer() {
     const quizzesRouter = require('./routes/quizzes');
     const telegramRouter = require('./routes/telegram');
     const reportsRouter = require('./routes/reports');
+    const studentAuthRouter = require('./routes/student-auth');
+    const studentPortalRouter = require('./routes/student-portal');
+    const kaspiRouter = require('./routes/kaspi');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -293,6 +355,9 @@ async function startServer() {
     app.use('/api/reports', reportsRouter);
     app.use('/api/telegram', telegramRouter);
     app.use('/api/webhooks/telegram', telegramRouter); // Webhook alias
+    app.use('/api/student', studentAuthRouter);
+    app.use('/api/student-portal', studentPortalRouter);
+    app.use('/api/kaspi', kaspiRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {

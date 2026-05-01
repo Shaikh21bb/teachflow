@@ -4,7 +4,7 @@ import {
     Home, BookOpen, LayoutTemplate, Library, 
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
-    Bell, LogOut, Moon, Sun, FileQuestion,
+    Bell, LogOut, Moon, Sun, FileQuestion, Zap,
     PanelLeftClose, PanelLeftOpen, UserCircle2
 } from 'lucide-react'
 import Landing from './pages/Landing'
@@ -27,6 +27,16 @@ import ProfilePage from './pages/Profile'
 import TelegramHub from './pages/TelegramHub'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import Pricing from './pages/Pricing'
+import MockPayment from './pages/MockPayment'
+
+import StudentLogin from './pages/student/StudentLogin'
+import StudentRegister from './pages/student/StudentRegister'
+import StudentDashboard from './pages/student/StudentDashboard'
+import StudentQuiz from './pages/student/StudentQuiz'
+import StudentResults from './pages/student/StudentResults'
+import StudentAssignment from './pages/student/StudentAssignment'
+
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -58,6 +68,16 @@ function App() {
                             <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/profile" element={<ProtectedRoute><DashboardLayout><ProfilePage /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/pricing" element={<ProtectedRoute><DashboardLayout><Pricing /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/mock-payment" element={<MockPayment />} />
+
+                            {/* Student Portal Routes */}
+                            <Route path="/student/login" element={<StudentLogin />} />
+                            <Route path="/student/register" element={<StudentRegister />} />
+                            <Route path="/student/dashboard" element={<StudentDashboard />} />
+                            <Route path="/student/quiz/:id" element={<StudentQuiz />} />
+                            <Route path="/student/assignment/:id" element={<StudentAssignment />} />
+                            <Route path="/student/results" element={<StudentResults />} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -99,6 +119,7 @@ function DashboardLayout({ children }) {
         { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
         { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
+        { path: '/pricing', icon: <Zap size={20} />, label: language === 'kk' ? 'Тарифтер' : 'Тарифы' },
     ]
 
     const otherItems = [

@@ -15,9 +15,13 @@ router.get('/', async (req, res) => {
         const params = [req.user.userId];
 
         let sql = `
-            SELECT a.*, c.name as class_name
+            SELECT a.*, c.name as class_name, c.subject as subject,
+                   COUNT(DISTINCT s.id) as class_total,
+                   COUNT(DISTINCT sub.id) as submission_count
             FROM assignments a
             LEFT JOIN classes c ON a.class_id = c.id
+            LEFT JOIN students s ON s.class_id = c.id
+            LEFT JOIN assignment_submissions sub ON sub.assignment_id = a.id
             WHERE a.user_id = ?
         `;
 
@@ -26,10 +30,17 @@ router.get('/', async (req, res) => {
             params.push(status);
         }
 
-        sql += ' ORDER BY a.due_date ASC';
+        sql += ' GROUP BY a.id ORDER BY a.due_date ASC';
 
         const assignments = await getAll(sql, params);
-        res.json(assignments);
+        res.json(assignments.map(a => ({
+            ...a,
+            total: Number(a.class_total || a.total || 0),
+            submitted: Number(a.submission_count || a.submitted || 0),
+            status: Number(a.submission_count || 0) > 0 && Number(a.class_total || a.total || 0) > 0 && Number(a.submission_count) >= Number(a.class_total || a.total || 0)
+                ? 'graded'
+                : a.status
+        })));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -58,10 +69,51 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// GET assignment submissions for teacher review
+router.get('/:id/submissions', async (req, res) => {
+    try {
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'Неверный ID задания' });
+
+        const assignment = await getOne(
+            `SELECT a.*, c.name as class_name, c.subject
+             FROM assignments a
+             LEFT JOIN classes c ON a.class_id = c.id
+             WHERE a.id = ? AND a.user_id = ?`,
+            [id, req.user.userId]
+        );
+
+        if (!assignment) {
+            return res.status(404).json({ error: 'Задание не найдено' });
+        }
+
+        const submissions = await getAll(
+            `SELECT sub.*, s.name as student_name, s.username
+             FROM assignment_submissions sub
+             JOIN students s ON sub.student_id = s.id
+             WHERE sub.assignment_id = ?
+             ORDER BY sub.submitted_at DESC`,
+            [id]
+        );
+
+        res.json({
+            assignment,
+            submissions: submissions.map(sub => ({
+                ...sub,
+                mistakes: (() => {
+                    try { return JSON.parse(sub.mistakes || '[]'); } catch { return []; }
+                })()
+            }))
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // POST create assignment (with Zod validation)
 router.post('/', validate(assignmentSchema), async (req, res) => {
     try {
-        const { title, type, class_id, due_date } = req.body;
+        const { title, type, class_id, instructions, answer_key, max_score, due_date } = req.body;
 
         // Verify class belongs to this teacher
         const cls = await getOne(
@@ -72,10 +124,12 @@ router.post('/', validate(assignmentSchema), async (req, res) => {
             return res.status(403).json({ error: 'Класс не найден или не принадлежит вам' });
         }
 
+        const totalInfo = await getOne('SELECT COUNT(*) as total FROM students WHERE class_id = ?', [class_id]);
+
         await runQuery(
-            `INSERT INTO assignments (title, type, class_id, due_date, total, submitted, status, user_id)
-             VALUES (?, ?, ?, ?, 0, 0, 'active', ?)`,
-            [title, type, class_id, due_date || null, req.user.userId]
+            `INSERT INTO assignments (title, type, class_id, instructions, answer_key, max_score, due_date, total, submitted, status, user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'active', ?)`,
+            [title, type, class_id, instructions || '', answer_key || '', max_score || 100, due_date || null, Number(totalInfo?.total || 0), req.user.userId]
         );
 
         const id = await getLastInsertId();
@@ -100,13 +154,13 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Задание не найдено' });
         }
 
-        const { title, type, class_id, due_date, submitted, total, status } = req.body;
+        const { title, type, class_id, instructions = '', answer_key = '', max_score = 100, due_date, submitted, total, status } = req.body;
 
         await runQuery(
             `UPDATE assignments
-             SET title = ?, type = ?, class_id = ?, due_date = ?, submitted = ?, total = ?, status = ?
+             SET title = ?, type = ?, class_id = ?, instructions = ?, answer_key = ?, max_score = ?, due_date = ?, submitted = ?, total = ?, status = ?
              WHERE id = ? AND user_id = ?`,
-            [title, type, parseInt(class_id, 10), due_date, submitted, total, status, id, req.user.userId]
+            [title, type, parseInt(class_id, 10), instructions, answer_key, max_score, due_date, submitted, total, status, id, req.user.userId]
         );
 
         const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [id]);

@@ -105,6 +105,9 @@ const assignmentSchema = z.object({
         .number({ required_error: 'Класс обязателен' })
         .int()
         .positive(),
+    instructions: z.string().max(5000).trim().optional().default(''),
+    answer_key: z.string().max(5000).trim().optional().default(''),
+    max_score: z.number().int().min(1).max(1000).optional().default(100),
     due_date: z
         .string()
         .optional()

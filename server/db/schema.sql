@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT DEFAULT 'teacher',
     avatar_url TEXT,
     credits INTEGER DEFAULT 10,
+    plan TEXT DEFAULT 'free',
+    billing_period_start DATETIME,
+    billing_period_end DATETIME,
     subjects TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME,
@@ -158,6 +161,11 @@ CREATE TABLE IF NOT EXISTS students (
     status TEXT DEFAULT 'good',
     telegram_chat_id TEXT,
     telegram_username TEXT,
+    password_hash TEXT,
+    username TEXT UNIQUE,
+    avatar_color TEXT DEFAULT '#6366f1',
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 );
@@ -167,6 +175,9 @@ CREATE TABLE IF NOT EXISTS assignments (
     title TEXT NOT NULL,
     type TEXT DEFAULT 'homework',
     class_id INTEGER,
+    instructions TEXT DEFAULT '',
+    answer_key TEXT DEFAULT '',
+    max_score INTEGER DEFAULT 100,
     due_date TEXT,
     submitted INTEGER DEFAULT 0,
     total INTEGER DEFAULT 0,
@@ -175,6 +186,24 @@ CREATE TABLE IF NOT EXISTS assignments (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    assignment_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    answer_text TEXT NOT NULL,
+    score INTEGER DEFAULT 0,
+    max_score INTEGER DEFAULT 100,
+    grade_label TEXT,
+    feedback TEXT,
+    mistakes TEXT DEFAULT '[]',
+    status TEXT DEFAULT 'graded',
+    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    graded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(assignment_id, student_id),
+    FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
@@ -226,6 +255,68 @@ CREATE TABLE IF NOT EXISTS lesson_teams (
 );
 
 -- ══════════════════════════════════════════
+-- QUIZ SYSTEM
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS quizzes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subject TEXT,
+    grade TEXT,
+    description TEXT DEFAULT '',
+    questions TEXT DEFAULT '[]',
+    time_limit INTEGER,
+    is_active INTEGER DEFAULT 1,
+    user_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL,
+    student_id INTEGER,
+    student_name TEXT NOT NULL,
+    answers TEXT DEFAULT '[]',
+    score INTEGER DEFAULT 0,
+    max_score INTEGER DEFAULT 0,
+    time_spent INTEGER DEFAULT 0,
+    taken_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS quiz_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id INTEGER NOT NULL,
+    class_id INTEGER NOT NULL,
+    assigned_by INTEGER NOT NULL,
+    deadline TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
+-- BILLING & MONETIZATION
+-- ══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    currency TEXT DEFAULT 'KZT',
+    provider TEXT DEFAULT 'kaspi',
+    external_id TEXT,
+    status TEXT DEFAULT 'pending',
+    metadata TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ══════════════════════════════════════════
 -- INDEXES
 -- ══════════════════════════════════════════
 
@@ -236,6 +327,10 @@ CREATE INDEX IF NOT EXISTS idx_lessons_published ON lessons(is_published, is_arc
 CREATE INDEX IF NOT EXISTS idx_lesson_files_lesson_id ON lesson_files(lesson_id);
 CREATE INDEX IF NOT EXISTS idx_lesson_stats_lesson_date ON lesson_stats(lesson_id, stat_date);
 CREATE INDEX IF NOT EXISTS idx_integrations_user_type ON integrations(user_id, type);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_external_id ON transactions(external_id);
+CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment ON assignment_submissions(assignment_id);
+CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student ON assignment_submissions(student_id);
 
 -- ══════════════════════════════════════════
 -- DEFAULT CATEGORIES SEED

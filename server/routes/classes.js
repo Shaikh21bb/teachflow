@@ -1,6 +1,7 @@
 const express = require('express');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
-const { authenticateToken } = require('./auth');
+const { authenticateToken } = require('../middleware/auth');
+const { checkClassLimit } = require('../middleware/planMiddleware');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ router.get('/:id/students', async (req, res) => {
 });
 
 // POST create class
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, checkClassLimit, async (req, res) => {
     try {
         const { name, subject, grade } = req.body;
 
