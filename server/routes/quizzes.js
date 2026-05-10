@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { runQuery, getAll, getOne } = require('../db/database');
+const { runQuery, getAll, getOne, getLastInsertId } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 const { chatWithAI } = require('../utils/aiProviders');
+const { requireCredits, deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
 
 // All routes require auth
 router.use(authenticateToken);
@@ -56,7 +57,7 @@ router.post('/', async (req, res) => {
  * POST /api/quizzes/ai-generate
  * MUST be before /:id routes
  */
-router.post('/ai-generate', async (req, res) => {
+router.post('/ai-generate', requireCredits('quiz_generation'), async (req, res) => {
     try {
         const { topic, subject, grade, question_count = 5, language = 'ru' } = req.body;
         if (!topic) return res.status(400).json({ error: 'Тема обязательна' });
@@ -85,7 +86,11 @@ router.post('/ai-generate', async (req, res) => {
             return res.status(500).json({ error: 'ИИ не смог сгенерировать вопросы. Попробуйте ещё раз.' });
         }
 
-        res.json({ questions, topic, subject, grade, count: questions.length });
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
+
+        res.json({ questions, topic, subject, grade, count: questions.length, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('AI generate error:', err);
         res.status(500).json({ error: 'Ошибка генерации ИИ: ' + err.message });
@@ -151,6 +156,37 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         console.error('Delete quiz error:', err);
         res.status(500).json({ error: 'Не удалось удалить тест' });
+    }
+});
+
+/**
+ * POST /api/quizzes/:id/assign
+ */
+router.post('/:id/assign', async (req, res) => {
+    try {
+        const { class_id, deadline } = req.body;
+        if (!class_id) {
+            return res.status(400).json({ error: 'Необходимо указать сынып' });
+        }
+        
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+        if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
+
+        // Check if assignment already exists
+        const existing = await getOne('SELECT * FROM quiz_assignments WHERE quiz_id = ? AND class_id = ?', [req.params.id, class_id]);
+        if (existing) {
+            return res.status(400).json({ error: 'Тест уже назначен этому классу' });
+        }
+
+        await runQuery(
+            `INSERT INTO quiz_assignments (quiz_id, class_id, assigned_by, deadline)
+             VALUES (?, ?, ?, ?)`,
+            [req.params.id, class_id, req.user.userId, deadline || null]
+        );
+        res.json({ success: true, message: 'Тест назначен' });
+    } catch (err) {
+        console.error('Assign quiz error:', err);
+        res.status(500).json({ error: 'Не удалось назначить тест' });
     }
 });
 

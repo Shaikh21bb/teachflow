@@ -21,7 +21,7 @@ async function getTeacherBot(userId) {
     }
 }
 
-// ── GET /api/telegram/status ── Check if bot configured, get stats
+// ── GET /api/telegram/status ──
 router.get('/status', authenticateToken, async (req, res) => {
     try {
         const bot = await getTeacherBot(req.user.userId);
@@ -48,7 +48,7 @@ router.get('/status', authenticateToken, async (req, res) => {
     }
 });
 
-// ── POST /api/telegram/class/:id/invite-code ── Generate invite code for class
+// ── POST /api/telegram/class/:id/invite-code ──
 router.post('/class/:id/invite-code', authenticateToken, async (req, res) => {
     try {
         const classInfo = await getOne(
@@ -58,10 +58,7 @@ router.post('/class/:id/invite-code', authenticateToken, async (req, res) => {
         if (!classInfo) return res.status(404).json({ error: 'Класс не найден' });
 
         const code = classInfo.telegram_invite_code || crypto.randomBytes(6).toString('hex').toUpperCase();
-        await runQuery(
-            'UPDATE classes SET telegram_invite_code = ? WHERE id = ?',
-            [code, classInfo.id]
-        );
+        await runQuery('UPDATE classes SET telegram_invite_code = ? WHERE id = ?', [code, classInfo.id]);
 
         const bot = await getTeacherBot(req.user.userId);
         const bot_name = bot ? (await getMe(bot.token)).result?.username : null;
@@ -72,41 +69,35 @@ router.post('/class/:id/invite-code', authenticateToken, async (req, res) => {
     }
 });
 
-// ── POST /api/telegram/send-to-class ── Broadcast message to all Telegram-connected students
+// ── POST /api/telegram/send-to-class ──
 router.post('/send-to-class', authenticateToken, async (req, res) => {
     try {
         const { class_id, message } = req.body;
-        if (!class_id || !message) return res.status(400).json({ error: 'class_id и message обязательны' });
+        if (!class_id || !message) return res.status(400).json({ error: 'class_id және message міндетті' });
 
         const bot = await getTeacherBot(req.user.userId);
-        if (!bot) return res.status(400).json({ error: 'Telegram бот не подключён' });
+        if (!bot) return res.status(400).json({ error: 'Telegram бот қосылмаған' });
 
         const classInfo = await getOne(
             'SELECT * FROM classes WHERE id = ? AND user_id = ?',
             [parseInt(class_id), req.user.userId]
         );
-        if (!classInfo) return res.status(404).json({ error: 'Класс не найден' });
+        if (!classInfo) return res.status(404).json({ error: 'Класс табылмады' });
 
         const students = await getAll(
             'SELECT * FROM students WHERE class_id = ? AND telegram_chat_id IS NOT NULL',
             [parseInt(class_id)]
         );
 
-        if (students.length === 0) {
-            return res.json({ success: true, sent: 0, message: 'Нет студентов с Telegram' });
-        }
+        if (students.length === 0) return res.json({ success: true, sent: 0, message: 'Telegram-да оқушылар жоқ' });
 
         const teacher = await getOne('SELECT name FROM users WHERE id = ?', [req.user.userId]);
-        const fullText = `📢 *${classInfo.name}* — сообщение от учителя\n\n${message}\n\n_— ${teacher.name}_`;
+        const fullText = `📢 *${classInfo.name}* — мұғалімнің хабарламасы\n\n${message}\n\n_— ${teacher.name}_`;
 
         let sent = 0, failed = 0;
         for (const student of students) {
-            try {
-                await sendMessage(bot.token, student.telegram_chat_id, fullText);
-                sent++;
-            } catch {
-                failed++;
-            }
+            try { await sendMessage(bot.token, student.telegram_chat_id, fullText); sent++; }
+            catch { failed++; }
         }
 
         res.json({ success: true, sent, failed, total: students.length });
@@ -115,26 +106,24 @@ router.post('/send-to-class', authenticateToken, async (req, res) => {
     }
 });
 
-// ── POST /api/telegram/send-to-student ── Send to specific student
+// ── POST /api/telegram/send-to-student ──
 router.post('/send-to-student', authenticateToken, async (req, res) => {
     try {
         const { student_id, message } = req.body;
-        if (!student_id || !message) return res.status(400).json({ error: 'Обязательные поля: student_id, message' });
+        if (!student_id || !message) return res.status(400).json({ error: 'student_id және message міндетті' });
 
         const bot = await getTeacherBot(req.user.userId);
-        if (!bot) return res.status(400).json({ error: 'Telegram бот не подключён' });
+        if (!bot) return res.status(400).json({ error: 'Telegram бот қосылмаған' });
 
         const student = await getOne(
-            `SELECT s.* FROM students s
-             JOIN classes c ON s.class_id = c.id
-             WHERE s.id = ? AND c.user_id = ?`,
+            `SELECT s.* FROM students s JOIN classes c ON s.class_id = c.id WHERE s.id = ? AND c.user_id = ?`,
             [parseInt(student_id), req.user.userId]
         );
-        if (!student) return res.status(404).json({ error: 'Ученик не найден' });
-        if (!student.telegram_chat_id) return res.status(400).json({ error: 'У ученика нет Telegram' });
+        if (!student) return res.status(404).json({ error: 'Оқушы табылмады' });
+        if (!student.telegram_chat_id) return res.status(400).json({ error: 'Оқушының Telegram-ы жоқ' });
 
         const teacher = await getOne('SELECT name FROM users WHERE id = ?', [req.user.userId]);
-        const fullText = `👤 *Личное сообщение*\n\n${message}\n\n_— ${teacher.name}_`;
+        const fullText = `👤 *Жеке хабарлама*\n\n${message}\n\n_— ${teacher.name}_`;
 
         await sendMessage(bot.token, student.telegram_chat_id, fullText);
         res.json({ success: true });
@@ -143,14 +132,14 @@ router.post('/send-to-student', authenticateToken, async (req, res) => {
     }
 });
 
-// ── GET /api/telegram/class/:id/students ── Students list with TG status
+// ── GET /api/telegram/class/:id/students ──
 router.get('/class/:id/students', authenticateToken, async (req, res) => {
     try {
         const classInfo = await getOne(
             'SELECT * FROM classes WHERE id = ? AND user_id = ?',
             [parseInt(req.params.id), req.user.userId]
         );
-        if (!classInfo) return res.status(404).json({ error: 'Класс не найден' });
+        if (!classInfo) return res.status(404).json({ error: 'Класс табылмады' });
 
         const students = await getAll(
             'SELECT id, name, email, telegram_chat_id, telegram_username, created_at FROM students WHERE class_id = ? ORDER BY name',
@@ -163,7 +152,11 @@ router.get('/class/:id/students', authenticateToken, async (req, res) => {
     }
 });
 
-// ── POST /api/webhooks/telegram/:teacherId ── Telegram webhook — student auto-join
+// ═══════════════════════════════════════════════════════════════
+// ── POST /api/telegram/webhook/:teacherId ── Main Webhook
+// Мұғалімге: /start, /stats, /myclass, /broadcast, /help
+// Оқушыға:   /start CODE, /mygrades, /help
+// ═══════════════════════════════════════════════════════════════
 router.post('/webhook/:teacherId', async (req, res) => {
     try {
         res.sendStatus(200); // Always reply fast to Telegram
@@ -174,12 +167,11 @@ router.post('/webhook/:teacherId', async (req, res) => {
         const text = message.text.trim();
         const chatId = message.chat.id.toString();
         const username = message.from?.username || null;
-        const firstName = message.from?.first_name || 'Ученик';
+        const firstName = message.from?.first_name || 'Пайдаланушы';
 
-        // Find teacher's bot
         const teacherId = parseInt(req.params.teacherId);
         const integration = await getOne(
-            'SELECT encrypted_token FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
+            'SELECT encrypted_token, chat_id FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
             [teacherId, 'telegram']
         );
         if (!integration) return;
@@ -187,19 +179,168 @@ router.post('/webhook/:teacherId', async (req, res) => {
         let botToken;
         try { botToken = decrypt(integration.encrypted_token); } catch { return; }
 
-        // /start CLASS_CODE
-        if (text.startsWith('/start')) {
-            const parts = text.split(' ');
-            const code = parts[1];
+        // ─── Determine who is sending ───────────────────────────────
+        const isTeacher = integration.chat_id && chatId === integration.chat_id.toString();
 
-            if (!code) {
+        // ─── Check if sender is a registered student ────────────────
+        const studentRecord = await getOne(
+            `SELECT s.*, c.name as class_name FROM students s
+             JOIN classes c ON s.class_id = c.id
+             WHERE s.telegram_chat_id = ? AND c.user_id = ?`,
+            [chatId, teacherId]
+        );
+
+        // ────────────────────────────────────────────────────────────
+        // TEACHER COMMANDS
+        // ────────────────────────────────────────────────────────────
+        if (isTeacher) {
+
+            // /start — Teacher welcome
+            if (text.startsWith('/start')) {
+                const teacher = await getOne('SELECT name FROM users WHERE id = ?', [teacherId]);
                 await sendMessage(botToken, chatId,
-                    `👋 *Сәлем, ${firstName}!*\n\nМен Urpaq.ai мұғалімінің бот-көмекшісімін.\n\nСыныпқа қосылу үшін мұғаліміңіз берген сілтемені басыңыз немесе кодты енгізіңіз:\n/join XXXXXX`
+                    `🎓 *Сәлем, ${teacher?.name || firstName}!*\n\n` +
+                    `Urpaq.ai мұғалім боты белсенді.\n\n` +
+                    `*Мұғалімге арналған командалар:*\n` +
+                    `📊 /stats — Жалпы статистика\n` +
+                    `📚 /myclass — Сыныптар тізімі\n` +
+                    `📣 /broadcast [хабарлама] — Барлық оқушыларға жіберу\n` +
+                    `❓ /help — Барлық командалар`
                 );
                 return;
             }
 
-            // Find class by code
+            // /stats — Teacher statistics
+            if (text === '/stats') {
+                const classes = await getAll(
+                    `SELECT c.name, c.subject, c.grade,
+                        (SELECT COUNT(*) FROM students WHERE class_id = c.id) as total,
+                        (SELECT COUNT(*) FROM students WHERE class_id = c.id AND telegram_chat_id IS NOT NULL) as tg_count
+                     FROM classes c WHERE c.user_id = ? ORDER BY c.name`,
+                    [teacherId]
+                );
+                const lessonCount = await getOne(
+                    'SELECT COUNT(*) as cnt FROM lessons WHERE user_id = ?', [teacherId]
+                );
+                const quizCount = await getOne(
+                    'SELECT COUNT(*) as cnt FROM quizzes WHERE user_id = ?', [teacherId]
+                );
+
+                const totalStudents = classes.reduce((a, c) => a + c.total, 0);
+                const tgStudents = classes.reduce((a, c) => a + c.tg_count, 0);
+
+                let statsText = `📊 *Urpaq.ai — Статистика*\n\n`;
+                statsText += `📚 Сабақтар: *${lessonCount?.cnt || 0}*\n`;
+                statsText += `📝 Тесттер: *${quizCount?.cnt || 0}*\n`;
+                statsText += `👥 Барлық оқушылар: *${totalStudents}*\n`;
+                statsText += `📱 Telegram-да: *${tgStudents}*\n\n`;
+                statsText += `*Сыныптар бойынша:*\n`;
+                classes.forEach(c => {
+                    statsText += `• ${c.name} — ${c.tg_count}/${c.total} TG\n`;
+                });
+
+                await sendMessage(botToken, chatId, statsText);
+                return;
+            }
+
+            // /myclass — List classes
+            if (text === '/myclass') {
+                const classes = await getAll(
+                    `SELECT c.*, 
+                        (SELECT COUNT(*) FROM students WHERE class_id = c.id) as total,
+                        (SELECT COUNT(*) FROM students WHERE class_id = c.id AND telegram_chat_id IS NOT NULL) as tg_count
+                     FROM classes c WHERE c.user_id = ? ORDER BY c.name`,
+                    [teacherId]
+                );
+                if (classes.length === 0) {
+                    await sendMessage(botToken, chatId, `📚 *Сыныптар жоқ*\n\nПлатформаға кіріп сынып қосыңыз.`);
+                    return;
+                }
+                let classText = `📚 *Сіздің сыныптарыңыз:*\n\n`;
+                classes.forEach((c, i) => {
+                    const code = c.telegram_invite_code || '—';
+                    classText += `${i + 1}. *${c.name}*\n`;
+                    classText += `   👥 ${c.tg_count}/${c.total} оқушы TG-да\n`;
+                    classText += `   🔗 Код: \`${code}\`\n\n`;
+                });
+                await sendMessage(botToken, chatId, classText);
+                return;
+            }
+
+            // /broadcast [message] — Send to all students
+            if (text.startsWith('/broadcast ')) {
+                const broadcastMsg = text.replace('/broadcast ', '').trim();
+                if (!broadcastMsg) {
+                    await sendMessage(botToken, chatId, `❌ Хабарлама жазыңыз:\n/broadcast Ертең бақылау жұмысы!`);
+                    return;
+                }
+                const allStudents = await getAll(
+                    `SELECT s.telegram_chat_id FROM students s
+                     JOIN classes c ON s.class_id = c.id
+                     WHERE c.user_id = ? AND s.telegram_chat_id IS NOT NULL`,
+                    [teacherId]
+                );
+                const teacher = await getOne('SELECT name FROM users WHERE id = ?', [teacherId]);
+                const fullMsg = `📢 *Мұғалімнің хабарламасы*\n\n${broadcastMsg}\n\n_— ${teacher?.name || 'Мұғалім'}_`;
+                let sent = 0;
+                for (const s of allStudents) {
+                    try { await sendMessage(botToken, s.telegram_chat_id, fullMsg); sent++; } catch {}
+                }
+                await sendMessage(botToken, chatId, `✅ *Жіберілді!*\n\n${sent}/${allStudents.length} оқушыға жетті.`);
+                return;
+            }
+
+            // /help — Teacher help
+            if (text === '/help') {
+                await sendMessage(botToken, chatId,
+                    `❓ *Мұғалімге арналған командалар:*\n\n` +
+                    `📊 /stats — Жалпы статистика\n` +
+                    `📚 /myclass — Сыныптар тізімі мен TG-статусы\n` +
+                    `📣 /broadcast [мәтін] — Барлық оқушыларға хабарлама\n` +
+                    `❓ /help — Осы мәзір\n\n` +
+                    `_Платформа: urpaq.ai_`
+                );
+                return;
+            }
+
+            // Unknown command for teacher
+            await sendMessage(botToken, chatId,
+                `❓ Команда танылмады.\n\nМұғалім командалары:\n/stats · /myclass · /broadcast · /help`
+            );
+            return;
+        }
+
+        // ────────────────────────────────────────────────────────────
+        // STUDENT COMMANDS
+        // ────────────────────────────────────────────────────────────
+
+        // /start [CODE] — Student join or welcome
+        if (text.startsWith('/start') || text.startsWith('/join')) {
+            const parts = text.split(' ');
+            const code = parts[1];
+
+            if (!code) {
+                if (studentRecord) {
+                    // Already registered student
+                    await sendMessage(botToken, chatId,
+                        `✅ *Сәлем, ${studentRecord.name}!*\n\n` +
+                        `📚 Сыныбыңыз: *${studentRecord.class_name}*\n\n` +
+                        `*Оқушы командалары:*\n` +
+                        `📊 /mygrades — Менің нәтижелерім\n` +
+                        `❓ /help — Командалар тізімі`
+                    );
+                } else {
+                    await sendMessage(botToken, chatId,
+                        `👋 *Сәлем, ${firstName}!*\n\n` +
+                        `Мен Urpaq.ai мұғалімінің бот-көмекшісімін.\n\n` +
+                        `Сыныпқа қосылу үшін мұғаліміңіз берген сілтемені басыңыз немесе:\n` +
+                        `/join XXXXXX — кодты енгізіңіз`
+                    );
+                }
+                return;
+            }
+
+            // Find class by invite code
             const classInfo = await getOne(
                 'SELECT * FROM classes WHERE telegram_invite_code = ? AND user_id = ?',
                 [code, teacherId]
@@ -212,7 +353,7 @@ router.post('/webhook/:teacherId', async (req, res) => {
                 return;
             }
 
-            // Check if already registered
+            // Already registered in this class
             const existing = await getOne(
                 'SELECT id, name FROM students WHERE telegram_chat_id = ? AND class_id = ?',
                 [chatId, classInfo.id]
@@ -220,58 +361,140 @@ router.post('/webhook/:teacherId', async (req, res) => {
 
             if (existing) {
                 await sendMessage(botToken, chatId,
-                    `✅ *${existing.name}, сіз бұрын тіркелгенсіз!*\n\n📚 Сынып: *${classInfo.name}*\n\nМұғалімнің хабарламаларын аласыз.`
+                    `✅ *${existing.name}, сіз бұрын тіркелгенсіз!*\n\n` +
+                    `📚 Сынып: *${classInfo.name}*\n\n` +
+                    `Командалар: /mygrades · /help`
                 );
                 return;
             }
 
-            // Auto-register or update existing student without TG
-            const studentByEmail = await getOne(
+            // Link or create student
+            const studentBySlot = await getOne(
                 'SELECT id, name FROM students WHERE class_id = ? AND telegram_chat_id IS NULL LIMIT 1',
                 [classInfo.id]
             );
 
-            if (studentByEmail) {
-                // Link Telegram to existing student record
+            let studentName;
+            if (studentBySlot) {
                 await runQuery(
                     'UPDATE students SET telegram_chat_id = ?, telegram_username = ? WHERE id = ?',
-                    [chatId, username, studentByEmail.id]
+                    [chatId, username, studentBySlot.id]
                 );
-                await sendMessage(botToken, chatId,
-                    `🎉 *Сәтті тіркелдіңіз!*\n\n👤 Аты: *${studentByEmail.name}*\n📚 Сынып: *${classInfo.name}*\n\nЕнді мұғалімнің хабарламаларын Telegram-да аласыз! 📬`
-                );
+                studentName = studentBySlot.name;
             } else {
-                // Create new student entry
                 await runQuery(
                     'INSERT INTO students (name, class_id, telegram_chat_id, telegram_username) VALUES (?, ?, ?, ?)',
                     [firstName, classInfo.id, chatId, username]
                 );
-                await sendMessage(botToken, chatId,
-                    `🎉 *${firstName}, сыныпқа қосылдыңыз!*\n\n📚 Сынып: *${classInfo.name}*\n\nЕнді мұғалімнің хабарламаларын Telegram-да аласыз! 📬`
-                );
+                studentName = firstName;
             }
 
-            // Notify teacher
-            const teacherIntegration = await getOne(
-                'SELECT encrypted_token, chat_id FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
-                [teacherId, 'telegram']
+            await sendMessage(botToken, chatId,
+                `🎉 *Сәтті тіркелдіңіз!*\n\n` +
+                `👤 Аты: *${studentName}*\n` +
+                `📚 Сынып: *${classInfo.name}*\n\n` +
+                `Мұғалімнің хабарламаларын Telegram-да аласыз! 📬\n\n` +
+                `Командалар: /mygrades · /help`
             );
-            if (teacherIntegration?.chat_id) {
+
+            // Notify teacher
+            if (integration.chat_id) {
                 try {
-                    const tToken = decrypt(teacherIntegration.encrypted_token);
-                    await sendMessage(tToken, teacherIntegration.chat_id,
-                        `📣 *Жаңа оқушы қосылды!*\n\n👤 ${firstName}${username ? ` (@${username})` : ''}\n📚 Сынып: *${classInfo.name}*`
+                    await sendMessage(botToken, integration.chat_id,
+                        `📣 *Жаңа оқушы қосылды!*\n\n👤 ${studentName}${username ? ` (@${username})` : ''}\n📚 Сынып: *${classInfo.name}*`
                     );
                 } catch {}
             }
+            return;
         }
 
-        // /help
-        if (text === '/help') {
-            await sendMessage(botToken, chatId,
-                `📖 *Urpaq.ai Bot — Командалар*\n\n/start CODE — сыныпқа қосылу\n/join CODE — сыныпқа қосылу\n/help — көмек`
+        // /mygrades — Student grades
+        if (text === '/mygrades') {
+            if (!studentRecord) {
+                await sendMessage(botToken, chatId,
+                    `❌ Сіз тіркелмегенсіз.\n\nМұғаліміңіздің сілтемесін басып тіркеліңіз.`
+                );
+                return;
+            }
+
+            const attempts = await getAll(
+                `SELECT q.title, qa.score, qa.max_score, qa.taken_at
+                 FROM quiz_attempts qa
+                 JOIN quizzes q ON qa.quiz_id = q.id
+                 WHERE qa.student_id = ?
+                 ORDER BY qa.taken_at DESC LIMIT 5`,
+                [studentRecord.id]
             );
+
+            const submissions = await getAll(
+                `SELECT a.title, asub.score, asub.max_score, asub.grade_label, asub.submitted_at
+                 FROM assignment_submissions asub
+                 JOIN assignments a ON asub.assignment_id = a.id
+                 WHERE asub.student_id = ?
+                 ORDER BY asub.submitted_at DESC LIMIT 5`,
+                [studentRecord.id]
+            );
+
+            let gradesText = `📊 *${studentRecord.name} — Нәтижелер*\n📚 ${studentRecord.class_name}\n\n`;
+
+            if (attempts.length > 0) {
+                gradesText += `*📝 Соңғы тесттер:*\n`;
+                attempts.forEach(a => {
+                    const pct = a.max_score > 0 ? Math.round((a.score / a.max_score) * 100) : 0;
+                    gradesText += `• ${a.title}: *${a.score}/${a.max_score}* (${pct}%)\n`;
+                });
+                gradesText += '\n';
+            }
+
+            if (submissions.length > 0) {
+                gradesText += `*📋 Соңғы тапсырмалар:*\n`;
+                submissions.forEach(s => {
+                    gradesText += `• ${s.title}: *${s.grade_label || s.score + '/' + s.max_score}*\n`;
+                });
+            }
+
+            if (attempts.length === 0 && submissions.length === 0) {
+                gradesText += `_Әлі нәтиже жоқ._`;
+            }
+
+            await sendMessage(botToken, chatId, gradesText);
+            return;
         }
+
+        // /help — Student help
+        if (text === '/help') {
+            if (studentRecord) {
+                await sendMessage(botToken, chatId,
+                    `❓ *Оқушы командалары:*\n\n` +
+                    `📊 /mygrades — Менің нәтижелерім (тест, тапсырма)\n` +
+                    `❓ /help — Осы мәзір\n\n` +
+                    `📚 Сыныбыңыз: *${studentRecord.class_name}*\n` +
+                    `_Мұғалімнің хабарламаларын автоматты аласыз._`
+                );
+            } else {
+                await sendMessage(botToken, chatId,
+                    `❓ *Командалар:*\n\n` +
+                    `/join XXXXXX — Сыныпқа қосылу\n` +
+                    `/help — Осы мәзір\n\n` +
+                    `Тіркелу үшін мұғаліміңіздің сілтемесін пайдаланыңыз.`
+                );
+            }
+            return;
+        }
+
+        // Unknown command for student
+        if (text.startsWith('/')) {
+            if (studentRecord) {
+                await sendMessage(botToken, chatId,
+                    `❓ Команда танылмады.\n\nОқушы командалары: /mygrades · /help`
+                );
+            } else {
+                await sendMessage(botToken, chatId,
+                    `👋 Тіркелу үшін мұғаліміңіздің сілтемесін пайдаланыңыз немесе /join XXXXXX деп жазыңыз.`
+                );
+            }
+        }
+
     } catch (err) {
         console.error('Telegram webhook error:', err.message);
     }

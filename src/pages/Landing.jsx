@@ -249,7 +249,7 @@ export default function Landing() {
                         <div key={i} style={{ display: 'flex', gap: '4rem' }}>
                             <div className="v3-marquee-item"><CheckCircle2 size={24} color="#8b5cf6" /> {language === 'kk' ? 'Бізге 5000+ мұғалім сенеді' : 'Нам доверяют 5000+ учителей'}</div>
                             <div className="v3-marquee-item"><Users size={24} color="#3b82f6" /> {language === 'kk' ? '150K+ белсенді оқушы' : '150K+ активных учеников'}</div>
-                            <div className="v3-marquee-item"><Star size={24} color="#fbbf24" /> {language === 'kk' ? 'Министрлік мақұлдаған' : 'Одобрено Министерством'}</div>
+
                             <div className="v3-marquee-item"><Zap size={24} color="#10b981" /> {language === 'kk' ? 'NIS және БИЛ үшін мінсіз' : 'Идеально для NIS и БИЛ'}</div>
                         </div>
                     ))}

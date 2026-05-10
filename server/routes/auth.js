@@ -7,6 +7,7 @@ const { Resend } = require('resend');
 const { runQuery, getOne } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
 const { validate, registerSchema, loginSchema } = require('../middleware/validate');
+const { STARTER_CREDITS, PLAN_CREDIT_LIMITS, CREDIT_COSTS } = require('../utils/creditCosts');
 
 // Initialize Resend safely - if no key is provided, emails will fail gracefully or log to console
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -51,7 +52,16 @@ async function generateRefreshToken(userId) {
 }
 
 function safeUserPayload(user) {
-    return { id: user.id, name: user.name, email: user.email, role: user.role };
+    return { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        plan: user.plan || 'free',
+        credits: user.credits || 0,
+        creditLimit: PLAN_CREDIT_LIMITS[user.plan || 'free'] || PLAN_CREDIT_LIMITS.free,
+        creditCosts: CREDIT_COSTS
+    };
 }
 
 // ──────────────────────────────────────────
@@ -72,12 +82,12 @@ router.post('/register', validate(registerSchema), async (req, res) => {
         const subjectsJson = JSON.stringify(subjects);
 
         await runQuery(
-            'INSERT INTO users (name, email, password_hash, role, subjects) VALUES (?, ?, ?, ?, ?)',
-            [name, email, passwordHash, 'teacher', subjectsJson]
+            'INSERT INTO users (name, email, password_hash, role, subjects, credits) VALUES (?, ?, ?, ?, ?, ?)',
+            [name, email, passwordHash, 'teacher', subjectsJson, STARTER_CREDITS]
         );
 
         const user = await getOne(
-            'SELECT id, name, email, role FROM users WHERE email = ?',
+            'SELECT id, name, email, role, credits, plan FROM users WHERE email = ?',
             [email]
         );
 
@@ -224,7 +234,7 @@ router.post('/logout', async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
     try {
         const user = await getOne(
-            'SELECT id, name, email, role, subjects, credits, created_at, last_login FROM users WHERE id = ?',
+            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login FROM users WHERE id = ?',
             [req.user.userId]
         );
 
@@ -238,7 +248,13 @@ router.get('/me', authenticateToken, async (req, res) => {
             user.subjects = [];
         }
 
-        res.json({ user });
+        res.json({
+            user: {
+                ...user,
+                creditLimit: PLAN_CREDIT_LIMITS[user.plan || 'free'] || PLAN_CREDIT_LIMITS.free,
+                creditCosts: CREDIT_COSTS
+            }
+        });
     } catch (error) {
         console.error('Get user error:', error);
         res.status(500).json({ error: 'Ошибка сервера' });
@@ -255,7 +271,7 @@ router.put('/profile', authenticateToken, validate(require('../middleware/valida
         await runQuery('UPDATE users SET name = ?, subjects = ? WHERE id = ?', [name, subjectsJson, req.user.userId]);
         
         const user = await getOne(
-            'SELECT id, name, email, role, subjects, credits, created_at, last_login FROM users WHERE id = ?',
+            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login FROM users WHERE id = ?',
             [req.user.userId]
         );
         user.subjects = JSON.parse(user.subjects || '[]');

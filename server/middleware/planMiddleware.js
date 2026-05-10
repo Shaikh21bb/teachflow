@@ -1,20 +1,21 @@
-const { getOne, getAll } = require('../db/database');
+const { getOne, getAll, runQuery } = require('../db/database');
+const { PLAN_CREDIT_LIMITS, getCreditCost } = require('../utils/creditCosts');
 
 const PLAN_LIMITS = {
     free: {
         lessons: 5,
         classes: 1,
-        ai_credits: 10
+        ai_credits: PLAN_CREDIT_LIMITS.free
     },
     pro: {
         lessons: 9999, // practically unlimited
         classes: 10,
-        ai_credits: 100
+        ai_credits: PLAN_CREDIT_LIMITS.pro
     },
     school: {
         lessons: 9999,
         classes: 9999,
-        ai_credits: 500
+        ai_credits: PLAN_CREDIT_LIMITS.school
     }
 };
 
@@ -82,16 +83,22 @@ async function checkClassLimit(req, res, next) {
 async function checkAICredits(req, res, next) {
     try {
         const userId = req.user.userId;
+        const cost = Number(req.creditCost || req.body?.creditCost || 1);
         const user = await getOne('SELECT credits, plan FROM users WHERE id = ?', [userId]);
         
-        if (!user || user.credits <= 0) {
+        if (!user || Number(user.credits || 0) < cost) {
             return res.status(403).json({ 
                 error: 'Недостаточно AI-кредитов', 
-                message: 'У вас закончились кредиты для использования ИИ. Пожалуйста, обновите тариф или подождите следующего месяца.',
+                message: `Бұл әрекетке ${cost} кредит керек. Сізде ${user?.credits || 0} кредит қалды.`,
                 no_credits: true,
-                code: 'NO_AI_CREDITS'
+                code: 'NO_AI_CREDITS',
+                required: cost,
+                remaining: Number(user?.credits || 0)
             });
         }
+
+        req.creditBalance = Number(user.credits || 0);
+        req.creditCost = cost;
         
         next();
     } catch (err) {
@@ -99,24 +106,45 @@ async function checkAICredits(req, res, next) {
     }
 }
 
+function requireCredits(feature) {
+    return (req, res, next) => {
+        req.creditFeature = feature;
+        req.creditCost = getCreditCost(feature);
+        return checkAICredits(req, res, next);
+    };
+}
+
 /**
  * Deduct AI credits from user
  */
 async function deductAICredits(userId, amount = 1) {
     try {
-        const { runQuery } = require('../db/database');
-        await runQuery('UPDATE users SET credits = credits - ? WHERE id = ?', [amount, userId]);
-        return true;
+        const result = await runQuery(
+            'UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?',
+            [amount, userId, amount]
+        );
+        return Number(result.rowsAffected || 0) > 0;
     } catch (err) {
         console.error('Deduct credits error:', err);
         return false;
     }
 }
 
+async function getCreditBalance(userId) {
+    const user = await getOne('SELECT credits, plan FROM users WHERE id = ?', [userId]);
+    return {
+        credits: Number(user?.credits || 0),
+        plan: user?.plan || 'free',
+        limit: PLAN_CREDIT_LIMITS[user?.plan || 'free'] || PLAN_CREDIT_LIMITS.free
+    };
+}
+
 module.exports = {
     checkLessonLimit,
     checkClassLimit,
     checkAICredits,
+    requireCredits,
     deductAICredits,
+    getCreditBalance,
     PLAN_LIMITS
 };

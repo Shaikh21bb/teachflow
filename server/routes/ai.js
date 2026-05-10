@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { chatWithAI, getAvailableProviders } = require('../utils/aiProviders');
 const { authenticateToken } = require('../middleware/auth');
+const { requireCredits, deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
+const { CREDIT_COSTS } = require('../utils/creditCosts');
 
 /**
  * POST /api/ai/chat
@@ -41,7 +43,7 @@ router.post('/chat', async (req, res) => {
  * POST /api/ai/lesson-plan
  * Generate a structured lesson plan by topic, subject, grade
  */
-router.post('/lesson-plan', authenticateToken, async (req, res) => {
+router.post('/lesson-plan', authenticateToken, requireCredits('lesson_plan'), async (req, res) => {
     try {
         const { topic, subject, grade, duration = 45, language = 'ru' } = req.body;
         if (!topic || !subject) {
@@ -53,7 +55,12 @@ router.post('/lesson-plan', authenticateToken, async (req, res) => {
             : `Составь подробный план урока по предмету "${subject}" на тему "${topic}" для ${grade} класса, длительностью ${duration} минут. Включи: 1. Цели и задачи, 2. Оборудование, 3. Орг. момент (5 мин), 4. Основная часть (${duration - 15} мин — объяснение, практика), 5. Подведение итогов (5 мин), 6. Домашнее задание, 7. Критерии оценивания. Отвечай структурированно.`;
 
         const plan = await chatWithAI(prompt, [], language);
-        res.json({ plan, topic, subject, grade, duration });
+        
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
+        
+        res.json({ plan, topic, subject, grade, duration, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('Lesson plan error:', err);
         res.status(500).json({ error: 'Не удалось сгенерировать план урока' });
@@ -64,7 +71,7 @@ router.post('/lesson-plan', authenticateToken, async (req, res) => {
  * POST /api/ai/quiz
  * Generate a quiz/test from lesson content or topic
  */
-router.post('/quiz', authenticateToken, async (req, res) => {
+router.post('/quiz', authenticateToken, requireCredits('quiz_generation'), async (req, res) => {
     try {
         const { content, topic, subject, grade, question_count = 5, language = 'ru' } = req.body;
         if (!content && !topic) {
@@ -91,7 +98,11 @@ router.post('/quiz', authenticateToken, async (req, res) => {
             questions = [];
         }
 
-        res.json({ questions, raw, count: questions.length });
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
+
+        res.json({ questions, raw, count: questions.length, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('Quiz gen error:', err);
         res.status(500).json({ error: 'Не удалось создать тест' });
@@ -102,7 +113,7 @@ router.post('/quiz', authenticateToken, async (req, res) => {
  * POST /api/ai/summarize
  * Summarize text content (e.g. PDF text extraction)
  */
-router.post('/summarize', authenticateToken, async (req, res) => {
+router.post('/summarize', authenticateToken, requireCredits('summarize'), async (req, res) => {
     try {
         const { content, language = 'ru' } = req.body;
         if (!content) return res.status(400).json({ error: 'content обязателен' });
@@ -113,7 +124,12 @@ router.post('/summarize', authenticateToken, async (req, res) => {
             : `Сделай краткое резюме следующего текста в 5-7 ключевых пунктах (для учеников, понятным языком):\n\n${trimmed}`;
 
         const summary = await chatWithAI(prompt, [], language);
-        res.json({ summary });
+        
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
+        
+        res.json({ summary, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('Summarize error:', err);
         res.status(500).json({ error: 'Не удалось создать резюме' });
@@ -124,7 +140,7 @@ router.post('/summarize', authenticateToken, async (req, res) => {
  * POST /api/ai/translate
  * Translate lesson content to another language
  */
-router.post('/translate', authenticateToken, async (req, res) => {
+router.post('/translate', authenticateToken, requireCredits('translate'), async (req, res) => {
     try {
         const { content, from = 'ru', to = 'kk' } = req.body;
         if (!content) return res.status(400).json({ error: 'content обязателен' });
@@ -134,7 +150,12 @@ router.post('/translate', authenticateToken, async (req, res) => {
         const prompt = `Переведи следующий текст с ${langNames[from] || from} на ${langNames[to] || to} язык, сохраняя структуру и смысл:\n\n${trimmed}`;
 
         const translated = await chatWithAI(prompt, [], to);
-        res.json({ translated, from, to });
+        
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
+        
+        res.json({ translated, from, to, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('Translate error:', err);
         res.status(500).json({ error: 'Не удалось перевести текст' });
@@ -153,7 +174,8 @@ router.get('/status', (req, res) => {
             gemini: providers.gemini,
             groq: providers.groq,
             huggingface: providers.huggingface
-        }
+        },
+        creditCosts: CREDIT_COSTS
     });
 });
 

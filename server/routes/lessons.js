@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
+const { checkLessonLimit } = require('../middleware/planMiddleware');
 const crypto = require('crypto');
 
 // ──────────────────────────────────────────
@@ -115,7 +116,7 @@ router.get('/:id', async (req, res) => {
 // ──────────────────────────────────────────
 // POST create lesson
 // ──────────────────────────────────────────
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
     try {
         const {
             title, subject, grade, duration, description, content,

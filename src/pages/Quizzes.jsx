@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import { quizzesAPI } from '../api'
+import { quizzesAPI, classesAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import {
     Plus, Trash2, Edit3, BarChart2, Sparkles,
     ChevronDown, ChevronUp, CheckCircle, XCircle,
-    FileQuestion, Clock, Users, BookOpen, Loader, Share2, Eye
+    FileQuestion, Clock, Users, BookOpen, Loader, Share2, Eye, Send
 } from 'lucide-react'
 
 const ALL_SUBJECTS = [
@@ -45,6 +45,7 @@ export default function Quizzes() {
     const [error, setError] = useState(null)
     const [modal, setModal] = useState(null)
     const [activeQuiz, setActiveQuiz] = useState(null)
+    const [classes, setClasses] = useState([])
 
     // Parse teacher's subjects from profile
     const userSubjectIds = (() => {
@@ -74,6 +75,7 @@ export default function Quizzes() {
 
     useEffect(() => {
         loadQuizzes()
+        loadClasses()
     }, [])
 
     // Timer for taking quiz
@@ -99,6 +101,15 @@ export default function Quizzes() {
             setError(e.message)
         } finally {
             setLoading(false)
+        }
+    }
+
+    async function loadClasses() {
+        try {
+            const data = await classesAPI.getAll()
+            setClasses(data)
+        } catch (e) {
+            console.error('Failed to load classes', e)
         }
     }
 
@@ -128,6 +139,14 @@ export default function Quizzes() {
         setTakeScore(null)
         setStudentName('')
         setModal('take')
+    }
+
+    const [assignForm, setAssignForm] = useState({ class_id: '', deadline: '' })
+
+    function openAssign(quiz) {
+        setActiveQuiz(quiz)
+        setAssignForm({ class_id: '', deadline: '' })
+        setModal('assign')
     }
 
     function closeModal() {
@@ -214,7 +233,7 @@ export default function Quizzes() {
 
     async function handleSubmitQuiz() {
         if (!studentName.trim()) return alert('Введите имя ученика')
-        const quiz = activeQuiz
+            const quiz = activeQuiz
         let score = 0
         const answers = quiz.questions.map((q, idx) => {
             const ans = takeAnswers[idx] || ''
@@ -234,6 +253,20 @@ export default function Quizzes() {
             loadQuizzes()
         } catch (e) {
             alert('Ошибка сохранения: ' + e.message)
+        }
+    }
+
+    async function handleAssignQuiz() {
+        if (!assignForm.class_id) return alert('Выберите класс')
+        try {
+            setSaving(true)
+            await quizzesAPI.assign(activeQuiz.id, assignForm)
+            alert('Тест успешно назначен классу!')
+            closeModal()
+        } catch (e) {
+            alert('Ошибка: ' + e.message)
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -322,6 +355,7 @@ export default function Quizzes() {
                             onTake={() => openTake(quiz)}
                             onCopyLink={() => copyLink(quiz)}
                             onReport={() => window.location.href = `/quizzes/${quiz.id}/report`}
+                            onAssign={() => openAssign(quiz)}
                         />
                     ))}
                 </div>
@@ -512,6 +546,30 @@ export default function Quizzes() {
                     )}
                 </Modal>
             )}
+
+            {/* ===== ASSIGN MODAL ===== */}
+            {modal === 'assign' && activeQuiz && (
+                <Modal title={language === 'kk' ? 'Сыныпқа тағайындау' : 'Назначить классу'} onClose={closeModal}>
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="label">Выберите класс *</label>
+                        <select className="input" value={assignForm.class_id} onChange={e => setAssignForm(p => ({ ...p, class_id: e.target.value }))}>
+                            <option value="">-- Выберите класс --</option>
+                            {classes.map(c => <option key={c.id} value={c.id}>{c.name} {c.grade ? `(${c.grade} кл)` : ''}</option>)}
+                        </select>
+                    </div>
+                    <div style={{ marginBottom: 24 }}>
+                        <label className="label">Дедлайн (необязательно)</label>
+                        <input type="datetime-local" className="input" value={assignForm.deadline} onChange={e => setAssignForm(p => ({ ...p, deadline: e.target.value }))} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 16, borderTop: '1px solid var(--color-gray-200)' }}>
+                        <button className="btn btn-secondary" onClick={closeModal}>Отмена</button>
+                        <button className="btn btn-primary" onClick={handleAssignQuiz} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {saving ? <Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                            Назначить
+                        </button>
+                    </div>
+                </Modal>
+            )}
         </div>
     )
 }
@@ -550,15 +608,12 @@ function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onRepo
                 ))}
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-primary" onClick={onTake} style={{ flex: 1, fontSize: '0.85rem', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <Eye size={15} /> {language === 'kk' ? 'Өту' : 'Пройти'}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" onClick={onAssign} style={{ flex: 1, fontSize: '0.85rem', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Send size={15} /> {language === 'kk' ? 'Беру' : 'Назначить'}
                 </button>
                 <button className="btn btn-secondary" onClick={onReport} style={{ flex: 1, fontSize: '0.85rem', padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <BarChart2 size={15} /> {language === 'kk' ? 'Есептер' : 'Отчёт'}
-                </button>
-                <button className="btn btn-secondary" onClick={onCopyLink} style={{ padding: '10px 12px' }} title={language === 'kk' ? 'Сілтемені көшіру' : 'Скопировать ссылку'}>
-                    <Share2 size={15} />
                 </button>
             </div>
         </div>

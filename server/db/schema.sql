@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     role TEXT DEFAULT 'teacher',
     avatar_url TEXT,
-    credits INTEGER DEFAULT 10,
+    credits INTEGER DEFAULT 5,
     plan TEXT DEFAULT 'free',
     billing_period_start DATETIME,
     billing_period_end DATETIME,

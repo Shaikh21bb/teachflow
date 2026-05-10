@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
-const { authenticateToken } = require('./auth');
+const { authenticateToken } = require('../middleware/auth');
 const { chatWithAI } = require('../utils/aiProviders');
+const { requireCredits, deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
 
 // GET all open lessons for current teacher
 router.get('/', authenticateToken, async (req, res) => {
@@ -52,7 +53,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // POST generate AI plan for open lesson
-router.post('/generate', authenticateToken, async (req, res) => {
+router.post('/generate', authenticateToken, requireCredits('open_lesson'), async (req, res) => {
     try {
         const { title, subject, grade, topic, objectives, language = 'ru', numTeams = 4 } = req.body;
 
@@ -119,8 +120,11 @@ router.post('/generate', authenticateToken, async (req, res) => {
 - ...`;
 
         const aiContent = await chatWithAI(prompt, [], language);
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
 
-        res.json({ content: aiContent });
+        res.json({ content: aiContent, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('AI generate error:', err);
         res.status(500).json({ error: 'Ошибка генерации ИИ: ' + err.message });

@@ -150,11 +150,62 @@ export const telegramAPI = {
     getClassStudents: (classId) => fetchAPI(`/telegram/class/${classId}/students`),
 };
 
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+function loadImageFromDataUrl(dataUrl) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = dataUrl;
+    });
+}
+
+export async function createInlineImageAsset(file, options = {}) {
+    const {
+        maxWidth = 1400,
+        maxHeight = 1400,
+        quality = 0.82
+    } = options;
+
+    const dataUrl = await readFileAsDataUrl(file);
+    const img = await loadImageFromDataUrl(dataUrl);
+
+    const ratio = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+    const width = Math.max(1, Math.round(img.width * ratio));
+    const height = Math.max(1, Math.round(img.height * ratio));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas is not supported');
+
+    ctx.drawImage(img, 0, 0, width, height);
+    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+    return {
+        secure_url: compressedDataUrl,
+        public_id: null,
+        storage: 'inline'
+    };
+}
+
 // Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
 export async function uploadToCloudinary(file, onProgress) {
     // 1. Get secure signature from our backend
     const sigRes = await fetch(`${API_BASE}/cloudinary/signature`);
-    if (!sigRes.ok) throw new Error('Signature failed');
+    if (!sigRes.ok) {
+        const error = await sigRes.json().catch(() => ({}));
+        throw new Error(error.error || 'Signature failed');
+    }
     const { signature, timestamp, apiKey, cloudName, folder } = await sigRes.json();
 
     // 2. Upload file securely

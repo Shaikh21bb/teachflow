@@ -3,6 +3,8 @@ const router = express.Router();
 const { runQuery, getAll, getOne, getLastInsertId } = require('../db/database');
 const { authenticateStudent } = require('../middleware/studentAuth');
 const { gradeAssignment } = require('../utils/assignmentGrader');
+const { deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
+const { getCreditCost } = require('../utils/creditCosts');
 
 // All routes here require student authentication
 router.use(authenticateStudent);
@@ -140,8 +142,31 @@ router.post('/assignments/:id/submit', async (req, res) => {
             return res.status(404).json({ error: language === 'kk' ? 'Тапсырма табылмады' : 'Задание не найдено' });
         }
 
+        const creditCost = getCreditCost('homework_grading');
+        const teacherBalance = await getCreditBalance(assignment.user_id);
+        if (teacherBalance.credits < creditCost) {
+            return res.status(403).json({
+                error: language === 'kk'
+                    ? 'Мұғалімнің AI кредиті жеткіліксіз. Кейінірек қайталап көріңіз.'
+                    : 'У учителя недостаточно AI-кредитов. Попробуйте позже.',
+                code: 'NO_AI_CREDITS',
+                required: creditCost,
+                remaining: teacherBalance.credits
+            });
+        }
+
         const student = await getOne('SELECT * FROM students WHERE id = ?', [req.student.studentId]);
         const grading = await gradeAssignment({ assignment, student, answerText, language });
+        const charged = await deductAICredits(assignment.user_id, creditCost);
+        if (!charged) {
+            return res.status(403).json({
+                error: language === 'kk'
+                    ? 'Мұғалімнің AI кредиті жеткіліксіз. Кейінірек қайталап көріңіз.'
+                    : 'У учителя недостаточно AI-кредитов. Попробуйте позже.',
+                code: 'NO_AI_CREDITS'
+            });
+        }
+        const updatedTeacherBalance = await getCreditBalance(assignment.user_id);
 
         await runQuery(`
             INSERT INTO assignment_submissions
@@ -188,6 +213,8 @@ router.post('/assignments/:id/submit', async (req, res) => {
         res.json({
             ...grading,
             answer_text: answerText,
+            creditsCharged: creditCost,
+            teacherCreditsRemaining: updatedTeacherBalance.credits,
             submitted_at: new Date().toISOString()
         });
     } catch (err) {

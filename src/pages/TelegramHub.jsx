@@ -695,6 +695,75 @@ export default function TelegramHub() {
                             )}
                         </div>
                     </div>
+
+                    {/* ── Commands Reference ── */}
+                    <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
+                        {/* Teacher Commands */}
+                        <div style={{
+                            background: `linear-gradient(135deg, ${TG_BLUE}12, ${TG_BLUE}04)`,
+                            border: `1.5px solid ${TG_BLUE}30`,
+                            borderRadius: 20, padding: 24
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: TG_BLUE, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🎓</div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--color-gray-900)' }}>Мұғалім командалары</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)' }}>Ботқа тікелей жіберіңіз</div>
+                                </div>
+                            </div>
+                            {[
+                                { cmd: '/stats', desc: 'Жалпы статистика (сыныптар, оқушылар, тесттер)' },
+                                { cmd: '/myclass', desc: 'Сыныптар тізімі мен TG-статусы' },
+                                { cmd: '/broadcast [мәтін]', desc: 'Барлық оқушыларға хабарлама жіберу' },
+                                { cmd: '/help', desc: 'Барлық командалар тізімі' },
+                            ].map(item => (
+                                <div key={item.cmd} style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
+                                    <code style={{
+                                        background: TG_BLUE, color: 'white', padding: '3px 8px',
+                                        borderRadius: 6, fontSize: '0.78rem', fontWeight: 700,
+                                        whiteSpace: 'nowrap', flexShrink: 0
+                                    }}>{item.cmd}</code>
+                                    <span style={{ fontSize: '0.82rem', color: 'var(--color-gray-600)', paddingTop: 2 }}>{item.desc}</span>
+                                </div>
+                            ))}
+                            <div style={{ marginTop: 4, fontSize: '0.78rem', color: 'var(--color-gray-400)', borderTop: '1px solid var(--color-gray-200)', paddingTop: 12 }}>
+                                💡 Chat ID-іңізді Integrations бетінде немесе @userinfobot арқылы алыңыз
+                            </div>
+                        </div>
+
+                        {/* Student Commands */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #d1fae520, #ecfdf510)',
+                            border: '1.5px solid #10b98130',
+                            borderRadius: 20, padding: 24
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>🎒</div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--color-gray-900)' }}>Оқушы командалары</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)' }}>Оқушы ботқа жібереді</div>
+                                </div>
+                            </div>
+                            {[
+                                { cmd: '/start [КОД]', desc: 'Сыныпқа тіркелу (мұғалімнің сілтемесі)' },
+                                { cmd: '/mygrades', desc: 'Өзінің тест және тапсырма нәтижелері' },
+                                { cmd: '/help', desc: 'Оқушыға арналған командалар тізімі' },
+                            ].map(item => (
+                                <div key={item.cmd} style={{ display: 'flex', gap: 12, marginBottom: 12, alignItems: 'flex-start' }}>
+                                    <code style={{
+                                        background: '#10b981', color: 'white', padding: '3px 8px',
+                                        borderRadius: 6, fontSize: '0.78rem', fontWeight: 700,
+                                        whiteSpace: 'nowrap', flexShrink: 0
+                                    }}>{item.cmd}</code>
+                                    <span style={{ fontSize: '0.82rem', color: 'var(--color-gray-600)', paddingTop: 2 }}>{item.desc}</span>
+                                </div>
+                            ))}
+                            <div style={{ marginTop: 4, fontSize: '0.78rem', color: 'var(--color-gray-400)', borderTop: '1px solid var(--color-gray-200)', paddingTop: 12 }}>
+                                🤖 Оқушы тіркелгенде мұғалімге автоматты хабарлама келеді
+                            </div>
+                        </div>
+                    </div>
                 </>
             )}
         </div>

@@ -15,7 +15,8 @@ export default function LessonBuilderNew() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const editId = searchParams.get('edit')
-    const { user } = useAuth()
+    const { user, refreshUser } = useAuth()
+    const lessonPlanCost = user?.creditCosts?.lesson_plan || 2
 
     const [step, setStep] = useState(0)
     const [saving, setSaving] = useState(false)
@@ -146,7 +147,8 @@ export default function LessonBuilderNew() {
                 language: 'ru'
             })
             setField('content', data.plan)
-            showToast('🤖 План урока сгенерирован!')
+            await refreshUser?.()
+            showToast(`🤖 План урока сгенерирован! -${data.creditsCharged || lessonPlanCost} кредит`)
         } catch (e) {
             showToast('Ошибка AI: ' + e.message, 'error')
         } finally {

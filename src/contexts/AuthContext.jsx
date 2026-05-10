@@ -228,6 +228,7 @@ export function AuthProvider({ children }) {
         register,
         login,
         logout,
+        refreshUser: fetchUserInfo,
     }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

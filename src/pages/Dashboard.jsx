@@ -69,8 +69,31 @@ function Dashboard() {
     return (
         <div>
             <div className="page-header">
-                <h1 className="page-title">{t('dashboard.title')}, {user?.name || 'Пайдаланушы'}!</h1>
-                <p className="page-subtitle">{t('dashboard.subtitle')}</p>
+                <div>
+                    <h1 className="page-title">{t('dashboard.title')}, {user?.name || 'Пайдаланушы'}!</h1>
+                    <p className="page-subtitle">{t('dashboard.subtitle')}</p>
+                </div>
+                
+                {/* Subscription Status Badge */}
+                <Link to="/pricing" style={{ 
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 16px',
+                    background: user?.plan === 'pro' ? 'var(--color-success-50)' : (user?.plan === 'school' ? 'var(--color-warning-50)' : 'var(--color-primary-50)'),
+                    borderRadius: '12px',
+                    border: '1px solid currentColor',
+                    color: user?.plan === 'pro' ? 'var(--color-success-700)' : (user?.plan === 'school' ? 'var(--color-warning-700)' : 'var(--color-primary-700)')
+                }}>
+                    <Zap size={18} fill="currentColor" />
+                    <div style={{ textAlign: 'left' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 500, opacity: 0.8 }}>{language === 'kk' ? 'Тариф' : 'Тариф'}</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, textTransform: 'uppercase' }}>
+                            {user?.plan || 'free'}
+                        </div>
+                    </div>
+                </Link>
             </div>
 
             {/* Stats Cards */}
@@ -187,6 +210,38 @@ function Dashboard() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+                    {/* Plan Management Widget */}
+                    <div className="widget" style={{ 
+                        background: 'var(--gradient-primary)', 
+                        color: 'white',
+                        border: 'none'
+                    }}>
+                        <div className="widget-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            <h3 className="widget-title" style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Zap size={20} /> {language === 'kk' ? 'Жазылым' : 'Подписка'}
+                            </h3>
+                        </div>
+                        <div className="widget-body">
+                            <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                                    <span>{language === 'kk' ? 'AI Кредиттер' : 'AI Кредиты'}</span>
+                                    <span>{user?.credits || 0} / {user?.creditLimit || (user?.plan === 'pro' ? 100 : (user?.plan === 'school' ? 500 : 5))}</span>
+                                </div>
+                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }}>
+                                    <div style={{ 
+                                        width: `${Math.min(100, ((user?.credits || 0) / (user?.creditLimit || (user?.plan === 'pro' ? 100 : (user?.plan === 'school' ? 500 : 5)))) * 100)}%`, 
+                                        height: '100%', 
+                                        background: 'white', 
+                                        borderRadius: '3px' 
+                                    }}></div>
+                                </div>
+                            </div>
+                            <Link to="/pricing" className="btn btn-white btn-sm" style={{ width: '100%', color: 'var(--color-primary-600)' }}>
+                                {user?.plan === 'free' ? (language === 'kk' ? 'Тарифті жаңарту' : 'Обновить тариф') : (language === 'kk' ? 'Басқару' : 'Управление')}
+                            </Link>
+                        </div>
+                    </div>
+
                     {/* Quick Actions */}
                     <div className="widget">
                         <div className="widget-header">
