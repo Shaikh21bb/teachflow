@@ -8,6 +8,7 @@ import {
     BookOpen, Edit3, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { uploadToCloudinary } from '../api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -48,6 +49,23 @@ export default function Profile() {
     const [colleagues, setColleagues] = useState([]);
     const [colleaguesLoading, setColleaguesLoading] = useState(false);
     const [togglingId, setTogglingId] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            setIsUploading(true);
+            const result = await uploadToCloudinary(file);
+            setProfileData(p => ({ ...p, avatar_url: result.secure_url }));
+            showMsg(language === 'kk' ? 'Сурет сәтті жүктелді!' : 'Фото успешно загружено!', 'success');
+        } catch (err) {
+            showMsg(language === 'kk' ? 'Сурет жүктеуде қате шықты' : 'Ошибка при загрузке фото', 'error');
+            console.error(err);
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     useEffect(() => {
         fetchProfile();
@@ -401,9 +419,34 @@ export default function Profile() {
                             {/* Avatar */}
                             <div style={{ marginBottom: '16px' }}>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Camera size={14} style={{ color: 'var(--color-primary-500)' }} /> {t('profile.avatarUrl') || 'Сурет сілтемесі / Фото URL'}
+                                    <Camera size={14} style={{ color: 'var(--color-primary-500)' }} /> {language === 'kk' ? 'Профиль суреті' : 'Фото профиля'}
                                 </label>
-                                <input className="input" type="url" value={profileData.avatar_url} onChange={e => setProfileData(p => ({ ...p, avatar_url: e.target.value }))} placeholder="https://..." />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--color-gray-100)', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                                        {profileData.avatar_url ? (
+                                            <img src={profileData.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-gray-400)' }}>
+                                                <User size={24} />
+                                            </div>
+                                        )}
+                                        {isUploading && (
+                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Loader2 size={20} className="spin" color="white" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} id="avatar-upload" disabled={isUploading} />
+                                        <label htmlFor="avatar-upload" className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                                            <Camera size={14} /> {language === 'kk' ? 'Суретті жүктеу' : 'Загрузить фото'}
+                                        </label>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', margin: '0 0 4px' }}>
+                                            {language === 'kk' ? 'Немесе URL сілтемені қойыңыз:' : 'Или вставьте URL ссылку:'}
+                                        </p>
+                                        <input className="input" style={{ padding: '6px 10px', fontSize: '0.85rem' }} type="url" value={profileData.avatar_url} onChange={e => setProfileData(p => ({ ...p, avatar_url: e.target.value }))} placeholder="https://..." />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Name */}
