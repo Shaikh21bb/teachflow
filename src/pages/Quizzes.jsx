@@ -576,7 +576,7 @@ export default function Quizzes() {
 
 // ============== Sub-components ==============
 
-function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onReport }) {
+function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onReport, onAssign }) {
     const pct = quiz.questions?.length > 0 ? Math.round(((quiz.attempts_count || 0) / Math.max(1, quiz.attempts_count || 1)) * 100) : 0
     return (
         <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -589,6 +589,8 @@ function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onRepo
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={onCopyLink} style={iconBtn} title={language === 'kk' ? 'Сілтеме көшіру' : 'Копировать ссылку'}><Share2 size={15} /></button>
+                    <button onClick={onTake} style={iconBtn} title={language === 'kk' ? 'Көру' : 'Посмотреть'}><Eye size={15} /></button>
                     <button onClick={onEdit} style={iconBtn} title={language === 'kk' ? 'Өңдеу' : 'Редактировать'}><Edit3 size={15} /></button>
                     <button onClick={onDelete} style={{ ...iconBtn, color: '#ef4444', background: '#ef444415' }} title={language === 'kk' ? 'Жою' : 'Удалить'}><Trash2 size={15} /></button>
                 </div>
