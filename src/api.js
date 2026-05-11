@@ -218,7 +218,7 @@ export async function uploadToCloudinary(file, onProgress) {
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
 
         if (onProgress) {
             xhr.upload.onprogress = (e) => {

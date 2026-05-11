@@ -60,8 +60,9 @@ export default function Profile() {
             setProfileData(p => ({ ...p, avatar_url: result.secure_url }));
             showMsg(language === 'kk' ? 'Сурет сәтті жүктелді!' : 'Фото успешно загружено!', 'success');
         } catch (err) {
-            showMsg(language === 'kk' ? 'Сурет жүктеуде қате шықты' : 'Ошибка при загрузке фото', 'error');
-            console.error(err);
+            const errMsg = err.message || (language === 'kk' ? 'Белгісіз қате' : 'Unknown error');
+            showMsg((language === 'kk' ? 'Сурет жүктеуде қате шықты: ' : 'Ошибка при загрузке фото: ') + errMsg, 'error');
+            console.error('Upload error:', err);
         } finally {
             setIsUploading(false);
         }
