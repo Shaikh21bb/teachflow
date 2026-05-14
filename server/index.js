@@ -334,7 +334,14 @@ async function startServer() {
 
         const crypto = require('crypto');
         const timestamp = Math.round((new Date).getTime() / 1000);
-        const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+        
+        // Ensure parameters are sorted alphabetically for Cloudinary signature
+        const params = { folder, timestamp };
+        const strToSign = Object.keys(params)
+            .sort()
+            .map(key => `${key}=${params[key]}`)
+            .join('&') + apiSecret;
+            
         const signature = crypto.createHash('sha1').update(strToSign).digest('hex');
 
         res.json({ signature, timestamp, apiKey, cloudName, folder });

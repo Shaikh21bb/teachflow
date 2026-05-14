@@ -240,7 +240,10 @@ export async function uploadToCloudinary(file, onProgress) {
                 reject(new Error('Cloudinary: ' + errMsg));
             }
         };
-        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.onerror = () => {
+            console.error('Cloudinary Network Error');
+            reject(new Error('Network error during upload (check CORS or Internet connection)'));
+        };
         xhr.send(formData);
     });
 }
