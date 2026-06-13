@@ -51,7 +51,7 @@ const Pricing = () => {
             highlight: true,
             cta: L('Pro таңдау →', 'Выбрать →'),
             ctaStyle: 'gradient',
-            badge: L('Ең танымал 🔥', 'Топ выбор 🔥'),
+            badge: L('Ең танымал', 'Топ выбор'),
             features: [
                 { text: L('60 AI-генерация айына', '60 AI-генераций в месяц'), available: true },
                 { text: L('Шексіз сабақтар', 'Безлимитные уроки'), available: true },
@@ -84,7 +84,7 @@ const Pricing = () => {
                 { text: L('Басымдықты қолдау (4 сағат)', 'Приоритетная поддержка (4ч)'), available: true },
             ],
             savings: L('Жылдық: 35,400 ₸ үнемдейсіз', 'Годовая: экономия 35,400 ₸'),
-            tag: L('🆕 Жаңа', '🆕 Новинка')
+            tag: L('Жаңа', 'Новинка')
         },
         {
             id: 'school',
@@ -190,11 +190,11 @@ const Pricing = () => {
                 .toggle-track {
                     width: 52px; height: 28px;
                     border-radius: 14px;
-                    background: linear-gradient(135deg, #2563eb, #7c3aed);
+                    background: #e5e7eb;
                     border: none;
                     position: relative;
                     cursor: pointer;
-                    transition: all 0.2s;
+                    transition: background 0.3s ease;
                     padding: 3px;
                     display: flex;
                     align-items: center;
@@ -258,6 +258,11 @@ const Pricing = () => {
                     </span>
                     <button 
                         className="toggle-track"
+                        style={{
+                            background: billingCycle === 'monthly' 
+                                ? 'linear-gradient(135deg, #2563eb, #7c3aed)' 
+                                : 'linear-gradient(135deg, #16a34a, #15803d)'
+                        }}
                         onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
                     >
                         <div 
