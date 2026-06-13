@@ -175,7 +175,8 @@ export const translations = {
             completionRate: 'Орындалу',
             avgScore: 'Орташа балл',
             classPerformance: 'Сынып үлгерімі',
-            classPerformance: 'Сынып үлгерімі',
+            performanceDynamics: 'Үлгерім динамикасы',
+            gradeDistribution: 'Бағалардың үлестірімі',
         },
 
         // Al-Farabi Bot
@@ -422,7 +423,8 @@ export const translations = {
             completionRate: 'Выполнение',
             avgScore: 'Средний балл',
             classPerformance: 'Успеваемость класса',
-            classPerformance: 'Успеваемость класса',
+            performanceDynamics: 'Динамика успеваемости',
+            gradeDistribution: 'Распределение оценок',
         },
 
         // Al-Farabi Bot
