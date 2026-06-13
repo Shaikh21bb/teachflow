@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { reportsAPI } from '../api'
-import { Loader, Search, Download, Sparkles, TrendingUp, Info } from 'lucide-react'
+import { Loader, Search, Download, Sparkles, TrendingUp, Info, Users, Star, Target, ClipboardList } from 'lucide-react'
 
 function Reports() {
     const { t, language } = useLanguage()
@@ -70,25 +70,25 @@ function Reports() {
             grade: language === 'kk' ? '5 (Өте жақсы)' : '5 (Отлично)', 
             percent: activeData.charts?.gradeDist?.['5'] || 0, 
             color: 'linear-gradient(90deg, #10b981 0%, #059669 100%)',
-            icon: '🟢'
+            icon: <div style={{width: 12, height: 12, borderRadius: '50%', background: '#10b981'}} />
         },
         { 
             grade: language === 'kk' ? '4 (Жақсы)' : '4 (Хорошо)', 
             percent: activeData.charts?.gradeDist?.['4'] || 0, 
             color: 'linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%)',
-            icon: '🔵'
+            icon: <div style={{width: 12, height: 12, borderRadius: '50%', background: '#3b82f6'}} />
         },
         { 
             grade: language === 'kk' ? '3 (Орташа)' : '3 (Удовл.)', 
             percent: activeData.charts?.gradeDist?.['3'] || 0, 
             color: 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
-            icon: '🟡'
+            icon: <div style={{width: 12, height: 12, borderRadius: '50%', background: '#f59e0b'}} />
         },
         { 
             grade: language === 'kk' ? '2 (Нашар)' : '2 (Неуд.)', 
             percent: activeData.charts?.gradeDist?.['2'] || 0, 
             color: 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)',
-            icon: '🔴'
+            icon: <div style={{width: 12, height: 12, borderRadius: '50%', background: '#ef4444'}} />
         },
     ]
 
@@ -200,7 +200,7 @@ function Reports() {
                             gap: '8px'
                         }}
                     >
-                        <span>✨</span>
+                        <Sparkles size={16} />
                         {isDemo 
                             ? (language === 'kk' ? 'Шынайы деректерді көру' : 'Показать реальные данные')
                             : (language === 'kk' ? 'Демо режимін қосу' : 'Включить демо-режим')}
@@ -222,7 +222,7 @@ function Reports() {
                     animation: 'slideDown 0.4s ease-out'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <span style={{ fontSize: '28px' }}>💡</span>
+                        <Info size={28} color="var(--color-primary-500)" />
                         <div>
                             <h4 style={{ margin: 0, fontWeight: 700, color: 'var(--color-primary-600)', fontSize: '15px' }}>
                                 {language === 'kk' ? 'Көрнекілік режимі белсенді (Демо деректер)' : 'Режим демонстрации активен (Демо-данные)'}
@@ -266,28 +266,28 @@ function Reports() {
                     {
                         title: t('dashboard.totalStudents'),
                         value: activeData.totalStudents || 0,
-                        icon: '👥',
+                        icon: <Users size={28} color="#3b82f6" />,
                         bgLight: '#eff6ff',
                         desc: language === 'kk' ? 'Тіркелген оқушы' : 'Зарегистрировано'
                     },
                     {
                         title: t('classes.avgGrade'),
                         value: activeData.avgGrade || 0,
-                        icon: '⭐',
+                        icon: <Star size={28} color="#eab308" />,
                         bgLight: '#fffbeb',
                         desc: language === 'kk' ? 'Орташа баға' : 'Средний балл'
                     },
                     {
                         title: t('classes.performance'),
                         value: `${activeData.performance || 0}%`,
-                        icon: '📈',
+                        icon: <TrendingUp size={28} color="#10b981" />,
                         bgLight: '#ecfdf5',
                         desc: language === 'kk' ? 'Үлгерім пайызы' : 'Успеваемость'
                     },
                     {
                         title: language === 'kk' ? 'Орындалған тапсырмалар' : 'Выполненных заданий',
                         value: activeData.completedTasks || 0,
-                        icon: '🎯',
+                        icon: <Target size={28} color="#8b5cf6" />,
                         bgLight: '#f5f3ff',
                         desc: language === 'kk' ? 'Барлық жұмыстар' : 'Всего работ'
                     }
@@ -349,7 +349,7 @@ function Reports() {
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                            <span style={{ fontSize: '20px' }}>📈</span> {t('reports.performanceDynamics')}
+                            <TrendingUp size={20} color="var(--color-primary-500)" /> {t('reports.performanceDynamics')}
                         </h3>
                         <span style={{ 
                             fontSize: '12px', 
@@ -493,7 +493,7 @@ function Reports() {
                 }}>
                     <div>
                         <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 20px 0' }}>
-                            <span style={{ fontSize: '20px' }}>🎯</span> {t('reports.gradeDistribution')}
+                            <Target size={20} color="var(--color-primary-500)" /> {t('reports.gradeDistribution')}
                         </h3>
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -564,7 +564,7 @@ function Reports() {
                     gap: '16px'
                 }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                        <span style={{ fontSize: '20px' }}>📋</span> {t('reports.classPerformance')}
+                        <ClipboardList size={20} color="var(--color-primary-500)" /> {t('reports.classPerformance')}
                     </h3>
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
