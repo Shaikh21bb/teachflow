@@ -112,10 +112,6 @@ function DashboardLayout({ children }) {
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
         { path: '/my-lessons', icon: <BookOpen size={20} />, label: t('nav.myLessons') },
-        { path: '/builder', icon: <LayoutTemplate size={20} />, label: t('nav.builder') },
-        { path: '/open-lessons', icon: <Library size={20} />, label: t('nav.openLessons') },
-        { path: '/quizzes', icon: <FileQuestion size={20} />, label: t('nav.quizzes') },
-        { path: '/assignments', icon: <ClipboardList size={20} />, label: t('nav.assignments') },
         { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
         { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
@@ -240,7 +236,7 @@ function DashboardLayout({ children }) {
 function MobileBottomNav({ items }) {
     const { t, language } = useLanguage()
     const primaryItems = items.filter(i =>
-        ['/dashboard', '/builder', '/open-lessons', '/alfarabi-bot'].includes(i.path)
+        ['/dashboard', '/my-lessons', '/classes', '/alfarabi-bot'].includes(i.path)
     )
     return (
         <nav className="mobile-bottom-nav hide-on-desktop">

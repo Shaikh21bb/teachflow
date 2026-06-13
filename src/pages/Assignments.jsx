@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { assignmentsAPI, classesAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
+import MaterialsTabs from '../components/MaterialsTabs'
 
 function Assignments() {
     const { t, language } = useLanguage()
@@ -96,6 +97,7 @@ function Assignments() {
 
     return (
         <div>
+            <MaterialsTabs />
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h1 className="page-title">{t('assignments.title')}</h1>

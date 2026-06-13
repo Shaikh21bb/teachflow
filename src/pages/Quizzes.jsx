@@ -7,6 +7,7 @@ import {
     ChevronDown, ChevronUp, CheckCircle, XCircle,
     FileQuestion, Clock, Users, BookOpen, Loader, Share2, Eye, Send
 } from 'lucide-react'
+import MaterialsTabs from '../components/MaterialsTabs'
 
 const ALL_SUBJECTS = [
     { id: 'primary', ru: 'Бастауыш / Нач. классы' },
@@ -293,6 +294,8 @@ export default function Quizzes() {
 
     return (
         <div className="page-content" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
+            <MaterialsTabs />
+            
             {/* Page Header */}
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <div>

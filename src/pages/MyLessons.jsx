@@ -8,6 +8,7 @@ import {
     BookOpen, Users, Eye, Download, FileText, CheckCircle, Clock,
     Loader2, Calendar
 } from 'lucide-react'
+import MaterialsTabs from '../components/MaterialsTabs'
 
 const SUBJECTS = ['Все', 'Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский']
 const GRADES = ['Все', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
@@ -198,6 +199,9 @@ export default function MyLessons() {
                     </div>
                 </div>
             )}
+
+            {/* Tabs */}
+            <MaterialsTabs />
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>

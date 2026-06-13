@@ -3,6 +3,7 @@ import { classesAPI, openLessonsAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useReactToPrint } from 'react-to-print'
+import MaterialsTabs from '../components/MaterialsTabs'
 
 const SUBJECTS_MAP = {
     math: { ru: 'Математика', kk: 'Математика', icon: '📐' },
@@ -211,6 +212,7 @@ function OpenLesson() {
     if (view === 'detail' && selectedLesson) {
         return (
             <div>
+                <MaterialsTabs />
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button className="btn btn-secondary no-print" onClick={() => setView('list')}>← {L('Назад', 'Артқа')}</button>
@@ -278,6 +280,7 @@ function OpenLesson() {
     if (view === 'create') {
         return (
             <div>
+                <MaterialsTabs />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                     <button className="btn btn-secondary" onClick={() => { setView('list'); resetForm() }}>
                         ← {L('Назад', 'Артқа')}
@@ -509,6 +512,7 @@ function OpenLesson() {
     // LIST VIEW
     return (
         <div>
+            <MaterialsTabs />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
                 <div>
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 800, marginBottom: '4px' }}>
