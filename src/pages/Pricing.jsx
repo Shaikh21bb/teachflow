@@ -218,7 +218,7 @@ const Pricing = () => {
                     marginBottom: '20px'
                 }}>
                     <Sparkles size={14} />
-                    {L('TeachFlow — Мұғалімдер үшін', 'TeachFlow — Для учителей')}
+                    {L('Urpaq.ai — Мұғалімдер үшін', 'Urpaq.ai — Для учителей')}
                 </div>
                 <h1 style={{ 
                     fontSize: 'clamp(32px, 5vw, 52px)', 
@@ -542,7 +542,7 @@ const Pricing = () => {
                     textAlign: 'center', fontSize: '22px', fontWeight: 800,
                     color: '#1e1b4b', marginBottom: '32px'
                 }}>
-                    {L('Неге TeachFlow-ға ақша жұмсау тиімді?', 'Почему TeachFlow окупается?')}
+                    {L('Неге Urpaq.ai-ға ақша жұмсау тиімді?', 'Почему Urpaq.ai окупается?')}
                 </h3>
                 <div style={{ 
                     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -597,25 +597,26 @@ const Pricing = () => {
 
             {/* Contact CTA */}
             <div style={{ 
-                background: '#111827',
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                border: '1px solid #bae6fd',
                 borderRadius: '24px', padding: '48px 40px',
                 textAlign: 'center',
                 position: 'relative', overflow: 'hidden'
             }}>
                 <div style={{
                     position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-                    background: 'radial-gradient(ellipse at top right, rgba(99,102,241,0.15) 0%, transparent 60%)',
+                    background: 'radial-gradient(ellipse at top right, rgba(14,165,233,0.15) 0%, transparent 60%)',
                     pointerEvents: 'none'
                 }} />
-                <Star size={32} style={{ color: '#fbbf24', marginBottom: '16px' }} />
+                <Star size={32} style={{ color: '#f59e0b', marginBottom: '16px' }} />
                 <h4 style={{ 
-                    fontSize: '26px', fontWeight: 800, color: 'white',
+                    fontSize: '26px', fontWeight: 800, color: '#0f172a',
                     marginBottom: '12px'
                 }}>
                     {L('Сұрақтар бар ма?', 'Есть вопросы?')}
                 </h4>
                 <p style={{ 
-                    color: '#9ca3af', fontSize: '16px',
+                    color: '#475569', fontSize: '16px',
                     marginBottom: '28px', maxWidth: '400px', margin: '0 auto 28px'
                 }}>
                     {L(
