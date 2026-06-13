@@ -37,6 +37,7 @@ import StudentQuiz from './pages/student/StudentQuiz'
 import StudentResults from './pages/student/StudentResults'
 import StudentAssignment from './pages/student/StudentAssignment'
 
+import GlobalSearch from './components/GlobalSearch'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -199,10 +200,7 @@ function DashboardLayout({ children }) {
                         <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
                     </Link>
 
-                    <div className="topbar-search">
-                        <Search size={18} style={{ color: 'var(--color-gray-400)' }} />
-                        <input type="text" placeholder={t('common.searchPlaceholder')} />
-                    </div>
+                    <GlobalSearch />
 
                     <div className="topbar-actions">
                         <ThemeToggleButton />

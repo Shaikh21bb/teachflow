@@ -3512,3 +3512,116 @@ a:hover {
         page-break-inside: avoid;
     }
 }
+
+/* Global Search Dropdown */
+.global-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    min-width: 320px;
+    margin-top: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.search-loading, .search-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.search-results-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.search-group {
+    margin-bottom: 8px;
+}
+
+.search-group:last-child {
+    margin-bottom: 0;
+}
+
+.search-group-title {
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--color-gray-500);
+    letter-spacing: 0.5px;
+}
+
+.search-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.search-item:hover {
+    background: var(--bg-hover);
+}
+
+.search-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.lesson-icon {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+}
+
+.assignment-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.search-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-item-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-item-desc {
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
