@@ -12,24 +12,85 @@ if (!API_BASE) {
     }
 }
 
-// Generic fetch wrapper with error handling
-function fetchAPI(endpoint, options = {}) {
-    const token = localStorage.getItem('auth_token');
-    const response = fetch(`${API_BASE}${endpoint}`, {
+// ─── Token helpers ────────────────────────────────────────
+const getToken = () => localStorage.getItem('auth_token');
+const getRefreshToken = () => localStorage.getItem('auth_refresh_token');
+const setTokens = (access, refresh) => {
+    localStorage.setItem('auth_token', access);
+    if (refresh) localStorage.setItem('auth_refresh_token', refresh);
+};
+const clearTokens = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_refresh_token');
+};
+
+let _isRefreshing = false;
+let _refreshQueue = [];
+
+async function _doRefresh() {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) throw new Error('No refresh token');
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) throw new Error('Refresh failed');
+    const data = await res.json();
+    setTokens(data.token, data.refreshToken);
+    return data.token;
+}
+
+// Generic fetch wrapper with auto token refresh
+async function fetchAPI(endpoint, options = {}) {
+    const makeRequest = (token) => fetch(`${API_BASE}${endpoint}`, {
+        ...options,
         headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            ...options.headers
+            ...options.headers,
         },
-        ...options
     });
-    return response.then(async res => {
-        if (!res.ok) {
-            const error = await res.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(error.error || 'API request failed');
+
+    let res = await makeRequest(getToken());
+
+    // Auto-refresh if token expired
+    if (res.status === 401) {
+        const body = await res.clone().json().catch(() => ({}));
+        if (body.code === 'TOKEN_EXPIRED') {
+            if (!_isRefreshing) {
+                _isRefreshing = true;
+                try {
+                    const newToken = await _doRefresh();
+                    _isRefreshing = false;
+                    _refreshQueue.forEach(cb => cb(newToken));
+                    _refreshQueue = [];
+                    res = await makeRequest(newToken);
+                } catch {
+                    _isRefreshing = false;
+                    _refreshQueue.forEach(cb => cb(null));
+                    _refreshQueue = [];
+                    clearTokens();
+                    window.location.href = '/login';
+                    throw new Error('Сессия истекла. Войдите снова.');
+                }
+            } else {
+                await new Promise(resolve => _refreshQueue.push(resolve));
+                res = await makeRequest(getToken());
+            }
+        } else {
+            // Not TOKEN_EXPIRED — likely NO_TOKEN or INVALID_TOKEN
+            clearTokens();
+            window.location.href = '/login';
+            throw new Error(body.error || 'Ошибка авторизации');
         }
-        return res.json();
-    });
+    }
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || 'API request failed');
+    }
+    return res.json();
 }
 
 // Lessons API
