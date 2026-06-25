@@ -441,54 +441,101 @@ export default function Landing() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'center', maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', alignItems: 'stretch', maxWidth: '1200px', margin: '0 auto' }}>
                         
                         {/* Free Tier */}
-                        <div className="pricing-card-premium">
+                        <div className="pricing-card-premium" style={{ display: 'flex', flexDirection: 'column' }}>
                             <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: '1rem' }}>
-                                {language === 'kk' ? 'Базалық' : 'Базовый'}
+                                {language === 'kk' ? 'Старт' : 'Старт'}
                             </h3>
-                            <div style={{ fontSize: '3.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
-                                $0<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
+                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
+                                0 ₸<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
                             </div>
-                            <p style={{ color: '#475569', marginBottom: '2rem' }}>
-                                {language === 'kk' ? 'ИИ-мен танысу және бастау үшін.' : 'Для старта и знакомства с ИИ.'}
+                            <p style={{ color: '#475569', marginBottom: '2rem', minHeight: '48px' }}>
+                                {language === 'kk' ? 'Тегін, мәңгіге.' : 'Бесплатно, навсегда.'}
                             </p>
                             
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <li style={{ display: 'flex', gap: '12px', color: '#475569' }}><CheckCircle2 size={20} color="#64748b" /> {language === 'kk' ? 'Айына 5 сабақ жасау' : 'Создание 5 уроков/мес'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#475569' }}><CheckCircle2 size={20} color="#64748b" /> {language === 'kk' ? 'Су белгісімен PDF экспорттау' : 'PDF Экспорт с вотермаркой'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#94a3b8', opacity: 0.8 }}>{language === 'kk' ? 'Файлдар қоймасы' : 'Хранилище файлов'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '3 AI-генерация айына' : '3 AI-генерации в месяц'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '5 сабақ жасауға болады' : '5 уроков'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '1 оқу сыныбы' : '1 учебный класс'}</li>
                             </ul>
                             
-                            <Link to="/register" className="secondary-btn" style={{ width: '100%' }}>
-                                {language === 'kk' ? 'Тегін бастау' : 'Начать бесплатно'}
+                            <Link to="/register" className="secondary-btn" style={{ width: '100%', marginTop: 'auto' }}>
+                                {language === 'kk' ? 'Қазір бастау' : 'Начать сейчас'}
                             </Link>
                         </div>
 
                         {/* Pro Tier */}
-                        <div className="pricing-card-premium featured">
-                            <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', padding: '6px 24px', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)' }}>
-                                {language === 'kk' ? 'Мұғалімдер таңдауы' : 'Выбор Учителей'}
+                        <div className="pricing-card-premium featured" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', padding: '6px 24px', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)', whiteSpace: 'nowrap' }}>
+                                {language === 'kk' ? 'Ең танымал' : 'Топ выбор'}
                             </div>
-                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: '1rem' }}>Pro</h3>
-                            <div style={{ fontSize: '3.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
-                                {billingCycle === 'monthly' ? '$19' : '$15'}<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: '1rem' }}>
+                                {language === 'kk' ? 'Мұғалім' : 'Учитель'}
+                            </h3>
+                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
+                                {billingCycle === 'monthly' ? '3990 ₸' : '2990 ₸'}<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
                             </div>
-                            <p style={{ color: '#8b5cf6', marginBottom: '2rem' }}>
-                                {language === 'kk' ? 'ИИ-дің толық суперкүші шектеусіз.' : 'Полная суперсила ИИ без ограничений.'}
+                            <p style={{ color: '#8b5cf6', marginBottom: '2rem', minHeight: '48px' }}>
+                                {language === 'kk' ? 'Белсенді педагогтар үшін.' : 'Для активных педагогов.'}
                             </p>
                             
                             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Шектеусіз ИИ генерациясы' : 'Безлимитная ИИ-генерация'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'PDF-ке экспорттау (таза)' : 'Экспорт в PDF (чистый)'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? '10GB бұлтты қойма' : '10GB облачного хранилища'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Үй жұмысы мен тесттерді AI тексеру' : 'AI-проверка домашних заданий и тестов'}</li>
-                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600 }}><CheckCircle2 size={20} color="#8b5cf6" /> {language === 'kk' ? 'Басымдықтағы ИИ моделі' : 'Приоритетная ИИ-модель'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#8b5cf6" style={{ flexShrink: 0 }} /> {language === 'kk' ? '60 AI-генерация айына' : '60 AI-генераций в месяц'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#8b5cf6" style={{ flexShrink: 0 }} /> {language === 'kk' ? 'Шексіз сабақтар' : 'Безлимитные уроки'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#8b5cf6" style={{ flexShrink: 0 }} /> {language === 'kk' ? 'AI-тест генераторы' : 'AI-генератор тестов'}</li>
                             </ul>
                             
-                            <Link to="/register" className="premium-btn" style={{ width: '100%' }}><span>{language === 'kk' ? 'Pro-ға өту' : 'Перейти на Pro'}</span></Link>
+                            <Link to="/register" className="premium-btn" style={{ width: '100%', marginTop: 'auto' }}><span>{language === 'kk' ? 'Pro таңдау →' : 'Выбрать →'}</span></Link>
                         </div>
+
+                        {/* Team Tier */}
+                        <div className="pricing-card-premium" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: '1rem' }}>
+                                {language === 'kk' ? 'Команда' : 'Команда'}
+                            </h3>
+                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
+                                {billingCycle === 'monthly' ? '12900 ₸' : '9900 ₸'}<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
+                            </div>
+                            <p style={{ color: '#475569', marginBottom: '2rem', minHeight: '48px' }}>
+                                {language === 'kk' ? 'Оқу орталықтары үшін.' : 'Для учебных центров.'}
+                            </p>
+                            
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '300 AI-генерация айына' : '300 AI-генераций в месяц'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '5 мұғалім аккаунты' : '5 аккаунтов учителей'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? 'Ортақ кітапхана' : 'Общая библиотека'}</li>
+                            </ul>
+                            
+                            <Link to="/register" className="secondary-btn" style={{ width: '100%', marginTop: 'auto', background: '#f8fafc' }}>
+                                {language === 'kk' ? 'Таңдау →' : 'Выбрать →'}
+                            </Link>
+                        </div>
+                        
+                        {/* School Tier */}
+                        <div className="pricing-card-premium" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <h3 className="font-outfit" style={{ fontSize: '1.5rem', color: '#0f172a', marginBottom: '1rem' }}>
+                                {language === 'kk' ? 'Мектеп' : 'Школа'}
+                            </h3>
+                            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif', marginBottom: '0.5rem' }}>
+                                {billingCycle === 'monthly' ? '39900 ₸' : '29900 ₸'}<span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500 }}>/{language === 'kk' ? 'ай' : 'мес'}</span>
+                            </div>
+                            <p style={{ color: '#475569', marginBottom: '2rem', minHeight: '48px' }}>
+                                {language === 'kk' ? 'Толық мектептер үшін.' : 'Для полноценных школ.'}
+                            </p>
+                            
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '1,500 AI-генерация айына' : '1,500 AI-генераций в месяц'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? '30 мұғалімге дейін' : 'До 30 учителей'}</li>
+                                <li style={{ display: 'flex', gap: '12px', color: '#475569', fontSize: '0.9rem' }}><CheckCircle2 size={18} color="#64748b" style={{ flexShrink: 0 }} /> {language === 'kk' ? 'Толық Admin-панель' : 'Полная Админ-панель'}</li>
+                            </ul>
+                            
+                            <a href="https://wa.me/77771225784" target="_blank" rel="noreferrer" className="secondary-btn" style={{ width: '100%', marginTop: 'auto', background: '#f8fafc' }}>
+                                {language === 'kk' ? 'Бізбен хабарласу' : 'Связаться с нами'}
+                            </a>
+                        </div>
+
                     </div>
                 </div>
             </section>
