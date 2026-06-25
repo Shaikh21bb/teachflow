@@ -38,6 +38,7 @@ import StudentResults from './pages/student/StudentResults'
 import StudentAssignment from './pages/student/StudentAssignment'
 
 import GlobalSearch from './components/GlobalSearch'
+import Presentation from './pages/Presentation'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -54,6 +55,7 @@ function App() {
                             <Route path="/register" element={<Register />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/lesson/:id/present" element={<ProtectedRoute><Presentation /></ProtectedRoute>} />
                             <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/library" element={<ProtectedRoute><DashboardLayout><LibraryPage /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/builder" element={<ProtectedRoute><DashboardLayout><LessonBuilder /></DashboardLayout></ProtectedRoute>} />
