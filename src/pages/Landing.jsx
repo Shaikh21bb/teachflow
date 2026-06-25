@@ -45,8 +45,8 @@ const TypewriterText = ({ text, delayOffset = 0.5 }) => {
   };
 
   const child = {
-    hidden: { opacity: 0, x: -10, filter: "blur(4px)" },
-    show: { opacity: 1, x: 0, filter: "blur(0px)", transition: { type: "spring", damping: 12, stiffness: 100 } },
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", damping: 12, stiffness: 100 } },
   };
 
   return (
@@ -394,8 +394,8 @@ export default function Landing() {
                                         <MessageSquareText size={18} />
                                         <p>
                                             {language === 'kk'
-                                                ? 'Жақсы жұмыс. Соңғы түбірді қайта тексер: 2 және 3 болуы керек.'
-                                                : 'Хорошая работа. Перепроверь последний корень: должно быть 2 и 3.'}
+                                                ? 'Жақсы жұмыс. Екінші түбірді қайта тексер: 4 емес, 3 болуы керек.'
+                                                : 'Хорошая работа. Перепроверь второй корень: он должен быть 3, а не 4.'}
                                         </p>
                                     </div>
                                     <div className="auto-check-metrics">
