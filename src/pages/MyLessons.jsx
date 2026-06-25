@@ -6,7 +6,7 @@ import {
     Plus, Search, LayoutGrid, List, MoreVertical, 
     Share2, Edit3, Trash2, Archive, Copy, ExternalLink,
     BookOpen, Users, Eye, Download, FileText, CheckCircle, Clock,
-    Loader2, Calendar
+    Loader2, Calendar, PlayCircle
 } from 'lucide-react'
 import MaterialsTabs from '../components/MaterialsTabs'
 
@@ -361,6 +361,7 @@ export default function MyLessons() {
                             actionMenuId={actionMenuId}
                             setActionMenuId={setActionMenuId}
                             deletingId={deletingId}
+                            onConduct={() => navigate(`/lesson/${lesson.id}/present`)}
                             onEdit={() => navigate(`/builder?edit=${lesson.id}`)}
                             onDelete={() => handleDelete(lesson.id)}
                             onArchive={() => handleArchive(lesson)}
@@ -417,7 +418,7 @@ export default function MyLessons() {
     )
 }
 
-function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, onEdit, onDelete, onArchive, onDuplicate, onShare }) {
+function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, onConduct, onEdit, onDelete, onArchive, onDuplicate, onShare }) {
     const isGrid = view === 'grid'
 
     const statusColor = lesson.is_archived
@@ -525,6 +526,7 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                 }}
                             >
                                 {[
+                                    { icon: <PlayCircle size={16} />, label: 'Вести урок', action: onConduct, highlight: true },
                                     { icon: <Edit3 size={16} />, label: 'Редактировать', action: onEdit },
                                     { icon: <Copy size={16} />, label: 'Дублировать', action: onDuplicate },
                                     { icon: <Share2 size={16} />, label: 'Поделиться', action: onShare },
@@ -537,14 +539,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                         disabled={deletingId === lesson.id}
                                         style={{
                                             width: '100%', padding: '9px 12px', border: 'none',
-                                            background: 'none', cursor: 'pointer', borderRadius: '8px',
+                                            background: item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))' : 'none',
+                                            cursor: 'pointer', borderRadius: '8px',
                                             display: 'flex', gap: '10px', alignItems: 'center',
-                                            fontSize: '0.875rem', fontWeight: 500, textAlign: 'left',
-                                            color: item.danger ? '#ef4444' : 'var(--color-gray-700, #374151)',
+                                            fontSize: '0.875rem', fontWeight: item.highlight ? 700 : 500, textAlign: 'left',
+                                            color: item.danger ? '#ef4444' : item.highlight ? '#6366f1' : 'var(--color-gray-700, #374151)',
                                             transition: 'background 0.15s'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background = item.danger ? '#fef2f2' : 'var(--color-gray-50, #f9fafb)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                        onMouseEnter={e => e.currentTarget.style.background = item.danger ? '#fef2f2' : item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))' : 'var(--color-gray-50, #f9fafb)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))' : 'none'}
                                     >
                                         {item.icon} {item.label}
                                     </button>
@@ -552,6 +555,27 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Conduct Lesson Button — visible directly on card */}
+                <div style={{ padding: '0 16px 16px', paddingTop: 0 }}>
+                    <button
+                        onClick={onConduct}
+                        style={{
+                            width: '100%', padding: '10px 16px',
+                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            color: 'white', border: 'none', borderRadius: '10px',
+                            cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(99,102,241,0.35)' }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(99,102,241,0.25)' }}
+                    >
+                        <PlayCircle size={18} />
+                        Вести урок
+                    </button>
                 </div>
             </div>
         </div>
