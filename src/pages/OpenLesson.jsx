@@ -574,6 +574,8 @@ function OpenLesson() {
                     <button className="btn btn-primary" onClick={() => setView('create')} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Sparkles size={16} /> {L('Создать урок', 'Сабақ жасау')}
                     </button>
+                </div>
+            ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
                     {lessons.map(lesson => (
                         <div

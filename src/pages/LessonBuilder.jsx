@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from 'react'
-import { useState, useRef, useCallback } from 'react'
 import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2, Youtube, AlertCircle, ExternalLink, GripVertical, ChevronDown, ChevronUp, BookOpen, Target, Layers, HelpCircle, ClipboardList } from 'lucide-react'
 import { AiSparkIcon, ObjectivesIcon, HomeworkIcon, SummaryIcon, ExampleIcon } from '../components/Icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'

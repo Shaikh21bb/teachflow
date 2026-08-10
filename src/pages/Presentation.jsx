@@ -364,6 +364,9 @@ export default function Presentation() {
         setCodeCopied(true)
         setTimeout(() => setCodeCopied(false), 2000)
     }
+
+    // Keyboard navigation
+    useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide()
             if (e.key === 'ArrowLeft') prevSlide()
