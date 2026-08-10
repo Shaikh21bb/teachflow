@@ -7,7 +7,8 @@ const CREDIT_COSTS = {
     homework_grading: 1,
     summarize: 1,
     translate: 1,
-    ai_chat: 1
+    ai_chat: 1,
+    generate_lesson: 5  // Full lesson: slides + quiz + homework in one call
 };
 
 const PLAN_CREDIT_LIMITS = {

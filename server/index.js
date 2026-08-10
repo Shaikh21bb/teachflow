@@ -270,6 +270,26 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_assignment_submissions_assignment ON assignment_submissions(assignment_id)`,
         `CREATE INDEX IF NOT EXISTS idx_assignment_submissions_student ON assignment_submissions(student_id)`,
+        // v11 - Structured slides + presentation themes
+        `ALTER TABLE lessons ADD COLUMN slides_json TEXT`,
+        `ALTER TABLE lessons ADD COLUMN theme TEXT DEFAULT 'dark'`,
+        // v11 - Live sessions for interactive open lessons
+        `CREATE TABLE IF NOT EXISTS live_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            lesson_id INTEGER,
+            teacher_id INTEGER NOT NULL,
+            current_slide_index INTEGER DEFAULT 0,
+            active_poll TEXT,
+            answers TEXT DEFAULT '[]',
+            participants_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE SET NULL,
+            FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_live_sessions_code ON live_sessions(code)`,
+        `CREATE INDEX IF NOT EXISTS idx_live_sessions_teacher ON live_sessions(teacher_id)`,
     ];
 
     for (const sql of migrations) {
@@ -312,6 +332,7 @@ async function startServer() {
     const studentAuthRouter = require('./routes/student-auth');
     const studentPortalRouter = require('./routes/student-portal');
     const kaspiRouter = require('./routes/kaspi');
+    const liveRouter = require('./routes/live');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -366,6 +387,7 @@ async function startServer() {
     app.use('/api/student', studentAuthRouter);
     app.use('/api/student-portal', studentPortalRouter);
     app.use('/api/kaspi', kaspiRouter);
+    app.use('/api/live', liveRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {

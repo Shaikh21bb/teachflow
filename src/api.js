@@ -103,6 +103,7 @@ export const lessonsAPI = {
         const q = shareToken ? `?share_token=${shareToken}` : '';
         return fetchAPI(`/lessons/${id}${q}`);
     },
+    getSlides: (id) => fetchAPI(`/lessons/${id}/slides`),
     create: (lesson) => fetchAPI('/lessons', { method: 'POST', body: JSON.stringify(lesson) }),
     update: (id, lesson) => fetchAPI(`/lessons/${id}`, { method: 'PUT', body: JSON.stringify(lesson) }),
     delete: (id) => fetchAPI(`/lessons/${id}`, { method: 'DELETE' }),
@@ -158,6 +159,7 @@ export const aiAPI = {
         body: JSON.stringify({ message, conversationHistory, language })
     }),
     lessonPlan: (data) => fetchAPI('/ai/lesson-plan', { method: 'POST', body: JSON.stringify(data) }),
+    generateLesson: (data) => fetchAPI('/ai/generate-lesson', { method: 'POST', body: JSON.stringify(data) }),
     quiz: (data) => fetchAPI('/ai/quiz', { method: 'POST', body: JSON.stringify(data) }),
     summarize: (content, language = 'ru') => fetchAPI('/ai/summarize', { method: 'POST', body: JSON.stringify({ content, language }) }),
     translate: (content, from = 'ru', to = 'kk') => fetchAPI('/ai/translate', { method: 'POST', body: JSON.stringify({ content, from, to }) }),
@@ -308,6 +310,28 @@ export async function uploadToCloudinary(file, onProgress) {
         xhr.send(formData);
     });
 }
+
+// Live Sessions API
+export const liveAPI = {
+    start: (lessonId) => fetchAPI('/live/start', { method: 'POST', body: JSON.stringify({ lesson_id: lessonId }) }),
+    getSession: (code) => fetchAPI(`/live/${code}`),
+    changeSlide: (code, slideIndex, activePoll) => fetchAPI(`/live/${code}/slide`, {
+        method: 'PATCH',
+        body: JSON.stringify({ slide_index: slideIndex, active_poll: activePoll || null })
+    }),
+    submitAnswer: (code, studentName, answer) => fetch(`${API_BASE}/live/${code}/answer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_name: studentName, answer })
+    }).then(r => r.json()),
+    joinSession: (code, studentName) => fetch(`${API_BASE}/live/${code}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_name: studentName })
+    }).then(r => r.json()),
+    getStats: (code) => fetchAPI(`/live/${code}/stats`),
+    endSession: (code) => fetchAPI(`/live/${code}`, { method: 'DELETE' }),
+};
 
 export default {
     lessons: lessonsAPI,

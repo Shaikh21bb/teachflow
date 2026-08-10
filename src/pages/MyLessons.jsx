@@ -5,26 +5,29 @@ import { useAuth } from '../contexts/AuthContext'
 import { 
     Plus, Search, LayoutGrid, List, MoreVertical, 
     Share2, Edit3, Trash2, Archive, Copy, ExternalLink,
-    BookOpen, Users, Eye, Download, FileText, CheckCircle, Clock,
-    Loader2, Calendar, PlayCircle
+    BookOpen, Users, Eye, FileText, CheckCircle, Clock,
+    Loader2, Calendar, PlayCircle, Film, Image, Paperclip,
+    Youtube
 } from 'lucide-react'
 import MaterialsTabs from '../components/MaterialsTabs'
+import { InboxEmptyIcon } from '../components/Icons'
 
 const SUBJECTS = ['Все', 'Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский']
 const GRADES = ['Все', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
 const STATUSES = [
     { value: '', label: 'Все (без архива)' },
-    { value: 'published', label: '✅ Опубликованные' },
-    { value: 'draft', label: '📝 Черновики' },
-    { value: 'archived', label: '📦 Архив' },
+    { value: 'published', label: 'Опубликованные' },
+    { value: 'draft', label: 'Черновики' },
+    { value: 'archived', label: 'Архив' },
 ]
 
-const FILE_TYPE_ICONS = {
-    pdf: '📄', video: '🎥', youtube: '▶️', image: '🖼️', docx: '📝', text: '📃', default: '📎'
-}
-
-function getFileIcon(type) {
-    return FILE_TYPE_ICONS[type] || FILE_TYPE_ICONS.default
+function FileTypeIcon({ type, size = 24 }) {
+    if (type === 'pdf') return <FileText size={size} color="#ef4444" />
+    if (type === 'video') return <Film size={size} color="#6366f1" />
+    if (type === 'youtube') return <Youtube size={size} color="#ef4444" />
+    if (type === 'image') return <Image size={size} color="#10b981" />
+    if (type === 'docx') return <FileText size={size} color="#3b82f6" />
+    return <Paperclip size={size} color="#6b7280" />
 }
 
 function formatDate(dateStr) {
@@ -154,13 +157,19 @@ export default function MyLessons() {
             {toast && (
                 <div style={{
                     position: 'fixed', top: '80px', right: '24px', zIndex: 9999,
-                    background: toast.type === 'error' ? '#ef4444' : '#10b981',
-                    color: 'white', padding: '12px 20px', borderRadius: '12px',
+                    background: 'var(--color-bg-card, white)',
+                    color: 'var(--color-gray-900)',
+                    padding: '12px 20px', borderRadius: '12px',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                     animation: 'slideIn 0.3s ease',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    borderLeft: `4px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`,
+                    display: 'flex', alignItems: 'center', gap: '10px'
                 }}>
-                    {toast.type === 'error' ? '❌ ' : '✅ '}{toast.message}
+                    {toast.type === 'error'
+                        ? <CheckCircle size={16} color="#ef4444" />
+                        : <CheckCircle size={16} color="#10b981" />}
+                    {toast.message}
                 </div>
             )}
 
@@ -175,7 +184,10 @@ export default function MyLessons() {
                         padding: '32px', maxWidth: '480px', width: '90%',
                         boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
                     }}>
-                        <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem' }}>🔗 Ссылка для учеников</h3>
+                        <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem' }}>
+                            <Share2 size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+                            Ссылка для учеников
+                        </h3>
                         <p style={{ color: 'var(--color-gray-500, #6b7280)', margin: '0 0 16px', fontSize: '0.9rem' }}>
                             Поделитесь этой ссылкой — ученики смогут открыть урок без регистрации
                         </p>
@@ -189,8 +201,11 @@ export default function MyLessons() {
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button onClick={copyShareLink} style={{
                                 flex: 1, padding: '10px', background: 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))',
-                                color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600
-                            }}>📋 Скопировать</button>
+                                color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                            }}>
+                                <Copy size={16} /> Скопировать
+                            </button>
                             <button onClick={() => setShareModal(null)} style={{
                                 padding: '10px 20px', background: 'var(--color-gray-100, #f3f4f6)',
                                 border: 'none', borderRadius: '8px', cursor: 'pointer'
@@ -206,7 +221,9 @@ export default function MyLessons() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: 'var(--color-gray-900)' }}>📚 Мои уроки</h1>
+                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <BookOpen size={32} color="#6366f1" /> Мои уроки
+                    </h1>
                     <p style={{ margin: '4px 0 0', color: 'var(--color-gray-500)', fontSize: '1rem' }}>
                         Привет, <span style={{ fontWeight: 700, color: 'var(--color-primary-600)' }}>{user?.name}</span>! Управляйте своими материалами
                     </p>
@@ -317,8 +334,8 @@ export default function MyLessons() {
 
             {/* Lessons Grid/List */}
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--color-gray-400, #9ca3af)' }}>
-                    <div style={{ fontSize: '2rem', animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</div>
+                <div style={{ textAlign: 'center', padding: '60px', color: 'var(--color-gray-400, #9ca3af)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#6366f1' }} />
                     <p>Загрузка уроков...</p>
                 </div>
             ) : lessons.length === 0 ? (
@@ -327,8 +344,8 @@ export default function MyLessons() {
                     background: 'var(--color-white, white)', borderRadius: '20px',
                     boxShadow: '0 2px 12px rgba(0,0,0,0.06)'
                 }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📭</div>
-                    <h3 style={{ margin: '0 0 8px', color: 'var(--color-gray-700, #374151)' }}>
+                    <InboxEmptyIcon size={64} color="#d1d5db" />
+                    <h3 style={{ margin: '16px 0 8px', color: 'var(--color-gray-700, #374151)' }}>
                         {search || subject || grade || status ? 'Ничего не найдено' : 'У вас пока нет уроков'}
                     </h3>
                     <p style={{ color: 'var(--color-gray-400, #9ca3af)', margin: '0 0 24px' }}>
@@ -338,9 +355,9 @@ export default function MyLessons() {
                         <Link to="/builder" style={{
                             background: 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))',
                             color: 'white', textDecoration: 'none', padding: '12px 28px',
-                            borderRadius: '12px', fontWeight: 700, display: 'inline-flex', gap: '8px'
+                            borderRadius: '12px', fontWeight: 700, display: 'inline-flex', gap: '8px', alignItems: 'center'
                         }}>
-                            ➕ Создать первый урок
+                            <Plus size={18} /> Создать первый урок
                         </Link>
                     )}
                 </div>
@@ -361,7 +378,7 @@ export default function MyLessons() {
                             actionMenuId={actionMenuId}
                             setActionMenuId={setActionMenuId}
                             deletingId={deletingId}
-                            onConduct={() => navigate(`/lesson/${lesson.id}/present`)}
+                            onConduct={() => navigate(`/lesson/${lesson.id}/present?live=true`)}
                             onEdit={() => navigate(`/builder?edit=${lesson.id}`)}
                             onDelete={() => handleDelete(lesson.id)}
                             onArchive={() => handleArchive(lesson)}
@@ -423,7 +440,9 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
 
     const statusColor = lesson.is_archived
         ? '#6b7280' : lesson.is_published ? '#10b981' : '#f59e0b'
-    const statusLabel = lesson.is_archived ? '📦 Архив' : lesson.is_published ? '✅ Опубликован' : '📝 Черновик'
+
+    const StatusIcon = lesson.is_archived ? Archive : lesson.is_published ? CheckCircle : FileText
+    const statusLabel = lesson.is_archived ? 'Архив' : lesson.is_published ? 'Опубликован' : 'Черновик'
 
     return (
         <div className="builder-card lesson-card-wrapper" style={{
@@ -446,13 +465,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                     position: 'relative', flexShrink: 0
                 }}>
                     {!lesson.thumbnail_url && (
-                        <span style={{ fontSize: '3rem' }}>{getFileIcon(lesson.file_type)}</span>
+                        <FileTypeIcon type={lesson.file_type} size={40} />
                     )}
                     <div style={{
                         position: 'absolute', top: '12px', right: '12px',
                         background: 'rgba(0,0,0,0.6)', color: 'white',
-                        padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600
+                        padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '5px'
                     }}>
+                        <StatusIcon size={11} color={statusColor} />
                         {statusLabel}
                     </div>
                 </div>
@@ -466,8 +487,10 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                             <span style={{
                                 background: statusColor + '20', color: statusColor,
                                 fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px',
-                                marginBottom: '6px', display: 'inline-block'
-                            }}>{statusLabel}</span>
+                                marginBottom: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                            }}>
+                                <StatusIcon size={11} /> {statusLabel}
+                            </span>
                         )}
                         <h3 style={{
                             margin: isGrid ? '0 0 6px' : '4px 0 4px',
@@ -490,7 +513,9 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                 </span>
                             )}
                             {lesson.duration && (
-                                <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>⏱ {lesson.duration} мин</span>
+                                <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                    <Clock size={12} /> {lesson.duration} мин
+                                </span>
                             )}
                         </div>
                         <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--color-gray-500)', marginTop: '8px' }}>
