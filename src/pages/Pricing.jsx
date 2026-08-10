@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
     Check, ArrowRight, MessageCircle, 
     Zap, Users, Building2, GraduationCap,
-    Sparkles, TrendingUp, Star
+    Sparkles, TrendingUp, Star, Clock, Bot, Target, Wallet
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -417,9 +417,10 @@ const Pricing = () => {
                                         marginTop: '8px',
                                         fontSize: '12px',
                                         color: plan.highlight ? 'rgba(255,255,255,0.6)' : '#16a34a',
-                                        fontWeight: 600
+                                        fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: '4px'
                                     }}>
-                                        💰 {plan.savings}
+                                        <Wallet size={12} /> {plan.savings}
                                     </div>
                                 )}
                                 {billingCycle === 'monthly' && price > 0 && (
@@ -507,7 +508,9 @@ const Pricing = () => {
                                 {loading === plan.id ? (
                                     <span>{L('Жүктелуде...', 'Загрузка...')}</span>
                                 ) : isCurrentPlan ? (
-                                    <span>✓ {L('Ағымдағы жоспар', 'Текущий план')}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Check size={14} strokeWidth={3} /> {L('Ағымдағы жоспар', 'Текущий план')}
+                                    </span>
                                 ) : (
                                     <span>{plan.cta}</span>
                                 )}
@@ -550,25 +553,29 @@ const Pricing = () => {
                 }}>
                     {[
                         {
-                            icon: '⏱️',
+                            icon: <Clock size={28} color="#6366f1" />,
+                            iconBg: 'rgba(99,102,241,0.08)',
                             value: L('3 сағат/апта', '3 часа/неделю'),
                             label: L('үнемделетін уақыт', 'экономия времени'),
                             sub: L('Сабақ жоспарлауда', 'При планировании уроков')
                         },
                         {
-                            icon: '🤖',
+                            icon: <Bot size={28} color="#8b5cf6" />,
+                            iconBg: 'rgba(139,92,246,0.08)',
                             value: L('60 AI-генерация', '60 AI-генераций'),
                             label: L('"Мұғалім" тарифінде', 'в тарифе "Учитель"'),
                             sub: L('Айына 3,990 ₸ = 66 ₸/генерация', '3,990 ₸/мес = 66 ₸/генерация')
                         },
                         {
-                            icon: '📈',
+                            icon: <TrendingUp size={28} color="#10b981" />,
+                            iconBg: 'rgba(16,185,129,0.08)',
                             value: L('1 платеж = жеткілікті', '1 платёж = достаточно'),
                             label: L('шығынды жабу үшін', 'для покрытия расходов'),
                             sub: L('Сервер: 3,200 ₸/ай', 'Сервер: 3,200 ₸/мес')
                         },
                         {
-                            icon: '🎯',
+                            icon: <Target size={28} color="#f59e0b" />,
+                            iconBg: 'rgba(245,158,11,0.08)',
                             value: '94%',
                             label: L('маржа', 'маржа'),
                             sub: L('Мұғалім тарифінде', 'В тарифе Учитель')
@@ -579,7 +586,13 @@ const Pricing = () => {
                             background: 'white', borderRadius: '16px', padding: '24px',
                             boxShadow: '0 2px 12px rgba(0,0,0,0.05)'
                         }}>
-                            <div style={{ fontSize: '28px', marginBottom: '12px' }}>{item.icon}</div>
+                            <div style={{ 
+                                width: '56px', height: '56px', borderRadius: '14px',
+                                background: item.iconBg, margin: '0 auto 12px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                {item.icon}
+                            </div>
                             <div style={{ 
                                 fontSize: '22px', fontWeight: 900,
                                 color: '#1e40af', marginBottom: '4px'

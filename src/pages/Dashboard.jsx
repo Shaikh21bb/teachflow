@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, ClipboardCheck, Users, CheckCircle, ClipboardList, ClipboardEdit, Zap, PenTool, BookOpen, Bell } from 'lucide-react'
+import { Calendar, ClipboardCheck, Users, CheckCircle, ClipboardList, ClipboardEdit, Zap, PenTool, BookOpen, Bell, Info, AlertCircle, MessageSquare } from 'lucide-react'
 import { dashboardAPI, assignmentsAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+// Map notification type → lucide icon
+function NotifIcon({ type }) {
+    const style = { flexShrink: 0 }
+    if (type === 'success') return <CheckCircle size={16} color="#10b981" style={style} />
+    if (type === 'warning') return <AlertCircle size={16} color="#f59e0b" style={style} />
+    if (type === 'error') return <AlertCircle size={16} color="#ef4444" style={style} />
+    if (type === 'message') return <MessageSquare size={16} color="#6366f1" style={style} />
+    return <Info size={16} color="#3b82f6" style={style} />
+}
 
 function Dashboard() {
     const { t, language } = useLanguage()
@@ -274,8 +284,8 @@ function Dashboard() {
                         <div className="widget-body">
                             {notifications.map((notif, index) => (
                                 <div key={index} className="notification-item">
-                                    <div className={`notification-icon ${notif.type}`}>
-                                        {notif.icon}
+                                    <div className={`notification-icon ${notif.type}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <NotifIcon type={notif.type} />
                                     </div>
                                     <div className="notification-content">
                                         <div className="notification-text">{notif.text}</div>

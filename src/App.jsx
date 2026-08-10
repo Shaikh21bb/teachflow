@@ -36,8 +36,10 @@ import StudentDashboard from './pages/student/StudentDashboard'
 import StudentQuiz from './pages/student/StudentQuiz'
 import StudentResults from './pages/student/StudentResults'
 import StudentAssignment from './pages/student/StudentAssignment'
+import JoinLesson from './pages/JoinLesson'
 
 import GlobalSearch from './components/GlobalSearch'
+import { TelegramIcon } from './components/Icons'
 import Presentation from './pages/Presentation'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -81,6 +83,9 @@ function App() {
                             <Route path="/student/quiz/:id" element={<StudentQuiz />} />
                             <Route path="/student/assignment/:id" element={<StudentAssignment />} />
                             <Route path="/student/results" element={<StudentResults />} />
+
+                            {/* Live lesson join — no auth required */}
+                            <Route path="/join/:code" element={<JoinLesson />} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -123,7 +128,7 @@ function DashboardLayout({ children }) {
 
     const otherItems = [
         { path: '/profile', icon: <UserCircle2 size={20} />, label: t('nav.profile') },
-        { path: '/telegram', icon: <span style={{ fontSize: '1.1rem' }}>✈️</span>, label: language === 'kk' ? 'Telegram Hub' : 'Telegram Hub' },
+        { path: '/telegram', icon: <TelegramIcon size={20} />, label: language === 'kk' ? 'Telegram Hub' : 'Telegram Hub' },
         { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
     ]
 

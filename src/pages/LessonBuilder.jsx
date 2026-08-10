@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
-import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2 } from 'lucide-react'
+import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2, Youtube, AlertCircle, ExternalLink, GripVertical, ChevronDown, ChevronUp, BookOpen, Target, Layers, HelpCircle, ClipboardList } from 'lucide-react'
+import { AiSparkIcon, ObjectivesIcon, HomeworkIcon, SummaryIcon, ExampleIcon } from '../components/Icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
@@ -41,6 +42,13 @@ export default function LessonBuilderNew() {
     const [youtubeUrl, setYoutubeUrl] = useState('')
     const [savedLessonId, setSavedLessonId] = useState(null)
     const printRef = useRef(null)
+
+    // ─── Slide cards state ────────────────────────────
+    const [slides, setSlides] = useState([])          // structured slide array
+    const [lessonTheme, setLessonTheme] = useState('dark')
+    const [contentMode, setContentMode] = useState('simple') // 'simple' | 'slides'
+    const [fullGenerating, setFullGenerating] = useState(false)
+    const dragSrcIndex = useRef(null)
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
@@ -134,6 +142,74 @@ export default function LessonBuilderNew() {
         showToast('YouTube-ссылка добавлена!')
     }
 
+    // ─── AI Full Lesson (slides + quiz + homework) ───
+    const generateFullLesson = async () => {
+        if (!form.title && !form.subject) { showToast('Введите название или тему', 'error'); return }
+        setFullGenerating(true)
+        try {
+            const data = await aiAPI.generateLesson({
+                topic: form.title || form.description,
+                subject: form.subject,
+                grade: form.grade,
+                duration: form.duration,
+                language: 'ru'
+            })
+            if (data.slides && data.slides.length > 0) {
+                setSlides(data.slides.map((s, i) => ({ ...s, _id: `slide_${Date.now()}_${i}` })))
+                setContentMode('slides')
+                // Also populate text plan as fallback
+                if (data.homework) setField('content', data.homework)
+                await refreshUser?.()
+                showToast(`Урок создан! ${data.slides.length} слайдов. -${data.creditsCharged || 5} кредитов`)
+            }
+        } catch (e) {
+            showToast('Ошибка AI: ' + e.message, 'error')
+        } finally {
+            setFullGenerating(false)
+        }
+    }
+
+    // ─── Slide DnD helpers ───────────────────────────
+    const handleDragStartSlide = (index) => { dragSrcIndex.current = index }
+    const handleDragOverSlide = (e, index) => {
+        e.preventDefault()
+        if (dragSrcIndex.current === null || dragSrcIndex.current === index) return
+        const next = [...slides]
+        const [moved] = next.splice(dragSrcIndex.current, 1)
+        next.splice(index, 0, moved)
+        dragSrcIndex.current = index
+        setSlides(next)
+    }
+    const handleDragEndSlide = () => { dragSrcIndex.current = null }
+
+    const updateSlide = (id, field, value) => {
+        setSlides(prev => prev.map(s => s._id === id ? { ...s, [field]: value } : s))
+    }
+    const updateSlideItem = (id, index, value) => {
+        setSlides(prev => prev.map(s => {
+            if (s._id !== id) return s
+            const arr = [...(s.items || s.bullets || [])]
+            arr[index] = value
+            return s.items ? { ...s, items: arr } : { ...s, bullets: arr }
+        }))
+    }
+    const removeSlide = (id) => setSlides(prev => prev.filter(s => s._id !== id))
+    const addSlide = (type) => {
+        const defaults = {
+            cover: { title: 'Новый слайд', subtitle: '' },
+            objectives: { title: 'Цели урока', items: ['Цель 1', 'Цель 2'] },
+            content: { title: 'Новый слайд', bullets: ['Пункт 1', 'Пункт 2'] },
+            example: { title: 'Пример', content: '', highlight: '' },
+            poll: { question: 'Вопрос?', options: ['A) Вариант 1', 'B) Вариант 2', 'C) Вариант 3', 'D) Вариант 4'], correct: 'A' },
+            homework: { title: 'Домашнее задание', content: '', due: 'К следующему уроку' },
+            summary: { title: 'Итоги урока', items: ['Вывод 1', 'Вывод 2'] },
+        }
+        setSlides(prev => [...prev, {
+            type, _id: `slide_${Date.now()}`,
+            ...(defaults[type] || { title: 'Слайд' })
+        }])
+    }
+
     // ─── AI Lesson Plan ──────────────────────────────
     const generatePlan = async () => {
         if (!form.title && !form.subject) { showToast('Введите название или тему', 'error'); return }
@@ -148,7 +224,7 @@ export default function LessonBuilderNew() {
             })
             setField('content', data.plan)
             await refreshUser?.()
-            showToast(`🤖 План урока сгенерирован! -${data.creditsCharged || lessonPlanCost} кредит`)
+            showToast(`AI план урока сгенерирован! -${data.creditsCharged || lessonPlanCost} кредит`)
         } catch (e) {
             showToast('Ошибка AI: ' + e.message, 'error')
         } finally {
@@ -161,7 +237,12 @@ export default function LessonBuilderNew() {
         if (!form.title.trim()) { showToast('Введите название урока', 'error'); return }
         setSaving(true)
         try {
-            const payload = { ...form, is_published: publish }
+        const payload = { 
+            ...form, 
+            is_published: publish,
+            slides_json: slides.length > 0 ? slides.map(({ _id, ...rest }) => rest) : null,
+            theme: lessonTheme
+        }
             let lesson
             if (savedLessonId || editId) {
                 lesson = await lessonsAPI.update(savedLessonId || editId, payload)
@@ -189,7 +270,7 @@ export default function LessonBuilderNew() {
                 }
             }
 
-            showToast(publish ? '🎉 Урок опубликован!' : '✅ Черновик сохранён')
+            showToast(publish ? 'Урок опубликован!' : 'Черновик сохранён')
             if (publish) {
                 setTimeout(() => navigate('/my-lessons'), 1200)
             }
@@ -238,12 +319,18 @@ export default function LessonBuilderNew() {
             {toast && (
                 <div style={{
                     position: 'fixed', top: '80px', right: '24px', zIndex: 9999,
-                    background: toast.type === 'error' ? '#ef4444' : '#10b981',
-                    color: 'white', padding: '12px 20px', borderRadius: '12px',
+                    background: 'var(--color-bg-card, white)',
+                    color: 'var(--color-gray-900)',
+                    padding: '12px 20px', borderRadius: '12px',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.15)', fontWeight: 500,
-                    animation: 'slideIn 0.3s ease'
+                    animation: 'slideIn 0.3s ease',
+                    borderLeft: `4px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`,
+                    display: 'flex', alignItems: 'center', gap: '10px'
                 }}>
-                    {toast.type === 'error' ? '❌ ' : '✅ '}{toast.message}
+                    {toast.type === 'error'
+                        ? <AlertCircle size={16} color="#ef4444" />
+                        : <CheckCircle size={16} color="#10b981" />}
+                    {toast.message}
                 </div>
             )}
 
@@ -369,25 +456,107 @@ export default function LessonBuilderNew() {
                             className="builder-input"
                             style={{ resize: 'vertical', fontFamily: 'inherit' }}
                         />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', marginBottom: '8px' }}>
-                            <Label style={{ margin: 0 }}>Подробный план / содержание</Label>
-                            <button onClick={generatePlan} disabled={aiLoading} style={{
-                                background: 'linear-gradient(135deg,#8b5cf6,#a78bfa)', color: 'white',
-                                border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer',
-                                fontSize: '0.8rem', fontWeight: 700, display: 'flex', gap: '6px', alignItems: 'center',
-                                opacity: aiLoading ? 0.7 : 1
-                            }}>
-                                {aiLoading ? <><Loader2 size={16} /> Генерирую...</> : <><Bot size={16} /> AI: Сгенерировать план</>}
+
+                        {/* ── Mode toggle ── */}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '20px', marginBottom: '8px' }}>
+                            <button
+                                onClick={() => setContentMode('simple')}
+                                style={{
+                                    flex: 1, padding: '10px', border: 'none', borderRadius: '10px',
+                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                                    background: contentMode === 'simple' ? 'var(--gradient-primary)' : 'var(--color-gray-100,#f3f4f6)',
+                                    color: contentMode === 'simple' ? 'white' : 'var(--color-gray-600)',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Простой план
+                            </button>
+                            <button
+                                onClick={() => setContentMode('slides')}
+                                style={{
+                                    flex: 1, padding: '10px', border: 'none', borderRadius: '10px',
+                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+                                    background: contentMode === 'slides' ? 'var(--gradient-primary)' : 'var(--color-gray-100,#f3f4f6)',
+                                    color: contentMode === 'slides' ? 'white' : 'var(--color-gray-600)',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Слайды {slides.length > 0 && `(${slides.length})`}
                             </button>
                         </div>
-                        <textarea
-                            value={form.content}
-                            onChange={e => setField('content', e.target.value)}
-                            placeholder="Введите план урока вручную или нажмите «AI: Сгенерировать план»..."
-                            rows={8}
-                            className="builder-input"
-                            style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                        />
+
+                        {/* ── AI generation buttons ── */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                            <button onClick={generatePlan} disabled={aiLoading || fullGenerating} style={{
+                                background: 'var(--color-gray-100,#f3f4f6)', color: 'var(--color-gray-700)',
+                                border: 'none', borderRadius: '8px', padding: '8px 14px', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 600, display: 'flex', gap: '6px', alignItems: 'center',
+                                opacity: aiLoading ? 0.7 : 1
+                            }}>
+                                {aiLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Bot size={14} />}
+                                Простой план
+                            </button>
+                            <button onClick={generateFullLesson} disabled={aiLoading || fullGenerating} style={{
+                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white',
+                                border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 700, display: 'flex', gap: '6px', alignItems: 'center',
+                                opacity: fullGenerating ? 0.7 : 1,
+                                boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                            }}>
+                                {fullGenerating
+                                    ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Генерирую...</>
+                                    : <><AiSparkIcon size={14} /> Создать полный урок (-5 кр.)</>}
+                            </button>
+                        </div>
+
+                        {/* ── Simple mode: textarea ── */}
+                        {contentMode === 'simple' && (
+                            <textarea
+                                value={form.content}
+                                onChange={e => setField('content', e.target.value)}
+                                placeholder="Введите план урока вручную или нажмите «Простой план»..."
+                                rows={8}
+                                className="builder-input"
+                                style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                            />
+                        )}
+
+                        {/* ── Slides mode: card list ── */}
+                        {contentMode === 'slides' && (
+                            <div>
+                                {slides.length === 0 ? (
+                                    <div style={{
+                                        border: '2px dashed var(--color-gray-200,#e5e7eb)',
+                                        borderRadius: '14px', padding: '40px 20px',
+                                        textAlign: 'center', color: 'var(--color-gray-400)'
+                                    }}>
+                                        <AiSparkIcon size={40} color="#d1d5db" />
+                                        <p style={{ marginTop: '12px', fontWeight: 600 }}>Нажмите «Создать полный урок» — AI сгенерирует слайды</p>
+                                        <p style={{ fontSize: '0.8rem', marginTop: '4px' }}>Или добавьте слайды вручную кнопкой ниже</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {slides.map((slide, idx) => (
+                                            <SlideCard
+                                                key={slide._id}
+                                                slide={slide}
+                                                index={idx}
+                                                total={slides.length}
+                                                onDragStart={() => handleDragStartSlide(idx)}
+                                                onDragOver={(e) => handleDragOverSlide(e, idx)}
+                                                onDragEnd={handleDragEndSlide}
+                                                onUpdate={(field, val) => updateSlide(slide._id, field, val)}
+                                                onUpdateItem={(i, val) => updateSlideItem(slide._id, i, val)}
+                                                onRemove={() => removeSlide(slide._id)}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Add slide dropdown */}
+                                <AddSlideButton onAdd={addSlide} />
+                            </div>
+                        )}
                     </Card>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -594,7 +763,7 @@ export default function LessonBuilderNew() {
                                         }}>
                                             <span style={{ display: 'flex', alignItems: 'center' }}>{f.type === 'pdf' ? <FileText size={18} color="#ef4444" /> : f.type === 'video' ? <Film size={18} color="#6366f1" /> : <ImageIcon size={18} color="#10b981" />}</span>
                                             {f.name}
-                                            <span style={{ marginLeft: 'auto', color: '#6366f1' }}>↗</span>
+                                            <ExternalLink size={14} style={{ marginLeft: 'auto', color: '#6366f1' }} />
                                         </a>
                                     ))}
                                 </div>
@@ -606,8 +775,8 @@ export default function LessonBuilderNew() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                         <button onClick={() => setStep(1)} className="ghost-btn">← Назад</button>
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <button onClick={handlePrint} className="no-print ghost-btn" style={{ color: 'var(--color-success-600)', borderColor: 'var(--color-success-200)' }}>
-                                📄 Скачать PDF
+                            <button onClick={handlePrint} className="no-print ghost-btn" style={{ color: 'var(--color-success-600)', borderColor: 'var(--color-success-200)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <FileText size={16} /> Скачать PDF
                             </button>
                             <button onClick={() => saveDraft(false)} disabled={saving} className="ghost-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Сохранить черновик
@@ -721,6 +890,251 @@ export default function LessonBuilderNew() {
                     }
                 }
             `}</style>
+        </div>
+    )
+}
+
+// ─── SlideCard ────────────────────────────────────────
+const SLIDE_TYPE_META = {
+    cover:      { label: 'Обложка',         color: '#6366f1', Icon: BookOpen },
+    objectives: { label: 'Цели',            color: '#06b6d4', Icon: Target },
+    content:    { label: 'Контент',         color: '#8b5cf6', Icon: Layers },
+    example:    { label: 'Пример',          color: '#f97316', Icon: ExampleIcon },
+    poll:       { label: 'Опрос',           color: '#ec4899', Icon: HelpCircle },
+    quiz_slide: { label: 'Тест',            color: '#3b82f6', Icon: ClipboardList },
+    homework:   { label: 'Домашнее задание',color: '#10b981', Icon: HomeworkIcon },
+    summary:    { label: 'Итоги',           color: '#fbbf24', Icon: SummaryIcon },
+}
+
+function SlideCard({ slide, index, onDragStart, onDragOver, onDragEnd, onUpdate, onUpdateItem, onRemove }) {
+    const [expanded, setExpanded] = useState(true)
+    const meta = SLIDE_TYPE_META[slide.type] || { label: slide.type, color: '#6b7280', Icon: FileText }
+    const { Icon } = meta
+
+    return (
+        <div
+            draggable
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            style={{
+                background: 'var(--color-bg-card, white)',
+                border: `1.5px solid ${meta.color}30`,
+                borderRadius: '14px',
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                cursor: 'grab',
+            }}
+        >
+            {/* Header */}
+            <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px',
+                background: `${meta.color}08`,
+                borderBottom: expanded ? `1px solid ${meta.color}20` : 'none',
+            }}>
+                <GripVertical size={16} color="#9ca3af" style={{ flexShrink: 0, cursor: 'grab' }} />
+                <div style={{
+                    width: '28px', height: '28px', borderRadius: '8px',
+                    background: `${meta.color}20`, color: meta.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                }}>
+                    <Icon size={14} />
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: meta.color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {index + 1}. {meta.label}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                        value={slide.title || ''}
+                        onChange={e => onUpdate('title', e.target.value)}
+                        style={{
+                            border: 'none', background: 'transparent', fontWeight: 600,
+                            fontSize: '0.875rem', color: 'var(--color-gray-900)', width: '100%',
+                            outline: 'none', cursor: 'text'
+                        }}
+                        placeholder="Заголовок слайда..."
+                        onClick={e => e.stopPropagation()}
+                    />
+                </div>
+                <button onClick={() => setExpanded(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <Trash2 size={14} />
+                </button>
+            </div>
+
+            {/* Body */}
+            {expanded && (
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Subtitle (cover only) */}
+                    {slide.type === 'cover' && (
+                        <input
+                            value={slide.subtitle || ''}
+                            onChange={e => onUpdate('subtitle', e.target.value)}
+                            className="builder-input" style={{ fontSize: '0.85rem' }}
+                            placeholder="Подзаголовок (необязательно)"
+                        />
+                    )}
+
+                    {/* Bullet items (content / objectives / summary) */}
+                    {(slide.type === 'content' || slide.type === 'objectives' || slide.type === 'summary') && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {(slide.items || slide.bullets || []).map((item, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: meta.color, flexShrink: 0, marginTop: '2px' }} />
+                                    <input
+                                        value={item}
+                                        onChange={e => onUpdateItem(i, e.target.value)}
+                                        className="builder-input"
+                                        style={{ fontSize: '0.85rem', flex: 1 }}
+                                        placeholder={`Пункт ${i + 1}`}
+                                    />
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => {
+                                    const arr = slide.items ? [...slide.items, ''] : [...(slide.bullets || []), '']
+                                    slide.items ? onUpdate('items', arr) : onUpdate('bullets', arr)
+                                }}
+                                style={{
+                                    background: 'none', border: `1px dashed ${meta.color}50`,
+                                    borderRadius: '8px', padding: '5px 10px',
+                                    color: meta.color, fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600
+                                }}
+                            >
+                                + Добавить пункт
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Content / highlight (example) */}
+                    {slide.type === 'example' && (
+                        <>
+                            <textarea
+                                value={slide.content || ''}
+                                onChange={e => onUpdate('content', e.target.value)}
+                                className="builder-input" rows={3}
+                                style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem' }}
+                                placeholder="Описание примера..."
+                            />
+                            <input
+                                value={slide.highlight || ''}
+                                onChange={e => onUpdate('highlight', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem' }}
+                                placeholder="Выделенная формула / ключевая фраза"
+                            />
+                        </>
+                    )}
+
+                    {/* Poll */}
+                    {slide.type === 'poll' && (
+                        <>
+                            <input
+                                value={slide.question || ''}
+                                onChange={e => onUpdate('question', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem', fontWeight: 600 }}
+                                placeholder="Вопрос..."
+                            />
+                            {(slide.options || []).map((opt, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <span style={{ width: '22px', height: '22px', borderRadius: '6px', background: slide.correct === ['A','B','C','D'][i] ? '#10b981' : '#f3f4f6', color: slide.correct === ['A','B','C','D'][i] ? 'white' : '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}
+                                        onClick={() => onUpdate('correct', ['A','B','C','D'][i])}>
+                                        {['A','B','C','D'][i]}
+                                    </span>
+                                    <input
+                                        value={opt}
+                                        onChange={e => {
+                                            const opts = [...slide.options]; opts[i] = e.target.value; onUpdate('options', opts)
+                                        }}
+                                        className="builder-input" style={{ fontSize: '0.85rem', flex: 1 }}
+                                        placeholder={`Вариант ${['A','B','C','D'][i]}`}
+                                    />
+                                </div>
+                            ))}
+                            <p style={{ fontSize: '0.72rem', color: '#9ca3af', margin: 0 }}>Нажмите на букву чтобы выбрать правильный ответ</p>
+                        </>
+                    )}
+
+                    {/* Homework */}
+                    {slide.type === 'homework' && (
+                        <>
+                            <textarea
+                                value={slide.content || ''}
+                                onChange={e => onUpdate('content', e.target.value)}
+                                className="builder-input" rows={3}
+                                style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem' }}
+                                placeholder="Описание домашнего задания..."
+                            />
+                            <input
+                                value={slide.due || ''}
+                                onChange={e => onUpdate('due', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem' }}
+                                placeholder="Срок сдачи (напр. К следующему уроку)"
+                            />
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ─── AddSlideButton ───────────────────────────────────
+function AddSlideButton({ onAdd }) {
+    const [open, setOpen] = useState(false)
+    const types = Object.entries(SLIDE_TYPE_META)
+    return (
+        <div style={{ position: 'relative', marginTop: '12px' }}>
+            <button
+                onClick={() => setOpen(v => !v)}
+                style={{
+                    width: '100%', padding: '10px', border: '1.5px dashed var(--color-gray-200,#e5e7eb)',
+                    borderRadius: '12px', background: 'transparent', cursor: 'pointer',
+                    color: 'var(--color-gray-500)', fontWeight: 600, fontSize: '0.875rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#6366f1'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-gray-200,#e5e7eb)'}
+            >
+                <Plus size={16} /> Добавить слайд
+            </button>
+            {open && (
+                <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setOpen(false)} />
+                    <div style={{
+                        position: 'absolute', bottom: '110%', left: 0, right: 0,
+                        background: 'var(--color-bg-card, white)', borderRadius: '14px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        border: '1px solid var(--color-gray-100,#f3f4f6)',
+                        padding: '8px', zIndex: 100,
+                        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px'
+                    }}>
+                        {types.map(([type, meta]) => {
+                            const { Icon } = meta
+                            return (
+                                <button key={type} onClick={() => { onAdd(type); setOpen(false) }} style={{
+                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                    padding: '8px 10px', border: 'none', borderRadius: '10px',
+                                    background: 'transparent', cursor: 'pointer', textAlign: 'left',
+                                    fontSize: '0.82rem', fontWeight: 500, color: 'var(--color-gray-700)',
+                                    transition: 'background 0.15s'
+                                }}
+                                    onMouseEnter={e => e.currentTarget.style.background = `${meta.color}10`}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: `${meta.color}20`, color: meta.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <Icon size={13} />
+                                    </div>
+                                    {meta.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </>
+            )}
         </div>
     )
 }

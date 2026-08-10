@@ -120,15 +120,17 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
     try {
         const {
             title, subject, grade, duration, description, content,
-            thumbnail_url, content_url, file_type, is_published
+            thumbnail_url, content_url, file_type, is_published,
+            slides_json, theme
         } = req.body;
         const userId = req.user.userId;
 
         await runQuery(`
             INSERT INTO lessons 
                 (title, subject, grade, duration, description, content, 
-                 thumbnail_url, content_url, file_type, is_published, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 thumbnail_url, content_url, file_type, is_published, user_id,
+                 slides_json, theme)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             title || 'Новый урок',
             subject || 'Математика',
@@ -140,7 +142,9 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
             content_url || null,
             file_type || 'text',
             is_published ? 1 : 0,
-            userId
+            userId,
+            slides_json ? JSON.stringify(slides_json) : null,
+            theme || 'dark'
         ]);
 
         const id = await getLastInsertId();
@@ -167,14 +171,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
         const {
             title, subject, grade, duration, description, content,
-            thumbnail_url, content_url, file_type, is_published
+            thumbnail_url, content_url, file_type, is_published,
+            slides_json, theme
         } = req.body;
 
         await runQuery(`
             UPDATE lessons 
             SET title = ?, subject = ?, grade = ?, duration = ?, description = ?, 
                 content = ?, thumbnail_url = ?, content_url = ?, file_type = ?,
-                is_published = ?, updated_at = datetime('now')
+                is_published = ?, slides_json = ?, theme = ?,
+                updated_at = datetime('now')
             WHERE id = ?
         `, [
             title ?? existing.title,
@@ -187,6 +193,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             content_url ?? existing.content_url,
             file_type ?? existing.file_type,
             is_published !== undefined ? (is_published ? 1 : 0) : existing.is_published,
+            slides_json !== undefined ? JSON.stringify(slides_json) : existing.slides_json,
+            theme ?? existing.theme ?? 'dark',
             lessonId
         ]);
 
@@ -233,14 +241,17 @@ router.post('/:id/duplicate', authenticateToken, async (req, res) => {
         await runQuery(`
             INSERT INTO lessons 
                 (title, subject, grade, duration, description, content, 
-                 thumbnail_url, content_url, file_type, is_published, user_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                 thumbnail_url, content_url, file_type, is_published, user_id,
+                 slides_json, theme)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
         `, [
             `${original.title} (Копия)`,
             original.subject, original.grade, original.duration,
             original.description, original.content,
             original.thumbnail_url, original.content_url,
-            original.file_type, userId
+            original.file_type, userId,
+            original.slides_json || null,
+            original.theme || 'dark'
         ]);
 
         const newId = await getLastInsertId();
@@ -282,6 +293,27 @@ router.post('/:id/share', authenticateToken, async (req, res) => {
 
         const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
         res.json({ share_url: `${baseUrl}/lesson/${lessonId}?share_token=${token}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ──────────────────────────────────────────
+// GET slides_json for a lesson (teacher only)
+// Returns parsed slides array or null
+// ──────────────────────────────────────────
+router.get('/:id/slides', authenticateToken, async (req, res) => {
+    try {
+        const lessonId = parseInt(req.params.id);
+        const lesson = await getOne('SELECT slides_json, theme FROM lessons WHERE id = ? AND user_id = ?',
+            [lessonId, req.user.userId]);
+        if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+
+        let slides = null;
+        if (lesson.slides_json) {
+            try { slides = JSON.parse(lesson.slides_json); } catch { slides = null; }
+        }
+        res.json({ slides, theme: lesson.theme || 'dark' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
