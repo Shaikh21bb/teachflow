@@ -49,6 +49,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import TeacherChat from './pages/TeacherChat'
 import TeacherPublicProfile from './pages/TeacherPublicProfile'
 import LessonTemplates from './pages/LessonTemplates'
+import ParentPortal from './pages/ParentPortal'
 
 function App() {
     return (
@@ -96,6 +97,9 @@ function App() {
                             <Route path="/teachers/:id" element={<TeacherPublicProfile />} />
                             <Route path="/chat" element={<ProtectedRoute><DashboardLayout><TeacherChat /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/templates" element={<ProtectedRoute><DashboardLayout><LessonTemplates /></DashboardLayout></ProtectedRoute>} />
+
+                            {/* Parent portal — no auth */}
+                            <Route path="/parent/:token" element={<ParentPortal />} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>

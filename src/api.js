@@ -361,6 +361,14 @@ export const teachersAPI = {
     getProfile: (id) => fetchAPI(`/auth/teachers/${id}`),
 };
 
+// Parent Portal API
+export const parentAPI = {
+    generate: (studentId) => fetchAPI(`/parent/generate/${studentId}`, { method: 'POST' }),
+    revoke: (studentId) => fetchAPI(`/parent/revoke/${studentId}`, { method: 'DELETE' }),
+    // Public — no auth needed (direct fetch)
+    getStudentData: (token) => fetch(`${API_BASE}/parent/${token}`).then(r => r.json()),
+};
+
 export default {
     lessons: lessonsAPI,
     lessonFiles: lessonFilesAPI,

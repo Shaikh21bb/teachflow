@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { classesAPI } from '../api'
+import { classesAPI, parentAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
+import { Link2, Trash2, Copy, CheckCircle } from 'lucide-react'
 
 const TEAM_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16']
 
@@ -12,6 +13,26 @@ function ClassDashboard() {
     const [selectedClass, setSelectedClass] = useState(null)
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
+
+    // Parent portal link state: { [studentId]: { url, copied } }
+    const [parentLinks, setParentLinks] = useState({})
+    const [parentLoading, setParentLoading] = useState(null)
+
+    async function handleParentLink(student) {
+        setParentLoading(student.id)
+        try {
+            const data = await parentAPI.generate(student.id)
+            setParentLinks(prev => ({ ...prev, [student.id]: { url: data.url, copied: false } }))
+            // Auto-copy
+            navigator.clipboard.writeText(data.url).catch(() => {})
+            setParentLinks(prev => ({ ...prev, [student.id]: { url: data.url, copied: true } }))
+            setTimeout(() => setParentLinks(prev => ({ ...prev, [student.id]: { ...prev[student.id], copied: false } })), 2500)
+        } catch (err) {
+            alert('Ошибка: ' + err.message)
+        } finally {
+            setParentLoading(null)
+        }
+    }
 
     // Modals
     const [showAddStudent, setShowAddStudent] = useState(false)
@@ -428,7 +449,38 @@ function ClassDashboard() {
                                                 {student.status === 'attention' && <span className="badge" style={{ background: '#fef2f2', color: '#ef4444' }}>{L('Внимание', 'Назар')}</span>}
                                             </td>
                                             <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                                <button className="btn btn-ghost btn-sm" onClick={() => handleDeleteStudent(student.id)}>🗑️</button>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                                                    {/* Parent portal link button */}
+                                                    <button
+                                                        title={L('Ссылка для родителей', 'Ата-ана сілтемесі')}
+                                                        onClick={() => handleParentLink(student)}
+                                                        disabled={parentLoading === student.id}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: '5px',
+                                                            padding: '5px 10px', border: '1px solid var(--color-gray-200)',
+                                                            borderRadius: '8px', background: parentLinks[student.id]?.copied ? '#dcfce7' : 'white',
+                                                            color: parentLinks[student.id]?.copied ? '#15803d' : 'var(--color-gray-600)',
+                                                            fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        {parentLinks[student.id]?.copied
+                                                            ? <><CheckCircle size={13} /> {L('Скопировано', 'Көшірілді')}</>
+                                                            : parentLoading === student.id
+                                                                ? L('...', '...')
+                                                                : <><Link2 size={13} /> {L('Родителям', 'Ата-анаға')}</>
+                                                        }
+                                                    </button>
+                                                    {/* Delete */}
+                                                    <button
+                                                        className="btn btn-ghost btn-sm"
+                                                        onClick={() => handleDeleteStudent(student.id)}
+                                                        title={L('Удалить', 'Жою')}
+                                                        style={{ display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

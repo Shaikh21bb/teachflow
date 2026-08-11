@@ -327,6 +327,9 @@ async function runMigrations() {
             FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
         )`,
         `CREATE INDEX IF NOT EXISTS idx_lesson_likes_lesson ON lesson_likes(lesson_id)`,
+        // v14 - Parent portal tokens
+        `ALTER TABLE students ADD COLUMN parent_token TEXT`,
+        `CREATE INDEX IF NOT EXISTS idx_students_parent_token ON students(parent_token) WHERE parent_token IS NOT NULL`,
     ];
 
     for (const sql of migrations) {
@@ -371,6 +374,7 @@ async function startServer() {
     const kaspiRouter = require('./routes/kaspi');
     const liveRouter = require('./routes/live');
     const chatRouter = require('./routes/chat');
+    const parentRouter = require('./routes/parent');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -427,6 +431,7 @@ async function startServer() {
     app.use('/api/kaspi', kaspiRouter);
     app.use('/api/live', liveRouter);
     app.use('/api/chat', chatRouter);
+    app.use('/api/parent', parentRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {
