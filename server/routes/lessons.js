@@ -8,6 +8,122 @@ const crypto = require('crypto');
 // ──────────────────────────────────────────
 // GET all lessons for the authenticated teacher
 // ──────────────────────────────────────────
+// ──────────────────────────────────────────
+// GET /api/lessons/public — community lesson library
+// Returns published lessons from ALL teachers
+// Supports: ?search=, ?subject=, ?grade=, ?sort=newest|popular|liked, ?page=
+// ──────────────────────────────────────────
+router.get('/public', authenticateToken, async (req, res) => {
+    try {
+        const myId = req.user.userId;
+        const { search, subject, grade, sort = 'newest', page = 1 } = req.query;
+        const limit = 24;
+        const offset = (parseInt(page) - 1) * limit;
+
+        let sql = `
+            SELECT l.id, l.title, l.subject, l.grade, l.duration, l.description,
+                l.thumbnail_url, l.views_count, l.likes, l.created_at,
+                u.id as author_id, u.name as author_name,
+                COALESCE(tp.avatar_url, u.avatar_url) as author_avatar,
+                tp.school as author_school,
+                CASE WHEN ll.user_id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                CASE WHEN sm.user_id IS NOT NULL THEN 1 ELSE 0 END as is_saved
+            FROM lessons l
+            JOIN users u ON l.user_id = u.id
+            LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+            LEFT JOIN lesson_likes ll ON ll.lesson_id = l.id AND ll.user_id = ?
+            LEFT JOIN saved_materials sm ON sm.lesson_id = l.id AND sm.user_id = ?
+            WHERE l.is_published = 1 AND l.is_archived = 0`;
+        const params = [myId, myId];
+
+        if (search) { sql += ` AND (l.title LIKE ? OR l.description LIKE ? OR u.name LIKE ?)`; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+        if (subject) { sql += ` AND l.subject = ?`; params.push(subject); }
+        if (grade)   { sql += ` AND l.grade = ?`;   params.push(grade); }
+
+        sql += sort === 'popular' ? ` ORDER BY l.views_count DESC` : sort === 'liked' ? ` ORDER BY l.likes DESC` : ` ORDER BY l.created_at DESC`;
+        sql += ` LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const lessons = await getAll(sql, params);
+
+        let countSql = `SELECT COUNT(*) as total FROM lessons l JOIN users u ON l.user_id = u.id WHERE l.is_published = 1 AND l.is_archived = 0`;
+        const countParams = [];
+        if (search) { countSql += ` AND (l.title LIKE ? OR l.description LIKE ? OR u.name LIKE ?)`; countParams.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+        if (subject) { countSql += ` AND l.subject = ?`; countParams.push(subject); }
+        if (grade)   { countSql += ` AND l.grade = ?`;   countParams.push(grade); }
+
+        const total = (await getOne(countSql, countParams))?.total || 0;
+
+        res.json({
+            lessons: lessons.map(l => ({ ...l, is_liked: l.is_liked === 1, is_saved: l.is_saved === 1 })),
+            total, page: parseInt(page), pages: Math.ceil(total / limit)
+        });
+    } catch (err) {
+        console.error('Public lessons error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ── GET /api/lessons/saved ───────────────────────────────────
+router.get('/saved', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const lessons = await getAll(
+            `SELECT l.id, l.title, l.subject, l.grade, l.duration, l.thumbnail_url,
+                    l.views_count, l.likes, l.created_at,
+                    u.id as author_id, u.name as author_name,
+                    COALESCE(tp.avatar_url, u.avatar_url) as author_avatar,
+                    sm.created_at as saved_at
+             FROM saved_materials sm
+             JOIN lessons l ON l.id = sm.lesson_id
+             JOIN users u ON u.id = l.user_id
+             LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+             WHERE sm.user_id = ? AND sm.type = 'lesson' AND l.is_archived = 0
+             ORDER BY sm.created_at DESC`, [userId]
+        );
+        res.json({ lessons });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── POST /api/lessons/:id/like — toggle like ─────────────────
+router.post('/:id/like', authenticateToken, async (req, res) => {
+    try {
+        const lessonId = parseInt(req.params.id);
+        const userId = req.user.userId;
+        const existing = await getOne('SELECT 1 FROM lesson_likes WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
+        if (existing) {
+            await runQuery('DELETE FROM lesson_likes WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
+            await runQuery('UPDATE lessons SET likes = MAX(0, likes - 1) WHERE id = ?', [lessonId]);
+        } else {
+            await runQuery('INSERT OR IGNORE INTO lesson_likes (user_id, lesson_id) VALUES (?, ?)', [userId, lessonId]);
+            await runQuery('UPDATE lessons SET likes = likes + 1 WHERE id = ?', [lessonId]);
+        }
+        const l = await getOne('SELECT likes FROM lessons WHERE id = ?', [lessonId]);
+        res.json({ liked: !existing, likes: l?.likes || 0 });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── POST /api/lessons/:id/save — save to my saved_materials ──
+router.post('/:id/save', authenticateToken, async (req, res) => {
+    try {
+        const lessonId = parseInt(req.params.id);
+        const userId = req.user.userId;
+        const lesson = await getOne('SELECT id, title FROM lessons WHERE id = ? AND is_published = 1', [lessonId]);
+        if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+        const existing = await getOne('SELECT id FROM saved_materials WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
+        if (existing) {
+            await runQuery('DELETE FROM saved_materials WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
+            res.json({ saved: false });
+        } else {
+            await runQuery(`INSERT INTO saved_materials (user_id, lesson_id, title, type) VALUES (?, ?, ?, 'lesson')`, [userId, lessonId, lesson.title]);
+            res.json({ saved: true });
+        }
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ──────────────────────────────────────────
+// GET /api/lessons — my own lessons
+// ──────────────────────────────────────────
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const { subject, grade, search, status, limit = 100, offset = 0 } = req.query;

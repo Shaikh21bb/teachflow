@@ -317,6 +317,16 @@ async function runMigrations() {
         `CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id)`,
         `CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)`,
         `CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(is_read, sender_id)`,
+        // v13 - Lesson likes table
+        `CREATE TABLE IF NOT EXISTS lesson_likes (
+            user_id INTEGER NOT NULL,
+            lesson_id INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, lesson_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_lesson_likes_lesson ON lesson_likes(lesson_id)`,
     ];
 
     for (const sql of migrations) {

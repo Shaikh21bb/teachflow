@@ -104,6 +104,13 @@ export const lessonsAPI = {
         return fetchAPI(`/lessons/${id}${q}`);
     },
     getSlides: (id) => fetchAPI(`/lessons/${id}/slides`),
+    getPublic: (params = {}) => {
+        const q = new URLSearchParams(params).toString();
+        return fetchAPI(`/lessons/public${q ? `?${q}` : ''}`);
+    },
+    getSaved: () => fetchAPI('/lessons/saved'),
+    like: (id) => fetchAPI(`/lessons/${id}/like`, { method: 'POST' }),
+    save: (id) => fetchAPI(`/lessons/${id}/save`, { method: 'POST' }),
     create: (lesson) => fetchAPI('/lessons', { method: 'POST', body: JSON.stringify(lesson) }),
     update: (id, lesson) => fetchAPI(`/lessons/${id}`, { method: 'PUT', body: JSON.stringify(lesson) }),
     delete: (id) => fetchAPI(`/lessons/${id}`, { method: 'DELETE' }),
