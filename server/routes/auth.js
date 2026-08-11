@@ -550,6 +550,12 @@ router.post('/colleagues/toggle', authenticateToken, async (req, res) => {
                 'INSERT OR IGNORE INTO user_connections (follower_id, following_id) VALUES (?, ?)',
                 [userId, targetId]
             );
+            // Notify the followed teacher
+            const follower = await getOne('SELECT name FROM users WHERE id = ?', [userId]);
+            try {
+                const { createNotification } = require('./notifications');
+                createNotification(targetId, 'success', `${follower?.name || 'Учитель'} подписался на вас`);
+            } catch { /* silent */ }
             res.json({ success: true, action: 'followed' });
         }
     } catch (error) {

@@ -40,6 +40,7 @@ import JoinLesson from './pages/JoinLesson'
 
 import GlobalSearch from './components/GlobalSearch'
 import { TelegramIcon } from './components/Icons'
+import NotificationBell from './components/NotificationBell'
 import Presentation from './pages/Presentation'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -349,15 +350,13 @@ function UserProfile() {
     }
 
     return (
-        <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <NotificationBell />
+            <div style={{ position: 'relative' }}>
             <div
-                className="topbar-user"
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 onClick={() => setShowDropdown(!showDropdown)}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-                <div className="topbar-icon" style={{ display: 'flex', alignItems: 'center' }}>
-                    <Bell size={20} />
-                </div>
                 <div style={{
                     width: '36px', height: '36px', borderRadius: '50%',
                     background: 'var(--gradient-primary)',
@@ -412,6 +411,7 @@ function UserProfile() {
                     </div>
                 </>
             )}
+            </div>
         </div>
     )
 }

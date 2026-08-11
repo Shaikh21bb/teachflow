@@ -149,7 +149,10 @@ export const classesAPI = {
 export const dashboardAPI = {
     getStats: () => fetchAPI('/dashboard/stats'),
     getUpcomingLessons: () => fetchAPI('/dashboard/upcoming-lessons'),
-    getNotifications: () => fetchAPI('/notifications')
+    getNotifications: () => fetchAPI('/notifications'),
+    getUnreadCount: () => fetchAPI('/notifications/unread-count'),
+    markAllRead: () => fetchAPI('/notifications/read-all', { method: 'PUT' }),
+    markOneRead: (id) => fetchAPI(`/notifications/${id}/read`, { method: 'PUT' }),
 };
 
 // AI API

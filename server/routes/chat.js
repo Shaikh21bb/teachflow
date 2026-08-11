@@ -13,6 +13,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { getOne, getAll, runQuery } = require('../db/database');
+const { createNotification } = require('./notifications');
 
 // ── Helper: get or create a conversation between two users ──
 async function getOrCreateConversation(userA, userB) {
@@ -174,6 +175,14 @@ router.post('/conversations/:id/messages', authenticateToken, async (req, res) =
             'UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?',
             [convId]
         );
+
+        // Notify recipient (non-blocking)
+        const partnerId = conv.user1_id === myId ? conv.user2_id : conv.user1_id;
+        const sender = await getOne('SELECT name FROM users WHERE id = ?', [myId]);
+        createNotification(
+            partnerId, 'message',
+            `Новое сообщение от ${sender?.name || 'коллеги'}`
+        ).catch(() => {});
 
         // Fetch the just-inserted message
         const msg = await getOne(
