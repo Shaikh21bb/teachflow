@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -44,6 +44,8 @@ import Presentation from './pages/Presentation'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+import TeacherChat from './pages/TeacherChat'
+import TeacherPublicProfile from './pages/TeacherPublicProfile'
 
 function App() {
     return (
@@ -86,6 +88,10 @@ function App() {
 
                             {/* Live lesson join — no auth required */}
                             <Route path="/join/:code" element={<JoinLesson />} />
+
+                            {/* Teacher community */}
+                            <Route path="/teachers/:id" element={<TeacherPublicProfile />} />
+                            <Route path="/chat" element={<ProtectedRoute><DashboardLayout><TeacherChat /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -104,10 +110,27 @@ function ProtectedRoute({ children }) {
 function DashboardLayout({ children }) {
     const location = useLocation()
     const { t, language, toggleLanguage } = useLanguage()
+    const { isAuthenticated } = useAuth()
 
     const [collapsed, setCollapsed] = useState(() => {
         try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch { return false }
     })
+    const [unreadCount, setUnreadCount] = useState(0)
+
+    // Poll unread chat count every 30s
+    useEffect(() => {
+        if (!isAuthenticated) return
+        const fetchUnread = async () => {
+            try {
+                const { chatAPI } = await import('./api')
+                const data = await chatAPI.getUnreadCount()
+                setUnreadCount(data.count || 0)
+            } catch { /* silent */ }
+        }
+        fetchUnread()
+        const interval = setInterval(fetchUnread, 30000)
+        return () => clearInterval(interval)
+    }, [isAuthenticated])
 
     const toggleCollapsed = () => {
         setCollapsed(prev => {
@@ -128,6 +151,28 @@ function DashboardLayout({ children }) {
 
     const otherItems = [
         { path: '/profile', icon: <UserCircle2 size={20} />, label: t('nav.profile') },
+        {
+            path: '/chat',
+            icon: (
+                <span style={{ position: 'relative', display: 'inline-flex' }}>
+                    <MessageSquare size={20} />
+                    {unreadCount > 0 && (
+                        <span style={{
+                            position: 'absolute', top: '-6px', right: '-8px',
+                            background: '#ef4444', color: 'white',
+                            borderRadius: '20px', padding: '0 4px',
+                            fontSize: '0.6rem', fontWeight: 800,
+                            minWidth: '14px', height: '14px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            lineHeight: 1, border: '1.5px solid var(--color-bg-sidebar, white)'
+                        }}>
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </span>
+            ),
+            label: language === 'kk' ? 'Чаттар' : 'Чаты'
+        },
         { path: '/telegram', icon: <TelegramIcon size={20} />, label: language === 'kk' ? 'Telegram Hub' : 'Telegram Hub' },
         { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
     ]
@@ -233,12 +278,12 @@ function DashboardLayout({ children }) {
                 </div>
             </main>
 
-            <MobileBottomNav items={navItems} />
+            <MobileBottomNav items={navItems} unreadCount={unreadCount} />
         </div>
     )
 }
 
-function MobileBottomNav({ items }) {
+function MobileBottomNav({ items, unreadCount = 0 }) {
     const { t, language } = useLanguage()
     const primaryItems = items.filter(i =>
         ['/dashboard', '/my-lessons', '/classes', '/alfarabi-bot'].includes(i.path)
@@ -255,6 +300,30 @@ function MobileBottomNav({ items }) {
                     <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>{item.label}</span>
                 </NavLink>
             ))}
+            {/* Chat link with badge */}
+            <NavLink
+                to="/chat"
+                className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
+            >
+                <div className="bottom-nav-icon" style={{ position: 'relative' }}>
+                    <MessageSquare size={20} />
+                    {unreadCount > 0 && (
+                        <span style={{
+                            position: 'absolute', top: '-4px', right: '-6px',
+                            background: '#ef4444', color: 'white', borderRadius: '20px',
+                            padding: '0 3px', fontSize: '0.58rem', fontWeight: 800,
+                            minWidth: '13px', height: '13px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            border: '1.5px solid white'
+                        }}>
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
+                </div>
+                <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
+                    {language === 'kk' ? 'Чат' : 'Чат'}
+                </span>
+            </NavLink>
             <NavLink
                 to="/profile"
                 className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}

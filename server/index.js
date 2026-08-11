@@ -290,6 +290,33 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_live_sessions_code ON live_sessions(code)`,
         `CREATE INDEX IF NOT EXISTS idx_live_sessions_teacher ON live_sessions(teacher_id)`,
+        // v12 - Teacher-to-teacher chat
+        `CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user1_id INTEGER NOT NULL,
+            user2_id INTEGER NOT NULL,
+            last_message_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user1_id, user2_id),
+            FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_conversations_user1 ON conversations(user1_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_conversations_user2 ON conversations(user2_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_conversations_last ON conversations(last_message_at DESC)`,
+        `CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            sender_id INTEGER NOT NULL,
+            text TEXT NOT NULL,
+            is_read INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+            FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(is_read, sender_id)`,
     ];
 
     for (const sql of migrations) {
@@ -333,6 +360,7 @@ async function startServer() {
     const studentPortalRouter = require('./routes/student-portal');
     const kaspiRouter = require('./routes/kaspi');
     const liveRouter = require('./routes/live');
+    const chatRouter = require('./routes/chat');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -388,6 +416,7 @@ async function startServer() {
     app.use('/api/student-portal', studentPortalRouter);
     app.use('/api/kaspi', kaspiRouter);
     app.use('/api/live', liveRouter);
+    app.use('/api/chat', chatRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {

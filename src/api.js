@@ -333,6 +333,24 @@ export const liveAPI = {
     endSession: (code) => fetchAPI(`/live/${code}`, { method: 'DELETE' }),
 };
 
+// Chat API (teacher-to-teacher)
+export const chatAPI = {
+    openConversation: (userId) => fetchAPI(`/chat/conversations/${userId}`, { method: 'POST' }),
+    getConversations: () => fetchAPI('/chat/conversations'),
+    getMessages: (convId, before) => fetchAPI(`/chat/conversations/${convId}/messages${before ? `?before=${before}` : ''}`),
+    sendMessage: (convId, text) => fetchAPI(`/chat/conversations/${convId}/messages`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+    }),
+    markRead: (convId) => fetchAPI(`/chat/conversations/${convId}/read`, { method: 'PUT' }),
+    getUnreadCount: () => fetchAPI('/chat/unread'),
+};
+
+// Public teacher profiles
+export const teachersAPI = {
+    getProfile: (id) => fetchAPI(`/auth/teachers/${id}`),
+};
+
 export default {
     lessons: lessonsAPI,
     lessonFiles: lessonFilesAPI,

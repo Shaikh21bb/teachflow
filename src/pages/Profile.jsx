@@ -5,10 +5,10 @@ import {
     User, Users, CheckCircle, AlertCircle, Loader2,
     Instagram, Youtube, Send, Globe, MapPin, School,
     UserCheck, UserPlus, Search, Camera, Settings, ChevronRight,
-    BookOpen, Edit3, X
+    BookOpen, Edit3, X, MessageSquare
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { uploadToCloudinary } from '../api';
+import { Link, useNavigate } from 'react-router-dom';
+import { uploadToCloudinary, chatAPI } from '../api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -21,6 +21,7 @@ const subjectOptions = [
 export default function Profile() {
     const { user } = useAuth();
     const { t, language } = useLanguage();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('profile');
     const [isEditing, setIsEditing] = useState(false);
     
@@ -554,6 +555,7 @@ export default function Profile() {
             ════════════════════════════════════════════════════ */}
             {activeTab === 'colleagues' && (
                 <div>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     {/* Search */}
                     <div style={{ position: 'relative', marginBottom: '16px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-gray-400)', pointerEvents: 'none' }} />
@@ -594,7 +596,7 @@ export default function Profile() {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {colleagues.map(colleague => (
-                                <ColleagueCard key={colleague.id} colleague={colleague} onToggle={handleToggleColleague} toggling={togglingId === colleague.id} t={t} language={language} />
+                                <ColleagueCard key={colleague.id} colleague={colleague} onToggle={handleToggleColleague} toggling={togglingId === colleague.id} t={t} language={language} navigate={navigate} />
                             ))}
                         </div>
                     )}
@@ -605,81 +607,141 @@ export default function Profile() {
 }
 
 // ── Colleague Card Component ─────────────────────────────────────────────────
-function ColleagueCard({ colleague, onToggle, toggling, t, language }) {
-    const initials = colleague.name
-        ? colleague.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-        : '?';
+function ColleagueCard({ colleague, onToggle, toggling, t, language, navigate }) {
+    const L = (ru, kk) => language === 'kk' ? kk : ru
+    const [msgLoading, setMsgLoading] = useState(false)
+
+    const initials = (colleague.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
+    const avatarColor = colors[(colleague.name?.charCodeAt(0) || 0) % colors.length]
+    const [imgError, setImgError] = useState(false)
 
     const linkIcons = [
-        colleague.instagram_url && { href: colleague.instagram_url, icon: <Instagram size={14} />, color: '#E1306C' },
-        colleague.youtube_url && { href: colleague.youtube_url, icon: <Youtube size={14} />, color: '#FF0000' },
-        colleague.telegram_url && { href: colleague.telegram_url, icon: <Send size={14} />, color: '#229ED9' },
-        colleague.website_url && { href: colleague.website_url, icon: <Globe size={14} />, color: '#10b981' },
-    ].filter(Boolean);
+        colleague.instagram_url && { href: colleague.instagram_url, icon: <Instagram size={13} />, color: '#E1306C' },
+        colleague.youtube_url && { href: colleague.youtube_url, icon: <Youtube size={13} />, color: '#FF0000' },
+        colleague.telegram_url && { href: colleague.telegram_url, icon: <Send size={13} />, color: '#229ED9' },
+        colleague.website_url && { href: colleague.website_url, icon: <Globe size={13} />, color: '#10b981' },
+    ].filter(Boolean)
+
+    const handleMessage = async (e) => {
+        e.stopPropagation()
+        setMsgLoading(true)
+        try {
+            await chatAPI.openConversation(colleague.id)
+        } catch { /* open anyway */ }
+        navigate(`/chat?with=${colleague.id}`)
+        setMsgLoading(false)
+    }
 
     return (
-        <div className="card" style={{
-            display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', borderRadius: '14px',
-            border: colleague.is_following ? '1px solid var(--color-primary-200)' : '1px solid var(--color-gray-100)',
-            background: colleague.is_following ? 'linear-gradient(to right, var(--color-primary-50), white)' : 'white'
-        }}>
+        <div
+            onClick={() => navigate(`/teachers/${colleague.id}`)}
+            style={{
+                display: 'flex', alignItems: 'center', gap: '14px',
+                padding: '14px 16px', borderRadius: '16px',
+                border: colleague.is_following ? '1.5px solid var(--color-primary-200)' : '1px solid var(--color-gray-100)',
+                background: colleague.is_following
+                    ? 'linear-gradient(to right, var(--color-primary-50), white)'
+                    : 'var(--color-white, white)',
+                cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.15s',
+                position: 'relative'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.09)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
+        >
             {/* Avatar */}
-            <div style={{ flexShrink: 0 }}>
-                {colleague.avatar_url ? (
-                    <img
-                        src={colleague.avatar_url} alt={colleague.name}
-                        style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
-                        onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                    />
-                ) : null}
-                <div style={{
-                    width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gradient-primary)',
-                    display: colleague.avatar_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 700, fontSize: '1rem',
-                }}>
-                    {initials}
-                </div>
+            <div style={{ flexShrink: 0, position: 'relative' }}>
+                {colleague.avatar_url && !imgError ? (
+                    <img src={colleague.avatar_url} alt={colleague.name} onError={() => setImgError(true)}
+                        style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                    <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '1.1rem' }}>
+                        {initials}
+                    </div>
+                )}
+                {colleague.is_following && (
+                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: '16px', height: '16px', borderRadius: '50%', background: '#6366f1', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <UserCheck size={9} color="white" />
+                    </div>
+                )}
             </div>
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-gray-900)' }}>
                     {colleague.name}
                 </div>
-                {colleague.school && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        <School size={10} style={{ display: 'inline' }}/> {colleague.school} 
-                        {colleague.city && <span style={{ opacity: 0.7 }}> · {colleague.city}</span>}
+                {(colleague.school || colleague.city) && (
+                    <div style={{ fontSize: '0.74rem', color: 'var(--color-gray-500)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {colleague.school && <><School size={10} style={{ display: 'inline', verticalAlign: 'middle' }} /> {colleague.school}</>}
+                        {colleague.school && colleague.city && <span> · </span>}
+                        {colleague.city && <><MapPin size={10} style={{ display: 'inline', verticalAlign: 'middle' }} /> {colleague.city}</>}
+                    </div>
+                )}
+                {/* Subjects pills */}
+                {colleague.subjects?.length > 0 && (
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                        {colleague.subjects.slice(0, 2).map(s => (
+                            <span key={s} style={{ background: 'var(--color-primary-100, #e0e7ff)', color: 'var(--color-primary-700, #4338ca)', padding: '1px 7px', borderRadius: '20px', fontSize: '0.68rem', fontWeight: 600 }}>
+                                {s}
+                            </span>
+                        ))}
+                        {colleague.subjects.length > 2 && (
+                            <span style={{ color: 'var(--color-gray-400)', fontSize: '0.68rem' }}>+{colleague.subjects.length - 2}</span>
+                        )}
                     </div>
                 )}
                 {linkIcons.length > 0 && (
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '3px' }}>
                         {linkIcons.map((l, i) => (
                             <a key={i} href={l.href} target="_blank" rel="noopener noreferrer"
-                                style={{ color: l.color, display: 'flex', alignItems: 'center' }} onClick={e => e.stopPropagation()}
-                            >
-                                {l.icon}
-                            </a>
+                                style={{ color: l.color, display: 'flex', alignItems: 'center' }}
+                                onClick={e => e.stopPropagation()}
+                            >{l.icon}</a>
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* Follow button */}
-            <button
-                onClick={() => onToggle(colleague.id)}
-                disabled={toggling}
-                style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    border: colleague.is_following ? 'none' : '1px solid var(--color-gray-300)',
-                    background: colleague.is_following ? 'var(--color-primary-100)' : 'transparent',
-                    color: colleague.is_following ? 'var(--color-primary-600)' : 'var(--color-gray-500)',
-                    cursor: 'pointer', flexShrink: 0, padding: 0
-                }}
-            >
-                {toggling ? <Loader2 size={16} className="spin" /> : (colleague.is_following ? <UserCheck size={16} /> : <UserPlus size={16} />)}
-            </button>
+            {/* Action buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                {/* Message button */}
+                <button
+                    onClick={handleMessage}
+                    disabled={msgLoading}
+                    title={L('Написать', 'Жазу')}
+                    style={{
+                        width: '34px', height: '34px', borderRadius: '10px', border: 'none',
+                        background: 'var(--color-primary-100, #e0e7ff)',
+                        color: 'var(--color-primary-600, #4f46e5)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-200, #c7d2fe)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--color-primary-100, #e0e7ff)'}
+                >
+                    {msgLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <MessageSquare size={14} />}
+                </button>
+
+                {/* Follow/Unfollow button */}
+                <button
+                    onClick={() => onToggle(colleague.id)}
+                    disabled={toggling}
+                    title={colleague.is_following ? L('Отписаться', 'Жазылымнан шығу') : L('Подписаться', 'Жазылу')}
+                    style={{
+                        width: '34px', height: '34px', borderRadius: '10px',
+                        border: colleague.is_following ? 'none' : '1.5px solid var(--color-gray-200)',
+                        background: colleague.is_following ? 'var(--color-primary-600, #4f46e5)' : 'transparent',
+                        color: colleague.is_following ? 'white' : 'var(--color-gray-500)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s'
+                    }}
+                >
+                    {toggling ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                        : colleague.is_following ? <UserCheck size={14} /> : <UserPlus size={14} />}
+                </button>
+            </div>
         </div>
-    );
+    )
 }
+

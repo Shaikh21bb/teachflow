@@ -394,6 +394,88 @@ router.put('/teacher-profile', authenticateToken, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// GET /api/auth/teachers/:id
+// Public teacher profile — visible to anyone (no auth required)
+// ──────────────────────────────────────────
+router.get('/teachers/:id', async (req, res) => {
+    try {
+        const teacherId = parseInt(req.params.id);
+        if (!teacherId) return res.status(400).json({ error: 'Неверный ID' });
+
+        const user = await getOne(
+            `SELECT u.id, u.name, COALESCE(tp.avatar_url, u.avatar_url) as avatar_url,
+                    u.subjects, u.created_at,
+                    tp.bio, tp.school, tp.city,
+                    tp.social_links,
+                    tp.instagram_url, tp.youtube_url, tp.telegram_url, tp.website_url
+             FROM users u
+             LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+             WHERE u.id = ? AND u.is_active = 1`,
+            [teacherId]
+        );
+        if (!user) return res.status(404).json({ error: 'Учитель не найден' });
+
+        // Parse JSON fields
+        try { user.subjects = JSON.parse(user.subjects || '[]'); } catch { user.subjects = []; }
+        let socialLinks = {};
+        try { socialLinks = JSON.parse(user.social_links || '{}'); } catch {}
+
+        // Lesson count (published)
+        const lessonStats = await getOne(
+            'SELECT COUNT(*) as total, SUM(is_published) as published FROM lessons WHERE user_id = ? AND is_archived = 0',
+            [teacherId]
+        );
+
+        // Followers count
+        const followers = await getOne(
+            'SELECT COUNT(*) as count FROM user_connections WHERE following_id = ?',
+            [teacherId]
+        );
+        const following = await getOne(
+            'SELECT COUNT(*) as count FROM user_connections WHERE follower_id = ?',
+            [teacherId]
+        );
+
+        // Public lessons (published, not archived)
+        const lessons = await getAll(
+            `SELECT id, title, subject, grade, duration, thumbnail_url, views_count, created_at
+             FROM lessons WHERE user_id = ? AND is_published = 1 AND is_archived = 0
+             ORDER BY created_at DESC LIMIT 12`,
+            [teacherId]
+        );
+
+        res.json({
+            teacher: {
+                id: user.id,
+                name: user.name,
+                avatar_url: user.avatar_url || null,
+                subjects: user.subjects,
+                bio: user.bio || '',
+                school: user.school || '',
+                city: user.city || '',
+                member_since: user.created_at,
+                social: {
+                    instagram: user.instagram_url || socialLinks.instagram_url || '',
+                    youtube: user.youtube_url || socialLinks.youtube_url || '',
+                    telegram: user.telegram_url || socialLinks.telegram_url || '',
+                    website: user.website_url || socialLinks.website_url || '',
+                }
+            },
+            stats: {
+                lessons_total: lessonStats?.total || 0,
+                lessons_published: lessonStats?.published || 0,
+                followers: followers?.count || 0,
+                following: following?.count || 0,
+            },
+            lessons
+        });
+    } catch (err) {
+        console.error('Public teacher profile error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ──────────────────────────────────────────
 // GET /api/auth/colleagues
 // List all teachers (excluding self), with connection status
 // ──────────────────────────────────────────
