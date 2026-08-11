@@ -33,9 +33,11 @@ const GRADES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
 
 const emptyQuestion = () => ({
     question: '',
+    type: 'multiple_choice', // multiple_choice | true_false
     options: ['A) ', 'B) ', 'C) ', 'D) '],
     correct: 'A',
-    explanation: ''
+    explanation: '',
+    time_limit: '' // per-question seconds (optional)
 })
 
 export default function Quizzes() {
@@ -126,7 +128,7 @@ export default function Quizzes() {
         setForm({
             title: quiz.title, subject: quiz.subject || '',
             grade: quiz.grade || '', description: quiz.description || '',
-            time_limit: quiz.time_limit || ''
+            time_limit: quiz.time_limit || '', question_time: quiz.question_time || ''
         })
         setQuestions(quiz.questions.length > 0 ? quiz.questions : [emptyQuestion()])
         setAiQuestions([])
@@ -206,6 +208,7 @@ export default function Quizzes() {
             const payload = {
                 ...form,
                 time_limit: form.time_limit ? parseInt(form.time_limit) : null,
+                question_time: form.question_time ? parseInt(form.question_time) : null,
                 questions: validQ
             }
             if (modal === 'edit' && activeQuiz) {
@@ -391,6 +394,11 @@ export default function Quizzes() {
                             <label className="label">Лимит времени (минут, 0 = без лимита)</label>
                             <input className="input" type="number" min="0" placeholder="Например: 20"
                                 value={form.time_limit} onChange={e => setForm(p => ({ ...p, time_limit: e.target.value }))} />
+                        </div>
+                        <div>
+                            <label className="label">Время на вопрос (сек, 0 = без)</label>
+                            <input className="input" type="number" min="0" max="300" placeholder="Например: 30"
+                                value={form.question_time || ''} onChange={e => setForm(p => ({ ...p, question_time: e.target.value }))} />
                         </div>
                         <div>
                             <label className="label">Описание</label>
@@ -627,6 +635,7 @@ function QuizCard({ quiz, language, onEdit, onDelete, onTake, onCopyLink, onRepo
 
 function QuestionEditor({ q, qi, onChange, onOptionChange, onRemove, canRemove }) {
     const [open, setOpen] = useState(true)
+    const isTF = q.type === 'true_false'
     return (
         <div style={{ border: '1px solid var(--color-gray-200)', borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--color-gray-100)', cursor: 'pointer' }}
@@ -641,31 +650,63 @@ function QuestionEditor({ q, qi, onChange, onOptionChange, onRemove, canRemove }
             </div>
             {open && (
                 <div style={{ padding: 16 }}>
+                    {/* Type selector */}
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                        {[
+                            { value: 'multiple_choice', label: '4 варианта' },
+                            { value: 'true_false', label: 'True / False' },
+                        ].map(t => (
+                            <button key={t.value} type="button"
+                                onClick={() => {
+                                    onChange('type', t.value)
+                                    if (t.value === 'true_false') { onChange('options', ['T) True', 'F) False']); onChange('correct', 'T') }
+                                    else { onChange('options', ['A) ', 'B) ', 'C) ', 'D) ']); onChange('correct', 'A') }
+                                }}
+                                style={{
+                                    padding: '5px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600,
+                                    border: `1.5px solid ${q.type === t.value ? '#6366f1' : 'var(--color-gray-200)'}`,
+                                    background: q.type === t.value ? '#eff6ff' : 'white',
+                                    color: q.type === t.value ? '#4338ca' : 'var(--color-gray-600)',
+                                    cursor: 'pointer'
+                                }}
+                            >{t.label}</button>
+                        ))}
+                    </div>
+
                     <div style={{ marginBottom: 12 }}>
                         <label className="label" style={{ fontSize: '0.8rem' }}>Вопрос *</label>
                         <textarea className="input" rows={2} placeholder="Текст вопроса..." value={q.question}
                             onChange={e => onChange('question', e.target.value)}
                             style={{ resize: 'vertical', fontFamily: 'inherit' }} />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                        {q.options.map((opt, oi) => (
-                            <div key={oi}>
-                                <label className="label" style={{ fontSize: '0.78rem' }}>Вариант {['A', 'B', 'C', 'D'][oi]}</label>
-                                <input className="input" value={opt} placeholder={`${['A', 'B', 'C', 'D'][oi]}) Ответ`}
-                                    onChange={e => onOptionChange(oi, e.target.value)} />
-                            </div>
-                        ))}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+
+                    {!isTF && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                            {q.options.map((opt, oi) => (
+                                <div key={oi}>
+                                    <label className="label" style={{ fontSize: '0.78rem' }}>Вариант {['A', 'B', 'C', 'D'][oi]}</label>
+                                    <input className="input" value={opt} placeholder={`${['A', 'B', 'C', 'D'][oi]}) Ответ`}
+                                        onChange={e => onOptionChange(oi, e.target.value)} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 10 }}>
                         <div>
                             <label className="label" style={{ fontSize: '0.78rem' }}>Правильный ответ</label>
                             <select className="input filter-select" value={q.correct} onChange={e => onChange('correct', e.target.value)}>
-                                {['A', 'B', 'C', 'D'].map(l => <option key={l}>{l}</option>)}
+                                {isTF ? ['T', 'F'].map(l => <option key={l}>{l}</option>) : ['A', 'B', 'C', 'D'].map(l => <option key={l}>{l}</option>)}
                             </select>
                         </div>
                         <div>
+                            <label className="label" style={{ fontSize: '0.78rem' }}>Сек. на вопрос</label>
+                            <input className="input" type="number" min="0" max="300" placeholder="0=нет"
+                                value={q.time_limit || ''} onChange={e => onChange('time_limit', e.target.value)} />
+                        </div>
+                        <div>
                             <label className="label" style={{ fontSize: '0.78rem' }}>Объяснение (необязательно)</label>
-                            <input className="input" value={q.explanation || ''} placeholder="Краткое объяснение правильного ответа"
+                            <input className="input" value={q.explanation || ''} placeholder="Краткое объяснение"
                                 onChange={e => onChange('explanation', e.target.value)} />
                         </div>
                     </div>

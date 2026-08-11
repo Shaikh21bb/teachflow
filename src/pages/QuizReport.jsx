@@ -98,6 +98,9 @@ export default function QuizReport() {
 
     const { quiz, stats, question_stats, attempts } = report
 
+    // ── Active tab ────────────────────────────────────────────
+    const [activeTab, setActiveTab] = useState('overview') // overview | leaderboard | questions
+
     // Score distribution buckets: 0-20, 21-40, 41-60, 61-80, 81-100
     const buckets = [0, 0, 0, 0, 0]
     attempts.forEach(a => {
@@ -177,7 +180,7 @@ export default function QuizReport() {
             </div>
 
             {/* ── KPI Stat Cards ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 32 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
                 {statCards.map(s => (
                     <div key={s.label} className="card" style={{ padding: '20px', border: '1px solid var(--color-gray-100)', borderRadius: '16px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', top: -15, right: -15, width: 80, height: 80, borderRadius: '50%', background: s.bg, opacity: 0.5, zIndex: 0 }}></div>
@@ -196,7 +199,24 @@ export default function QuizReport() {
                 ))}
             </div>
 
-            {/* ── Charts Row ── */}
+            {/* ── Tab bar ── */}
+            <div style={{ display: 'flex', background: 'var(--color-gray-100)', borderRadius: 12, padding: 4, marginBottom: 24, width: 'fit-content', gap: 2 }}>
+                {[
+                    { id: 'overview', label: language === 'kk' ? 'Шолу' : 'Обзор' },
+                    { id: 'leaderboard', label: language === 'kk' ? 'Рейтинг' : 'Рейтинг' },
+                    { id: 'questions', label: language === 'kk' ? 'Сұрақтар' : 'Вопросы' },
+                ].map(t => (
+                    <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
+                        padding: '8px 18px', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
+                        background: activeTab === t.id ? 'white' : 'transparent',
+                        color: activeTab === t.id ? 'var(--color-primary-600)' : 'var(--color-gray-600)',
+                        boxShadow: activeTab === t.id ? 'var(--shadow-sm)' : 'none', transition: 'all 0.2s'
+                    }}>{t.label}</button>
+                ))}
+            </div>
+
+            {/* ── Charts Row (overview + questions tabs) ── */}
+            {activeTab !== 'leaderboard' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, marginBottom: 32 }}>
                 
                 {/* Chart 1: Score distribution */}
@@ -278,6 +298,68 @@ export default function QuizReport() {
                     )}
                 </div>
             </div>
+            )} {/* end activeTab !== leaderboard */}
+
+            {/* ── Leaderboard tab ── */}
+            {activeTab === 'leaderboard' && (
+                <div className="card" style={{ padding: 0, borderRadius: 20, border: '1px solid var(--color-gray-100)', overflow: 'hidden', marginBottom: 32 }}>
+                    <div style={{ padding: '20px 24px 14px', borderBottom: '1px solid var(--color-gray-100)', background: 'linear-gradient(135deg,#eff6ff,#f5f3ff)' }}>
+                        <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.15rem', color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            🏆 {language === 'kk' ? 'Рейтинг кестесі' : 'Таблица лидеров'}
+                        </h3>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        {attempts.length === 0 ? (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-gray-400)' }}>
+                                {language === 'kk' ? 'Нәтижелер жоқ' : 'Нет результатов'}
+                            </div>
+                        ) : [...attempts]
+                            .sort((a, b) => {
+                                const pa = a.max_score > 0 ? a.score / a.max_score : 0
+                                const pb = b.max_score > 0 ? b.score / b.max_score : 0
+                                return pb !== pa ? pb - pa : (a.time_spent || 99999) - (b.time_spent || 99999)
+                            })
+                            .map((a, rank) => {
+                                const pct = a.max_score > 0 ? Math.round((a.score / a.max_score) * 100) : 0
+                                const medal = rank === 0 ? { bg: '#fbbf24', color: '#92400e', icon: '🥇' } : rank === 1 ? { bg: '#d1d5db', color: '#374151', icon: '🥈' } : rank === 2 ? { bg: '#fb923c', color: '#7c2d12', icon: '🥉' } : null
+                                return (
+                                    <div key={a.id || rank} style={{
+                                        display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px',
+                                        borderBottom: '1px solid var(--color-gray-100)',
+                                        background: rank < 3 ? `${['#fef9c3','#f9fafb','#fff7ed'][rank]}` : 'white',
+                                        transition: 'background 0.15s'
+                                    }}>
+                                        {/* Rank */}
+                                        <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: rank < 3 ? '1.1rem' : '0.9rem', background: medal ? medal.bg : 'var(--color-gray-100)', color: medal ? medal.color : 'var(--color-gray-500)' }}>
+                                            {medal ? medal.icon : rank + 1}
+                                        </div>
+                                        {/* Avatar */}
+                                        <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '1rem', flexShrink: 0 }}>
+                                            {(a.student_name || '?').charAt(0).toUpperCase()}
+                                        </div>
+                                        {/* Name */}
+                                        <div style={{ flex: 1, fontWeight: rank < 3 ? 800 : 600, fontSize: '0.95rem', color: 'var(--color-gray-900)' }}>
+                                            {a.student_name}
+                                        </div>
+                                        {/* Score bar */}
+                                        <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: 10, minWidth: 120 }}>
+                                            <div style={{ flex: 1, height: 8, background: 'var(--color-gray-100)', borderRadius: 4, overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${pct}%`, background: pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : '#f59e0b', borderRadius: 4, transition: 'width 0.5s ease' }} />
+                                            </div>
+                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: pct >= 80 ? '#059669' : pct >= 60 ? '#1d4ed8' : '#d97706', minWidth: 44, textAlign: 'right' }}>{pct}%</span>
+                                        </div>
+                                        {/* Time */}
+                                        {a.time_spent > 0 && (
+                                            <span style={{ fontSize: '0.78rem', color: 'var(--color-gray-400)', flexShrink: 0 }}>
+                                                {Math.floor(a.time_spent / 60)}:{(a.time_spent % 60).toString().padStart(2, '0')}
+                                            </span>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                    </div>
+                </div>
+            )}
 
             {/* ── Table: All Attempts ── */}
             <div className="card" style={{ padding: '0', borderRadius: '20px', border: '1px solid var(--color-gray-100)', overflow: 'hidden' }}>
