@@ -41,6 +41,7 @@ import JoinLesson from './pages/JoinLesson'
 import GlobalSearch from './components/GlobalSearch'
 import { TelegramIcon } from './components/Icons'
 import NotificationBell from './components/NotificationBell'
+import InstallPrompt from './components/InstallPrompt'
 import Presentation from './pages/Presentation'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -283,6 +284,7 @@ function DashboardLayout({ children }) {
             </main>
 
             <MobileBottomNav items={navItems} unreadCount={unreadCount} />
+            <InstallPrompt />
         </div>
     )
 }

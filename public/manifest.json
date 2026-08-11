@@ -1,23 +1,58 @@
 {
-  "name": "Urpaq AI",
-  "short_name": "Urpaq",
-  "description": "Суперсила для учителей на базе ИИ",
+  "name": "Urpaq.ai — Суперсила для учителей",
+  "short_name": "Urpaq.ai",
+  "description": "AI-платформа для учителей: создавайте уроки, квизы, управляйте классами и общайтесь с коллегами",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
   "orientation": "portrait-primary",
+  "lang": "ru",
+  "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/apple-touch-icon.png",
+      "src": "/logo.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any"
     },
     {
-      "src": "/apple-touch-icon.png",
+      "src": "/logo.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Создать урок",
+      "short_name": "Новый урок",
+      "description": "Открыть конструктор урока",
+      "url": "/builder",
+      "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Мои уроки",
+      "short_name": "Уроки",
+      "description": "Список моих уроков",
+      "url": "/my-lessons",
+      "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Al Farabi Bot",
+      "short_name": "AI Бот",
+      "description": "Чат с AI-ассистентом",
+      "url": "/alfarabi-bot",
+      "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/dashboard-mockup-ru.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Дашборд учителя"
     }
   ]
 }
