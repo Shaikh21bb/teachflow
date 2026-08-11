@@ -59,8 +59,8 @@ function ResetPassword() {
 
     if (!token) {
         return (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--gradient-primary)', padding: '24px' }}>
-                <div style={{ background: 'white', padding: '40px', borderRadius: '16px', textAlign: 'center', maxWidth: '400px' }}>
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#060912', padding: '24px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(24px)', border: '1px solid rgba(255,255,255,0.1)', padding: '40px', borderRadius: '20px', textAlign: 'center', maxWidth: '400px', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
                     <AlertCircle size={48} color="var(--color-error-500)" style={{ marginBottom: '16px' }} />
                     <h2 style={{ marginBottom: '8px' }}>{error}</h2>
                     <p style={{ color: 'var(--color-gray-500)', marginBottom: '24px' }}>
@@ -80,17 +80,27 @@ function ResetPassword() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--gradient-primary)',
+            background: '#060912',
             padding: 'var(--spacing-6)'
         }}>
             <div style={{
-                background: 'white',
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 'var(--radius-2xl)',
                 padding: 'var(--spacing-10)',
                 width: '100%',
                 maxWidth: '440px',
-                boxShadow: 'var(--shadow-2xl)'
+                boxShadow: '0 32px 80px rgba(0,0,0,0.6)'
             }}>
+                <style>{`
+                    .auth-dark-form .input { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.12) !important; color: white !important; -webkit-text-fill-color: white !important; }
+                    .auth-dark-form .input::placeholder { color: rgba(255,255,255,0.3) !important; }
+                    .auth-dark-form .input:focus { border-color: #6366f1 !important; background: rgba(99,102,241,0.08) !important; }
+                    .auth-dark-form .input:-webkit-autofill, .auth-dark-form .input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 100px #10123a inset !important; -webkit-text-fill-color: white !important; }
+                    .auth-dark-form .label { color: rgba(255,255,255,0.75) !important; }
+                `}</style>
+                <div className="auth-dark-form">
                 <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
                     <h1 style={{
                         fontSize: 'var(--font-size-2xl)',
@@ -178,6 +188,7 @@ function ResetPassword() {
                         </button>
                     </form>
                 )}
+                </div>{/* end auth-dark-form */}
             </div>
         </div>
     );

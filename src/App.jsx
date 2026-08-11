@@ -110,7 +110,25 @@ function App() {
 
 function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth()
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка...</div>
+    if (loading) return (
+        <div style={{
+            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: '#0f172a', flexDirection: 'column', gap: '20px'
+        }}>
+            <div style={{
+                width: '56px', height: '56px', borderRadius: '14px',
+                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: 'pulse 1.5s ease-in-out infinite'
+            }}>
+                <img src="/logo.jpg" alt="Urpaq" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontFamily: 'Inter,sans-serif' }}>
+                Загрузка...
+            </div>
+            <style>{`@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4);} 50%{box-shadow:0 0 0 12px rgba(99,102,241,0);} }`}</style>
+        </div>
+    )
     if (!isAuthenticated) return <Navigate to="/login" replace />
     return children
 }

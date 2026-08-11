@@ -57,31 +57,38 @@ async function fetchAPI(endpoint, options = {}) {
     // Auto-refresh if token expired
     if (res.status === 401) {
         const body = await res.clone().json().catch(() => ({}));
-        if (body.code === 'TOKEN_EXPIRED') {
-            if (!_isRefreshing) {
-                _isRefreshing = true;
-                try {
-                    const newToken = await _doRefresh();
-                    _isRefreshing = false;
-                    _refreshQueue.forEach(cb => cb(newToken));
-                    _refreshQueue = [];
-                    res = await makeRequest(newToken);
-                } catch {
-                    _isRefreshing = false;
-                    _refreshQueue.forEach(cb => cb(null));
-                    _refreshQueue = [];
-                    clearTokens();
+        // Try refresh for ANY 401 when we have a refresh token
+        const refreshToken = getRefreshToken();
+        if (refreshToken && !_isRefreshing) {
+            _isRefreshing = true;
+            try {
+                const newToken = await _doRefresh();
+                _isRefreshing = false;
+                _refreshQueue.forEach(cb => cb(newToken));
+                _refreshQueue = [];
+                // Retry original request with new token
+                res = await makeRequest(newToken);
+            } catch {
+                _isRefreshing = false;
+                _refreshQueue.forEach(cb => cb(null));
+                _refreshQueue = [];
+                clearTokens();
+                // Only redirect if we are in a browser context and on a protected page
+                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
                     window.location.href = '/login';
-                    throw new Error('Сессия истекла. Войдите снова.');
                 }
-            } else {
-                await new Promise(resolve => _refreshQueue.push(resolve));
-                res = await makeRequest(getToken());
+                throw new Error('Сессия истекла. Войдите снова.');
             }
+        } else if (refreshToken && _isRefreshing) {
+            // Another request is already refreshing — queue this one
+            await new Promise(resolve => _refreshQueue.push(resolve));
+            res = await makeRequest(getToken());
         } else {
-            // Not TOKEN_EXPIRED — likely NO_TOKEN or INVALID_TOKEN
+            // No refresh token at all
             clearTokens();
-            window.location.href = '/login';
+            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+                window.location.href = '/login';
+            }
             throw new Error(body.error || 'Ошибка авторизации');
         }
     }

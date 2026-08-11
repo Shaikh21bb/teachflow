@@ -44,27 +44,36 @@ function ForgotPassword() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--gradient-primary)',
+            background: '#060912',
             padding: 'var(--spacing-6)'
         }}>
             <div style={{
-                background: 'white',
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 'var(--radius-2xl)',
                 padding: 'var(--spacing-10)',
                 width: '100%',
                 maxWidth: '440px',
-                boxShadow: 'var(--shadow-2xl)'
+                boxShadow: '0 32px 80px rgba(0,0,0,0.6)'
             }}>
+                <style>{`
+                    .auth-dark-form .input { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.12) !important; color: white !important; -webkit-text-fill-color: white !important; }
+                    .auth-dark-form .input::placeholder { color: rgba(255,255,255,0.3) !important; }
+                    .auth-dark-form .input:focus { border-color: #6366f1 !important; background: rgba(99,102,241,0.08) !important; }
+                    .auth-dark-form .input:-webkit-autofill, .auth-dark-form .input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 100px #10123a inset !important; -webkit-text-fill-color: white !important; }
+                    .auth-dark-form .label { color: rgba(255,255,255,0.75) !important; }
+                `}</style>
+                <div className="auth-dark-form">
                 <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
                     <h1 style={{
                         fontSize: 'var(--font-size-2xl)',
                         fontWeight: 800,
-                        color: 'var(--color-gray-900)',
                         marginBottom: 'var(--spacing-2)'
                     }}>
                         {language === 'kk' ? 'Құпия сөзді қалпына келтіру' : 'Восстановление пароля'}
                     </h1>
-                    <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--font-size-sm)' }}>
+                    <p style={{ fontSize: 'var(--font-size-sm)' }}>
                         {language === 'kk' ? 'Аккаунтыңыздың электрондық поштасын енгізіңіз' : 'Введите email вашего аккаунта'}
                     </p>
                 </div>
@@ -118,13 +127,14 @@ function ForgotPassword() {
 
                 <div style={{ textAlign: 'center', marginTop: 'var(--spacing-6)' }}>
                     <Link to="/login" style={{
-                        color: 'var(--color-gray-500)',
+                        color: 'rgba(255,255,255,0.4)',
                         fontSize: 'var(--font-size-sm)',
                         textDecoration: 'none'
                     }}>
                         ← {language === 'kk' ? 'Кіру бетіне оралу' : 'Вернуться на страницу входа'}
                     </Link>
                 </div>
+                </div>{/* end auth-dark-form */}
             </div>
         </div>
     );

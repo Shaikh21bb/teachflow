@@ -110,32 +110,67 @@ function Register() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--gradient-primary)',
-            padding: 'var(--spacing-6)'
+            background: '#060912',
+            padding: 'var(--spacing-6)',
+            position: 'relative',
+            overflow: 'hidden',
+            fontFamily: "'Inter','Outfit',sans-serif",
         }}>
+            {/* Background orbs */}
+            <div style={{ position: 'absolute', width: 600, height: 600, left: '-10%', top: '-15%', borderRadius: '50%', background: 'rgba(99,102,241,0.18)', filter: 'blur(80px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 500, height: 500, right: '-8%', bottom: '-10%', borderRadius: '50%', background: 'rgba(139,92,246,0.15)', filter: 'blur(80px)', pointerEvents: 'none' }} />
             <div style={{
-                background: 'white',
+                background: 'rgba(255,255,255,0.04)',
+                backdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 'var(--radius-2xl)',
                 padding: 'var(--spacing-10)',
                 width: '100%',
                 maxWidth: step === 2 ? '600px' : '440px',
-                boxShadow: 'var(--shadow-2xl)',
-                transition: 'max-width 0.3s ease'
+                boxShadow: '0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)',
+                transition: 'max-width 0.3s ease',
+                position: 'relative',
             }}>
+                {/* Force dark inputs regardless of theme */}
+                <style>{`
+                    .auth-dark-form .input, .auth-dark-form .filter-select {
+                        background: rgba(255,255,255,0.05) !important;
+                        border-color: rgba(255,255,255,0.12) !important;
+                        color: white !important;
+                        -webkit-text-fill-color: white !important;
+                    }
+                    .auth-dark-form .input::placeholder { color: rgba(255,255,255,0.3) !important; }
+                    .auth-dark-form .input:focus {
+                        border-color: #6366f1 !important;
+                        background: rgba(99,102,241,0.08) !important;
+                        box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
+                    }
+                    .auth-dark-form .input:-webkit-autofill,
+                    .auth-dark-form .input:-webkit-autofill:hover,
+                    .auth-dark-form .input:-webkit-autofill:focus {
+                        -webkit-box-shadow: 0 0 0 100px #10123a inset !important;
+                        -webkit-text-fill-color: white !important;
+                        caret-color: white !important;
+                    }
+                    .auth-dark-form .label { color: rgba(255,255,255,0.75) !important; }
+                    .auth-dark-form .label + * input, .auth-dark-form select { color: white; }
+                    .auth-dark-form textarea.input { color: white !important; }
+                `}</style>
+                <div className="auth-dark-form">
                 {/* Logo */}
                 <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: 'var(--spacing-1)' }}>
                         <img src="/logo.jpg" alt="Urpaq Logo" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
                         <h1 style={{
                             fontSize: 'var(--font-size-3xl)',
-                            fontWeight: 800,
-                            background: 'var(--gradient-primary)',
+                            fontWeight: 900,
+                            background: 'linear-gradient(135deg,#a5b4fc,#e879f9,#f0abfc)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             margin: 0
                         }}>Urpaq.ai</h1>
                     </div>
-                    <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--font-size-sm)' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--font-size-sm)' }}>
                         {language === 'kk' ? 'Жаңа аккаунт жасау' : 'Создать новый аккаунт'}
                     </p>
                 </div>
@@ -147,7 +182,7 @@ function Register() {
                             <div style={{
                                 width: '32px', height: '32px', borderRadius: '50%',
                                 background: s <= step ? 'var(--gradient-primary)' : 'var(--color-gray-200)',
-                                color: s <= step ? 'white' : 'var(--color-gray-500)',
+                                color: s <= step ? 'white' : 'rgba(255,255,255,0.3)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontWeight: 700, fontSize: '0.85rem',
                                 transition: 'all 0.3s ease'
@@ -165,10 +200,10 @@ function Register() {
                 {error && (
                     <div style={{
                         padding: 'var(--spacing-3)',
-                        background: 'var(--color-error-50)',
-                        border: '1px solid var(--color-error-200)',
+                        background: 'rgba(239,68,68,0.12)',
+                        border: '1px solid rgba(239,68,68,0.3)',
                         borderRadius: 'var(--radius-lg)',
-                        color: 'var(--color-error-700)',
+                        color: '#fca5a5',
                         marginBottom: 'var(--spacing-4)',
                         fontSize: 'var(--font-size-sm)'
                     }}>{error}</div>
@@ -195,11 +230,11 @@ function Register() {
                                     value={formData.password} onChange={handleChange}
                                     placeholder="••••••••" style={{ paddingRight: '40px' }} />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)}
-                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-gray-500)', padding: 0 }}>
+                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: 0 }}>
                                     {showPassword ? eyeOpen : eyeClosed}
                                 </button>
                             </div>
-                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-gray-400)', marginTop: '4px' }}>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
                                 {language === 'kk' ? 'Кем дегенде 8 таңба' : 'Минимум 8 символов'}
                             </p>
                         </div>
@@ -210,7 +245,7 @@ function Register() {
                                     value={formData.confirmPassword} onChange={handleChange}
                                     placeholder="••••••••" style={{ paddingRight: '40px' }} />
                                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-gray-500)', padding: 0 }}>
+                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: 0 }}>
                                     {showConfirmPassword ? eyeOpen : eyeClosed}
                                 </button>
                             </div>
@@ -219,7 +254,7 @@ function Register() {
                             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-2)', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={agreedToTerms}
                                     onChange={e => setAgreedToTerms(e.target.checked)} style={{ marginTop: '2px' }} />
-                                <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-600)' }}>
+                                <span style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.6)' }}>
                                     {language === 'kk'
                                         ? 'Мен қызмет көрсету шарттарымен және құпиялылық саясатымен келісемін'
                                         : 'Я согласен с условиями использования и политикой конфиденциальности'}
@@ -240,7 +275,7 @@ function Register() {
                             <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, marginBottom: '8px' }}>
                                 {language === 'kk' ? 'Пәндерді таңдаңыз' : 'Выберите предметы'}
                             </h2>
-                            <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--font-size-sm)' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk'
                                     ? 'Негізгі 2 пәніңізді таңдаңыз'
                                     : 'Выберите до 2 предметов, которые вы преподаёте'}
@@ -285,7 +320,7 @@ function Register() {
                                         <span style={{
                                             fontSize: '0.72rem',
                                             fontWeight: isSelected ? 700 : 500,
-                                            color: isSelected ? 'var(--color-primary-700)' : 'var(--color-gray-600)',
+                                            color: isSelected ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
                                             textAlign: 'center',
                                             lineHeight: 1.3
                                         }}>
@@ -312,7 +347,7 @@ function Register() {
                                 borderRadius: '10px',
                                 marginBottom: 'var(--spacing-4)',
                                 fontSize: 'var(--font-size-sm)',
-                                color: 'var(--color-primary-700)',
+                                color: '#a5b4fc',
                                 fontWeight: 500
                             }}>
                                 {language === 'kk' ? 'Таңдалды' : 'Выбрано'}: {selectedSubjects.length} / 2
@@ -340,13 +375,13 @@ function Register() {
                     <>
                         <div style={{ display: 'flex', alignItems: 'center', margin: 'var(--spacing-4) 0', gap: 'var(--spacing-3)' }}>
                             <div style={{ flex: 1, height: '1px', background: 'var(--color-gray-200)' }} />
-                            <span style={{ color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk' ? 'немесе' : 'или'}
                             </span>
                             <div style={{ flex: 1, height: '1px', background: 'var(--color-gray-200)' }} />
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <p style={{ color: 'var(--color-gray-600)', fontSize: 'var(--font-size-sm)' }}>
+                            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk' ? 'Аккаунтыңыз бар ма?' : 'Уже есть аккаунт?'}{' '}
                                 <Link to="/login" style={{ color: 'var(--color-primary-600)', textDecoration: 'none', fontWeight: 600 }}>
                                     {language === 'kk' ? 'Кіру' : 'Войти'}
@@ -357,10 +392,11 @@ function Register() {
                 )}
 
                 <div style={{ textAlign: 'center', marginTop: 'var(--spacing-4)' }}>
-                    <Link to="/" style={{ color: 'var(--color-gray-400)', fontSize: 'var(--font-size-sm)', textDecoration: 'none' }}>
+                    <Link to="/" style={{ color: 'rgba(255,255,255,0.3)', fontSize: 'var(--font-size-sm)', textDecoration: 'none' }}>
                         ← {language === 'kk' ? 'Басты бетке оралу' : 'Вернуться на главную'}
                     </Link>
                 </div>
+                </div> {/* end auth-dark-form */}
             </div>
         </div>
     )
