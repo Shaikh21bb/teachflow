@@ -192,6 +192,8 @@ export const integrationsAPI = {
     getAll: () => fetchAPI('/integrations'),
     connectTelegram: (data) => fetchAPI('/integrations/telegram', { method: 'POST', body: JSON.stringify(data) }),
     connectAI: (data) => fetchAPI('/integrations/ai', { method: 'POST', body: JSON.stringify(data) }),
+    connectTeams: (data) => fetchAPI('/integrations/teams', { method: 'POST', body: JSON.stringify(data) }),
+    sendToTeams: (data) => fetchAPI('/integrations/teams/send', { method: 'POST', body: JSON.stringify(data) }),
     disconnect: (type) => fetchAPI(`/integrations/${type}`, { method: 'DELETE' }),
 };
 

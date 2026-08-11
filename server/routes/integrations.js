@@ -125,6 +125,89 @@ router.post('/ai', authenticateToken, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// POST /api/integrations/teams — connect MS Teams webhook
+// ──────────────────────────────────────────
+router.post('/teams', authenticateToken, async (req, res) => {
+    try {
+        const { webhook_url } = req.body;
+        if (!webhook_url || !webhook_url.startsWith('https://')) {
+            return res.status(400).json({ error: 'Укажите корректный HTTPS webhook URL' });
+        }
+        const encryptedToken = encrypt(webhook_url);
+        const config = JSON.stringify({ type: 'teams' });
+        const existing = await getOne(
+            'SELECT id FROM integrations WHERE user_id = ? AND type = ?',
+            [req.user.userId, 'teams']
+        );
+        if (existing) {
+            await runQuery(
+                `UPDATE integrations SET encrypted_token = ?, config = ?, is_active = 1, connected_at = CURRENT_TIMESTAMP WHERE user_id = ? AND type = ?`,
+                [encryptedToken, config, req.user.userId, 'teams']
+            );
+        } else {
+            await runQuery(
+                `INSERT INTO integrations (user_id, type, encrypted_token, config, is_active) VALUES (?, ?, ?, ?, 1)`,
+                [req.user.userId, 'teams', encryptedToken, config]
+            );
+        }
+        res.json({ success: true, message: 'Microsoft Teams подключён!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ──────────────────────────────────────────
+// POST /api/integrations/teams/send — send lesson/quiz to Teams channel
+// ──────────────────────────────────────────
+router.post('/teams/send', authenticateToken, async (req, res) => {
+    try {
+        const { title, description, url, type = 'lesson' } = req.body;
+        const integration = await getOne(
+            'SELECT encrypted_token FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
+            [req.user.userId, 'teams']
+        );
+        if (!integration) return res.status(400).json({ error: 'Teams не подключён' });
+
+        const webhookUrl = decrypt(integration.encrypted_token);
+        const color = type === 'quiz' ? 'FF6B6B' : '6366F1';
+        const emoji = type === 'quiz' ? '📝' : '📚';
+
+        const payload = {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            themeColor: color,
+            summary: title,
+            sections: [{
+                activityTitle: `${emoji} ${title}`,
+                activitySubtitle: description || 'Новый материал в Urpaq.ai',
+                activityImage: 'https://urpaq.ai/logo.jpg',
+                facts: [
+                    { name: 'Тип:', value: type === 'quiz' ? 'Тест' : 'Урок' },
+                    { name: 'Платформа:', value: 'Urpaq.ai' }
+                ],
+                markdown: true
+            }],
+            potentialAction: url ? [{
+                "@type": "OpenUri",
+                name: "Открыть",
+                targets: [{ os: "default", uri: url }]
+            }] : []
+        };
+
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('Teams webhook error: ' + response.status);
+
+        res.json({ success: true, message: 'Отправлено в Teams!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ──────────────────────────────────────────
 // DELETE disconnect integration
 // ──────────────────────────────────────────
 router.delete('/:type', authenticateToken, async (req, res) => {
