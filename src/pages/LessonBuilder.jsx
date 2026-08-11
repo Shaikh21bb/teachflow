@@ -19,6 +19,13 @@ export default function LessonBuilderNew() {
     const { user, refreshUser } = useAuth()
     const lessonPlanCost = user?.creditCosts?.lesson_plan || 2
 
+    // Form state — pre-fill from ?template= query params
+    const templateTitle = searchParams.get('title') || ''
+    const templateSubject = searchParams.get('subject') || SUBJECTS[0]
+    const templateGrade = parseInt(searchParams.get('grade')) || 5
+    const templateDuration = parseInt(searchParams.get('duration')) || 45
+    const templateDescription = searchParams.get('description') || ''
+
     const [step, setStep] = useState(0)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState(null)
@@ -26,8 +33,12 @@ export default function LessonBuilderNew() {
 
     // Form state
     const [form, setForm] = useState({
-        title: '', subject: SUBJECTS[0], grade: 5, duration: 45,
-        description: '', content: '', file_type: 'text',
+        title: templateTitle,
+        subject: SUBJECTS.includes(templateSubject) ? templateSubject : SUBJECTS[0],
+        grade: templateGrade,
+        duration: templateDuration,
+        description: templateDescription,
+        content: '', file_type: 'text',
         thumbnail_url: '', content_url: '', is_published: false
     })
 
@@ -49,6 +60,15 @@ export default function LessonBuilderNew() {
     const [contentMode, setContentMode] = useState('simple') // 'simple' | 'slides'
     const [fullGenerating, setFullGenerating] = useState(false)
     const dragSrcIndex = useRef(null)
+
+    // ── Auto-generate from template ──────────────────────────
+    useEffect(() => {
+        const templateId = searchParams.get('template')
+        if (templateId && searchParams.get('title')) {
+            const timer = setTimeout(() => { generateFullLesson() }, 700)
+            return () => clearTimeout(timer)
+        }
+    }, []) // eslint-disable-line
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })

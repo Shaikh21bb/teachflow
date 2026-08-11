@@ -4,7 +4,7 @@ import {
     Calendar, ClipboardCheck, Users, CheckCircle, ClipboardList, ClipboardEdit, 
     Zap, PenTool, BookOpen, Bell, Info, AlertCircle, MessageSquare,
     Sparkles, UserCircle, School, X, ChevronRight, Target, 
-    Award, Rocket, Star
+    Award, Rocket, Star, LayoutTemplate
 } from 'lucide-react'
 import { dashboardAPI, assignmentsAPI, aiAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -544,6 +544,9 @@ function Dashboard() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-3)' }}>
                                 <Link to="/builder" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
                                     <PenTool size={18} /> {t('dashboard.createLesson')}
+                                </Link>
+                                <Link to="/templates" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <BookOpen size={18} /> {language === 'kk' ? 'Үлгілер' : 'Шаблоны'}
                                 </Link>
                                 <Link to="/assignments" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
                                     <ClipboardList size={18} /> {t('dashboard.newAssignment')}

@@ -47,6 +47,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import TeacherChat from './pages/TeacherChat'
 import TeacherPublicProfile from './pages/TeacherPublicProfile'
+import LessonTemplates from './pages/LessonTemplates'
 
 function App() {
     return (
@@ -93,6 +94,7 @@ function App() {
                             {/* Teacher community */}
                             <Route path="/teachers/:id" element={<TeacherPublicProfile />} />
                             <Route path="/chat" element={<ProtectedRoute><DashboardLayout><TeacherChat /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/templates" element={<ProtectedRoute><DashboardLayout><LessonTemplates /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -144,6 +146,7 @@ function DashboardLayout({ children }) {
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
         { path: '/my-lessons', icon: <BookOpen size={20} />, label: t('nav.myLessons') },
+        { path: '/templates', icon: <LayoutTemplate size={20} />, label: language === 'kk' ? 'Үлгілер' : 'Шаблоны' },
         { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
         { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
