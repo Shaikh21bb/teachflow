@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { quizzesAPI } from '../api'
 import {
@@ -7,6 +7,8 @@ import {
     FileSpreadsheet, Sparkles
 } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useReactToPrint } from 'react-to-print'
+import PrintTemplate from '../components/PrintTemplate'
 
 export default function QuizReport() {
     const { id } = useParams()
@@ -16,6 +18,14 @@ export default function QuizReport() {
     const [report, setReport] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [showAnswersInPrint, setShowAnswersInPrint] = useState(true)
+
+    // ── Print ref ────────────────────────────────────────────
+    const printRef = useRef(null)
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: report?.quiz?.title || 'Квиз',
+    })
 
     useEffect(() => {
         if (id) loadReport()
@@ -107,6 +117,16 @@ export default function QuizReport() {
 
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 16px', animation: 'fadeIn 0.3s ease-out' }}>
+            {/* Hidden print template */}
+            <PrintTemplate
+                ref={printRef}
+                type="quiz"
+                data={{ ...quiz, questions: quiz.questions }}
+                attempts={attempts}
+                showAnswers={showAnswersInPrint}
+                language={language}
+            />
+
             {/* ── Header ── */}
             <div style={{ 
                 display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', 
@@ -127,14 +147,33 @@ export default function QuizReport() {
                         <span className="badge" style={{ background: 'var(--color-gray-100)', color: 'var(--color-gray-700)', padding: '6px 12px', borderRadius: '12px' }}>{quiz.questions?.length || 0} {language === 'kk' ? 'сұрақ' : 'вопросов'}</span>
                     </div>
                 </div>
-                <button 
-                    className="btn btn-primary" 
-                    onClick={exportCSV} 
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)' }} 
-                    disabled={attempts.length === 0}
-                >
-                    <FileSpreadsheet size={18} /> {language === 'kk' ? 'Жүктеу (Excel)' : 'Скачать (Excel)'}
-                </button>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* PDF with answers toggle */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--color-gray-600)', cursor: 'pointer', userSelect: 'none' }}>
+                        <input
+                            type="checkbox"
+                            checked={showAnswersInPrint}
+                            onChange={e => setShowAnswersInPrint(e.target.checked)}
+                            style={{ cursor: 'pointer' }}
+                        />
+                        {language === 'kk' ? 'Жауаптармен' : 'С ответами'}
+                    </label>
+                    <button
+                        onClick={handlePrint}
+                        className="btn btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: 600 }}
+                    >
+                        <Download size={16} /> {language === 'kk' ? 'PDF' : 'PDF'}
+                    </button>
+                    <button 
+                        className="btn btn-primary" 
+                        onClick={exportCSV} 
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)' }} 
+                        disabled={attempts.length === 0}
+                    >
+                        <FileSpreadsheet size={18} /> {language === 'kk' ? 'Жүктеу (Excel)' : 'Excel'}
+                    </button>
+                </div>
             </div>
 
             {/* ── KPI Stat Cards ── */}

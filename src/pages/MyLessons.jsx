@@ -1,16 +1,19 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { lessonsAPI } from '../api'
+import { lessonsAPI, lessonFilesAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { 
     Plus, Search, LayoutGrid, List, MoreVertical, 
     Share2, Edit3, Trash2, Archive, Copy, ExternalLink,
     BookOpen, Users, Eye, FileText, CheckCircle, Clock,
     Loader2, Calendar, PlayCircle, Film, Image, Paperclip,
-    Youtube
+    Youtube, Download
 } from 'lucide-react'
 import MaterialsTabs from '../components/MaterialsTabs'
 import { InboxEmptyIcon } from '../components/Icons'
+import { useReactToPrint } from 'react-to-print'
+import PrintTemplate from '../components/PrintTemplate'
 
 const SUBJECTS = ['Все', 'Математика', 'Физика', 'Химия', 'Биология', 'История', 'Литература', 'Информатика', 'Английский', 'Казахский', 'Русский']
 const GRADES = ['Все', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
@@ -37,7 +40,30 @@ function formatDate(dateStr) {
 
 export default function MyLessons() {
     const { user } = useAuth()
+    const { language } = useLanguage()
     const navigate = useNavigate()
+
+    // ── Print state ──────────────────────────────────────────
+    const [printLesson, setPrintLesson] = useState(null)
+    const [printSlides, setPrintSlides] = useState(null)
+    const printRef = useRef(null)
+
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: printLesson?.title || 'Урок',
+        onAfterPrint: () => { setPrintLesson(null); setPrintSlides(null) }
+    })
+
+    const openPrint = async (lesson) => {
+        let slides = null
+        try {
+            const data = await lessonsAPI.getSlides(lesson.id)
+            slides = data.slides
+        } catch { /* silent */ }
+        setPrintLesson(lesson)
+        setPrintSlides(slides)
+        setTimeout(() => handlePrint(), 300)
+    }
     const [lessons, setLessons] = useState([])
     const [stats, setStats] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -153,6 +179,9 @@ export default function MyLessons() {
 
     return (
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 16px' }}>
+            {/* Hidden print template */}
+            <PrintTemplate ref={printRef} type="lesson" data={printLesson} slides={printSlides} language={language} />
+
             {/* Toast */}
             {toast && (
                 <div style={{
@@ -379,6 +408,7 @@ export default function MyLessons() {
                             setActionMenuId={setActionMenuId}
                             deletingId={deletingId}
                             onConduct={() => navigate(`/lesson/${lesson.id}/present?live=true`)}
+                                onPrint={() => openPrint(lesson)}
                             onEdit={() => navigate(`/builder?edit=${lesson.id}`)}
                             onDelete={() => handleDelete(lesson.id)}
                             onArchive={() => handleArchive(lesson)}
@@ -435,7 +465,7 @@ export default function MyLessons() {
     )
 }
 
-function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, onConduct, onEdit, onDelete, onArchive, onDuplicate, onShare }) {
+function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, onConduct, onEdit, onDelete, onArchive, onDuplicate, onShare, onPrint }) {
     const isGrid = view === 'grid'
 
     const statusColor = lesson.is_archived
@@ -552,6 +582,7 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                             >
                                 {[
                                     { icon: <PlayCircle size={16} />, label: 'Вести урок', action: onConduct, highlight: true },
+                                    { icon: <Download size={16} />, label: 'Скачать PDF', action: onPrint },
                                     { icon: <Edit3 size={16} />, label: 'Редактировать', action: onEdit },
                                     { icon: <Copy size={16} />, label: 'Дублировать', action: onDuplicate },
                                     { icon: <Share2 size={16} />, label: 'Поделиться', action: onShare },
