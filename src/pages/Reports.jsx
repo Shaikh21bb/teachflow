@@ -1,33 +1,51 @@
 import { useState, useEffect } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { reportsAPI } from '../api'
-import { Loader, Search, Download, Sparkles, TrendingUp, Info, Users, Star, Target, ClipboardList } from 'lucide-react'
+import { 
+    Loader, Search, Download, Sparkles, TrendingUp, Info, Users, Star, 
+    Target, ClipboardList, BookOpen, Eye, Heart, Award, BarChart2,
+    Calendar, ChevronRight, Flame
+} from 'lucide-react'
 
 function Reports() {
     const { t, language } = useLanguage()
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
+    const [period, setPeriod] = useState('week') // week | month
+    const [topTab, setTopTab] = useState('views') // views | likes
     
-    // Fallback/Demo data if real data is empty
     const demoData = {
-        totalStudents: 24,
-        avgGrade: 4.6,
-        performance: 88,
-        completedTasks: 42,
+        totalStudents: 24, avgGrade: 4.6, performance: 88, completedTasks: 42, totalLessons: 18,
         charts: {
             performance: [65, 72, 78, 85, 82, 88, 92],
-            gradeDist: {
-                '5': 45, // 45%
-                '4': 35, // 35%
-                '3': 15, // 15%
-                '2': 5   // 5%
-            }
+            gradeDist: { '5': 45, '4': 35, '3': 15, '2': 5 }
+        },
+        activity: {
+            period,
+            days: Array.from({ length: period === 'month' ? 30 : 7 }, (_, i) => ({
+                date: new Date(Date.now() - (period === 'month' ? 29 - i : 6 - i) * 86400000).toISOString().split('T')[0],
+                count: Math.floor(Math.random() * 4)
+            }))
+        },
+        topLessons: {
+            byViews: [
+                { id: 1, title: 'Квадратные уравнения', subject: 'Математика', grade: 8, views_count: 142, likes: 34 },
+                { id: 2, title: 'Закон Ньютона', subject: 'Физика', grade: 9, views_count: 98, likes: 21 },
+                { id: 3, title: 'Фотосинтез', subject: 'Биология', grade: 7, views_count: 87, likes: 19 },
+                { id: 4, title: 'Алгебра — основы', subject: 'Математика', grade: 6, views_count: 76, likes: 15 },
+                { id: 5, title: 'История Казахстана', subject: 'История', grade: 10, views_count: 65, likes: 12 },
+            ],
+            byLikes: [
+                { id: 1, title: 'Квадратные уравнения', subject: 'Математика', grade: 8, views_count: 142, likes: 34 },
+                { id: 2, title: 'Закон Ньютона', subject: 'Физика', grade: 9, views_count: 98, likes: 21 },
+                { id: 3, title: 'Фотосинтез', subject: 'Биология', grade: 7, views_count: 87, likes: 19 },
+            ]
         },
         classStats: [
-            { class: '10 "А"', subject: 'Математика', students: 12, avgGrade: 4.7, completion: 92 },
-            { class: '11 "Б"', subject: 'Физика', students: 8, avgGrade: 4.5, completion: 85 },
-            { class: '9 "В"', subject: 'Геометрия', students: 4, avgGrade: 4.2, completion: 78 }
+            { id: 1, class: '10 "А"', subject: 'Математика', students: 12, avgGrade: 4.7, completion: 92, topStudents: [{ name: 'Айгерим С.', grade: 5.0, xp: 520 }, { name: 'Данияр К.', grade: 4.9, xp: 480 }], gradeDistribution: { excellent: 7, good: 4, satisfactory: 1, poor: 0 } },
+            { id: 2, class: '11 "Б"', subject: 'Физика', students: 8, avgGrade: 4.5, completion: 85, topStudents: [{ name: 'Нурлан А.', grade: 4.9, xp: 390 }], gradeDistribution: { excellent: 4, good: 3, satisfactory: 1, poor: 0 } },
+            { id: 3, class: '9 "В"', subject: 'Геометрия', students: 4, avgGrade: 4.2, completion: 78, topStudents: [], gradeDistribution: { excellent: 2, good: 1, satisfactory: 1, poor: 0 } },
         ]
     }
 
@@ -35,22 +53,20 @@ function Reports() {
 
     useEffect(() => {
         const fetchReports = async () => {
+            setLoading(true)
             try {
-                const res = await reportsAPI.getDashboard()
+                const res = await reportsAPI.getDashboard(period)
                 setData(res)
-                // If real data has 0 students, default to demo mode so user sees a beautiful mockup
-                if (!res || res.totalStudents === 0) {
-                    setIsDemo(true)
-                }
+                if (!res || res.totalStudents === 0) setIsDemo(true)
             } catch (err) {
                 console.error(err)
-                setIsDemo(true) // Fallback to demo on error
+                setIsDemo(true)
             } finally {
                 setLoading(false)
             }
         }
         fetchReports()
-    }, [])
+    }, [period])
 
     if (loading) {
         return (
@@ -290,6 +306,13 @@ function Reports() {
                         icon: <Target size={28} color="#8b5cf6" />,
                         bgLight: '#f5f3ff',
                         desc: language === 'kk' ? 'Барлық жұмыстар' : 'Всего работ'
+                    },
+                    {
+                        title: language === 'kk' ? 'Сабақтар' : 'Уроков создано',
+                        value: activeData.totalLessons || 0,
+                        icon: <BookOpen size={28} color="#06b6d4" />,
+                        bgLight: '#ecfeff',
+                        desc: language === 'kk' ? 'Барлық сабақтар' : 'В библиотеке'
                     }
                 ].map((card, idx) => (
                     <div 
@@ -544,6 +567,142 @@ function Reports() {
                             })}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* ── Activity Chart ── */}
+            <div style={{ background: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 18px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', marginBottom: '28px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BarChart2 size={20} color="var(--color-primary-500)" />
+                        {language === 'kk' ? 'Белсенділік' : 'Активность создания уроков'}
+                    </h3>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                        {[{ v: 'week', l: language === 'kk' ? 'Апта' : 'Неделя' }, { v: 'month', l: language === 'kk' ? 'Ай' : 'Месяц' }].map(o => (
+                            <button key={o.v} onClick={() => setPeriod(o.v)} style={{ padding: '6px 14px', border: `1px solid ${period === o.v ? '#6366f1' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: period === o.v ? '#eff6ff' : 'white', color: period === o.v ? '#4f46e5' : 'var(--color-gray-600)' }}>
+                                {o.l}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {(() => {
+                    const days = activeData.activity?.days || []
+                    const maxCount = Math.max(...days.map(d => d.count), 1)
+                    const barWidth = Math.max(8, Math.min(24, Math.floor(600 / days.length) - 4))
+                    return (
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px', overflowX: 'auto', paddingBottom: '28px', position: 'relative' }}>
+                            {days.map((d, i) => {
+                                const h = Math.max(4, (d.count / maxCount) * 100)
+                                const date = new Date(d.date)
+                                const label = period === 'week'
+                                    ? date.toLocaleDateString(language === 'kk' ? 'kk-KZ' : 'ru-RU', { weekday: 'short' })
+                                    : date.getDate() % 5 === 1 ? date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : ''
+                                return (
+                                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: `${barWidth + 4}px` }}>
+                                        {d.count > 0 && <span style={{ fontSize: '10px', fontWeight: 700, color: '#6366f1', marginBottom: '2px' }}>{d.count}</span>}
+                                        <div
+                                            title={`${d.date}: ${d.count} ${language === 'kk' ? 'сабақ' : 'урок(ов)'}`}
+                                            style={{ width: `${barWidth}px`, height: `${h}%`, background: d.count > 0 ? 'linear-gradient(180deg,#6366f1,#8b5cf6)' : 'var(--color-gray-100)', borderRadius: '4px 4px 0 0', transition: 'height 0.4s ease', cursor: d.count > 0 ? 'pointer' : 'default' }}
+                                        />
+                                        {label && <span style={{ fontSize: '10px', color: 'var(--color-gray-400)', whiteSpace: 'nowrap', position: 'absolute', bottom: 0 }}>{label}</span>}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )
+                })()}
+            </div>
+
+            {/* ── Top Lessons + Student Progress ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '28px' }}>
+
+                {/* Top Lessons */}
+                <div style={{ background: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 18px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Flame size={18} color="#f97316" /> {language === 'kk' ? 'Топ сабақтар' : 'Топ уроки'}
+                        </h3>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            {[{ v: 'views', icon: <Eye size={12} />, l: language === 'kk' ? 'Қаралым' : 'Просмотры' }, { v: 'likes', icon: <Heart size={12} />, l: language === 'kk' ? 'Ұнату' : 'Лайки' }].map(o => (
+                                <button key={o.v} onClick={() => setTopTab(o.v)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', border: `1px solid ${topTab === o.v ? '#6366f1' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: topTab === o.v ? '#eff6ff' : 'white', color: topTab === o.v ? '#4f46e5' : 'var(--color-gray-500)' }}>
+                                    {o.icon} {o.l}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    {(() => {
+                        const list = topTab === 'views' ? activeData.topLessons?.byViews : activeData.topLessons?.byLikes
+                        const maxVal = Math.max(...(list || []).map(l => topTab === 'views' ? l.views_count : l.likes), 1)
+                        return (list || []).length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--color-gray-400)', fontSize: '14px' }}>
+                                <BookOpen size={32} color="#e5e7eb" style={{ marginBottom: '8px' }} />
+                                <p style={{ margin: 0 }}>{language === 'kk' ? 'Жарияланған сабақтар жоқ' : 'Нет опубликованных уроков'}</p>
+                            </div>
+                        ) : list.map((lesson, i) => {
+                            const val = topTab === 'views' ? lesson.views_count : lesson.likes
+                            const pct = (val / maxVal) * 100
+                            return (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i < list.length - 1 ? '1px solid var(--color-gray-100)' : 'none' }}>
+                                    <span style={{ width: '22px', height: '22px', borderRadius: '6px', background: i === 0 ? '#fbbf24' : i === 1 ? '#d1d5db' : i === 2 ? '#fb923c' : 'var(--color-gray-100)', color: i < 3 ? 'white' : 'var(--color-gray-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-gray-900)' }}>{lesson.title}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ flex: 1, height: '5px', background: 'var(--color-gray-100)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${pct}%`, background: topTab === 'views' ? '#6366f1' : '#ef4444', borderRadius: '3px' }} />
+                                            </div>
+                                            <span style={{ fontSize: '12px', fontWeight: 700, color: topTab === 'views' ? '#6366f1' : '#ef4444', flexShrink: 0, minWidth: '28px', textAlign: 'right' }}>{val}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })
+                    })()}
+                </div>
+
+                {/* Student progress per class */}
+                <div style={{ background: 'white', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 18px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+                    <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Award size={18} color="#10b981" /> {language === 'kk' ? 'Сыныптар прогресі' : 'Прогресс по классам'}
+                    </h3>
+                    {(activeData.classStats || []).length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '24px', color: 'var(--color-gray-400)', fontSize: '14px' }}>
+                            <Users size={32} color="#e5e7eb" style={{ marginBottom: '8px' }} />
+                            <p style={{ margin: 0 }}>{language === 'kk' ? 'Сыныптар жоқ' : 'Нет классов'}</p>
+                        </div>
+                    ) : (activeData.classStats || []).map((cls, i) => (
+                        <div key={i} style={{ marginBottom: i < activeData.classStats.length - 1 ? '16px' : 0, paddingBottom: i < activeData.classStats.length - 1 ? '16px' : 0, borderBottom: i < activeData.classStats.length - 1 ? '1px solid var(--color-gray-100)' : 'none' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <div>
+                                    <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-gray-900)' }}>{cls.class}</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--color-gray-400)', marginLeft: '8px' }}>{cls.subject} · {cls.students} {language === 'kk' ? 'оқушы' : 'уч.'}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '16px', fontWeight: 800, color: cls.avgGrade >= 4.5 ? '#10b981' : cls.avgGrade >= 4.0 ? '#3b82f6' : '#f59e0b' }}>{cls.avgGrade}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--color-gray-400)' }}>avg</span>
+                                </div>
+                            </div>
+                            {/* Progress bar */}
+                            <div style={{ height: '8px', background: 'var(--color-gray-100)', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+                                <div style={{ height: '100%', width: `${cls.completion}%`, background: cls.completion >= 85 ? '#10b981' : cls.completion >= 70 ? '#3b82f6' : '#f59e0b', borderRadius: '4px', transition: 'width 0.6s ease' }} />
+                            </div>
+                            {/* Grade breakdown mini dots */}
+                            {cls.gradeDistribution && cls.students > 0 && (
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {[
+                                        { key: 'excellent', color: '#10b981', label: '5' },
+                                        { key: 'good', color: '#3b82f6', label: '4' },
+                                        { key: 'satisfactory', color: '#f59e0b', label: '3' },
+                                        { key: 'poor', color: '#ef4444', label: '2' },
+                                    ].map(g => cls.gradeDistribution[g.key] > 0 && (
+                                        <span key={g.key} style={{ display: 'flex', alignItems: 'center', gap: '3px', background: `${g.color}15`, color: g.color, padding: '2px 7px', borderRadius: '20px', fontSize: '11px', fontWeight: 700 }}>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: g.color }} />
+                                            {g.label}: {cls.gradeDistribution[g.key]}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
 

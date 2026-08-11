@@ -211,7 +211,7 @@ export const quizzesAPI = {
 
 // Reports API
 export const reportsAPI = {
-    getDashboard: () => fetchAPI('/reports'),
+    getDashboard: (period = 'week') => fetchAPI(`/reports?period=${period}`),
 };
 
 // Telegram API
