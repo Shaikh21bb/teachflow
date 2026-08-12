@@ -189,7 +189,7 @@ function Register() {
                             }}>{s}</div>
                             {s < 2 && <div style={{
                                 width: '48px', height: '2px',
-                                background: step > s ? 'var(--color-primary-500)' : 'var(--color-gray-200)',
+                                background: step > s ? '#6366f1' : 'rgba(255,255,255,0.1)',
                                 transition: 'background 0.3s ease'
                             }} />}
                         </div>
@@ -272,7 +272,7 @@ function Register() {
                 {step === 2 && (
                     <>
                         <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-6)' }}>
-                            <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, marginBottom: '8px' }}>
+                            <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, marginBottom: '8px', color: 'white' }}>
                                 {language === 'kk' ? 'Пәндерді таңдаңыз' : 'Выберите предметы'}
                             </h2>
                             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--font-size-sm)' }}>
@@ -284,8 +284,8 @@ function Register() {
 
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                            gap: '10px',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                            gap: '8px',
                             marginBottom: 'var(--spacing-6)'
                         }}>
                             {SUBJECTS.map(subj => {
@@ -298,42 +298,38 @@ function Register() {
                                         onClick={() => toggleSubject(subj.id)}
                                         disabled={isDisabled}
                                         style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '12px 8px',
-                                            borderRadius: '12px',
+                                            padding: '10px 12px',
+                                            borderRadius: '10px',
                                             border: isSelected
-                                                ? '2px solid var(--color-primary-500)'
-                                                : '2px solid var(--color-gray-200)',
+                                                ? '1.5px solid #6366f1'
+                                                : '1.5px solid rgba(255,255,255,0.12)',
                                             background: isSelected
-                                                ? 'var(--color-primary-50)'
-                                                : isDisabled ? 'var(--color-gray-100)' : 'white',
+                                                ? 'rgba(99,102,241,0.2)'
+                                                : isDisabled
+                                                    ? 'rgba(255,255,255,0.02)'
+                                                    : 'rgba(255,255,255,0.05)',
                                             cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                            opacity: isDisabled ? 0.45 : 1,
-                                            transition: 'all 0.2s ease',
-                                            transform: isSelected ? 'scale(1.03)' : 'scale(1)',
-                                            boxShadow: isSelected ? '0 4px 12px rgba(99,102,241,0.25)' : 'none'
+                                            opacity: isDisabled ? 0.4 : 1,
+                                            transition: 'all 0.15s',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
                                         }}
                                     >
                                         <span style={{
-                                            fontSize: '0.72rem',
+                                            fontSize: '0.82rem',
                                             fontWeight: isSelected ? 700 : 500,
-                                            color: isSelected ? '#a5b4fc' : 'rgba(255,255,255,0.5)',
-                                            textAlign: 'center',
-                                            lineHeight: 1.3
+                                            color: isSelected ? '#a5b4fc' : 'rgba(255,255,255,0.75)',
+                                            textAlign: 'left',
+                                            lineHeight: 1.3,
                                         }}>
                                             {language === 'kk' ? subj.kk : subj.ru}
                                         </span>
                                         {isSelected && (
-                                            <span style={{
-                                                width: '18px', height: '18px',
-                                                background: 'var(--gradient-primary)',
-                                                borderRadius: '50%',
+                                            <div style={{
+                                                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                                                background: '#6366f1',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: 'white', fontSize: '10px', fontWeight: 700
-                                            }}>✓</span>
+                                                color: 'white', fontSize: '10px', fontWeight: 800
+                                            }}>✓</div>
                                         )}
                                     </button>
                                 )
@@ -343,15 +339,21 @@ function Register() {
                         {selectedSubjects.length > 0 && (
                             <div style={{
                                 padding: '10px 14px',
-                                background: 'var(--color-primary-50)',
+                                background: 'rgba(99,102,241,0.15)',
+                                border: '1px solid rgba(99,102,241,0.3)',
                                 borderRadius: '10px',
                                 marginBottom: 'var(--spacing-4)',
                                 fontSize: 'var(--font-size-sm)',
                                 color: '#a5b4fc',
-                                fontWeight: 500
+                                fontWeight: 600,
+                                display: 'flex', alignItems: 'center', gap: 8
                             }}>
-                                {language === 'kk' ? 'Таңдалды' : 'Выбрано'}: {selectedSubjects.length} / 2
-                                {selectedSubjects.length === 2 && <span style={{ marginLeft: 8, color: '#22c55e' }}>— максимум достигнут</span>}
+                                <span>{language === 'kk' ? 'Таңдалды' : 'Выбрано'}: {selectedSubjects.length} / 2</span>
+                                {selectedSubjects.length === 2 && (
+                                    <span style={{ color: '#4ade80', fontSize: '0.8rem' }}>
+                                        — {language === 'kk' ? 'максимум' : 'максимум достигнут'}
+                                    </span>
+                                )}
                             </div>
                         )}
 
@@ -374,16 +376,16 @@ function Register() {
                 {step === 1 && (
                     <>
                         <div style={{ display: 'flex', alignItems: 'center', margin: 'var(--spacing-4) 0', gap: 'var(--spacing-3)' }}>
-                            <div style={{ flex: 1, height: '1px', background: 'var(--color-gray-200)' }} />
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
                             <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk' ? 'немесе' : 'или'}
                             </span>
-                            <div style={{ flex: 1, height: '1px', background: 'var(--color-gray-200)' }} />
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
                         </div>
                         <div style={{ textAlign: 'center' }}>
                             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 'var(--font-size-sm)' }}>
                                 {language === 'kk' ? 'Аккаунтыңыз бар ма?' : 'Уже есть аккаунт?'}{' '}
-                                <Link to="/login" style={{ color: 'var(--color-primary-600)', textDecoration: 'none', fontWeight: 600 }}>
+                                <Link to="/login" style={{ color: '#818cf8', textDecoration: 'none', fontWeight: 600 }}>
                                     {language === 'kk' ? 'Кіру' : 'Войти'}
                                 </Link>
                             </p>
