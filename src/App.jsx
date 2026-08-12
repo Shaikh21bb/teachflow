@@ -336,6 +336,27 @@ function UserProfile() {
     const { user, logout } = useAuth()
     const { language } = useLanguage()
     const [showDropdown, setShowDropdown] = useState(false)
+    const [avatarUrl, setAvatarUrl] = useState(null)
+    const [imgErr, setImgErr] = useState(false)
+    const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+    // Load avatar from teacher_profiles
+    useEffect(() => {
+        if (!user) return
+        const loadAvatar = async () => {
+            try {
+                const { authFetch } = await import('./contexts/AuthContext')
+                const res = await authFetch(`${API_BASE}/auth/teacher-profile`)
+                if (res.ok) {
+                    const data = await res.json()
+                    const url = data.profile?.avatar_url || data.user?.avatar_url || null
+                    if (url) setAvatarUrl(url)
+                }
+            } catch { /* silent */ }
+        }
+        loadAvatar()
+    }, [user?.id])
+
     if (!user) return null
 
     function handleLogout() {
@@ -343,68 +364,143 @@ function UserProfile() {
         window.location.href = '/'
     }
 
+    const initials = user.name
+        ? user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+        : '?'
+
+    const planLabel = user.plan === 'pro' ? 'Pro' : user.plan === 'school' ? 'School' : 'Free'
+    const planColor = user.plan === 'pro' ? '#10b981' : user.plan === 'school' ? '#f59e0b' : '#6366f1'
+
+    const AvatarEl = () => avatarUrl && !imgErr ? (
+        <img
+            src={avatarUrl}
+            alt={user.name}
+            onError={() => setImgErr(true)}
+            style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                objectFit: 'cover', border: '2px solid rgba(99,102,241,0.3)',
+                display: 'block'
+            }}
+        />
+    ) : (
+        <div style={{
+            width: '36px', height: '36px', borderRadius: '50%',
+            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white', fontWeight: 700, fontSize: '0.875rem',
+            border: '2px solid rgba(99,102,241,0.3)',
+            flexShrink: 0, userSelect: 'none'
+        }}>
+            {initials}
+        </div>
+    )
+
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <NotificationBell />
             <div style={{ position: 'relative' }}>
-            <div
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                onClick={() => setShowDropdown(!showDropdown)}
-            >
-                <div style={{
-                    width: '36px', height: '36px', borderRadius: '50%',
-                    background: 'var(--gradient-primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 600
-                }}>
-                    {user.name ? user.name.charAt(0).toUpperCase() : '?'}
-                </div>
-            </div>
-
-            {showDropdown && (
-                <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setShowDropdown(false)} />
-                    <div style={{
-                        position: 'absolute', top: '100%', right: 0,
-                        marginTop: 'var(--spacing-2)', background: 'white',
-                        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
-                        minWidth: '220px', padding: 'var(--spacing-2)', zIndex: 1000
-                    }}>
-                        <div style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-gray-200)' }}>
-                            <div style={{ fontWeight: 600, marginBottom: '4px' }}>{user.name}</div>
-                            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-gray-500)' }}>{user.email}</div>
+                {/* Avatar button */}
+                <button
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: showDropdown ? 'var(--color-gray-100)' : 'transparent',
+                        border: '1px solid transparent',
+                        borderRadius: '40px', padding: '3px 10px 3px 3px',
+                        cursor: 'pointer', transition: 'all 0.15s',
+                        outline: 'none'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                    onMouseLeave={e => { if (!showDropdown) e.currentTarget.style.background = 'transparent' }}
+                >
+                    <AvatarEl />
+                    <div style={{ textAlign: 'left', display: 'none' }} className="hide-on-mobile">
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--color-gray-900)', lineHeight: 1.2, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {user.name?.split(' ')[0]}
                         </div>
-                        <div style={{ padding: '4px' }}>
-                            <a
-                                href="/profile"
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                    padding: '8px 12px', borderRadius: '8px',
-                                    color: 'var(--color-gray-700)', textDecoration: 'none',
-                                    fontSize: 'var(--font-size-sm)', fontWeight: 500
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-gray-100)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                onClick={() => setShowDropdown(false)}
-                            >
-                                <UserCircle2 size={16} />
-                                {language === 'kk' ? 'Профилім' : 'Мой профиль'}
-                            </a>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={handleLogout}
-                                style={{
-                                    width: '100%', justifyContent: 'flex-start',
-                                    marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px'
-                                }}
-                            >
-                                <LogOut size={16} />
-                                <span>{language === 'kk' ? 'Шығу' : 'Выйти'}</span>
-                            </button>
+                        <div style={{ fontSize: '0.7rem', color: planColor, fontWeight: 600, lineHeight: 1 }}>
+                            {planLabel}
                         </div>
                     </div>
-                </>
-            )}
+                </button>
+
+                {/* Dropdown */}
+                {showDropdown && (
+                    <>
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setShowDropdown(false)} />
+                        <div style={{
+                            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                            background: 'white', borderRadius: '16px',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+                            border: '1px solid var(--color-gray-100)',
+                            minWidth: '240px', zIndex: 1000, overflow: 'hidden',
+                            animation: 'dropdownSlide 0.18s ease'
+                        }}>
+                            {/* Header with avatar + info */}
+                            <div style={{ padding: '16px', background: 'linear-gradient(135deg,#f8f7ff,#fff)', borderBottom: '1px solid var(--color-gray-100)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    {avatarUrl && !imgErr ? (
+                                        <img src={avatarUrl} alt={user.name} onError={() => setImgErr(true)} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f130' }} />
+                                    ) : (
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>
+                                            {initials}
+                                        </div>
+                                    )}
+                                    {/* Plan badge */}
+                                    <div style={{ position: 'absolute', bottom: -2, right: -2, background: planColor, borderRadius: '20px', padding: '1px 5px', fontSize: '0.6rem', fontWeight: 800, color: 'white', border: '1.5px solid white' }}>
+                                        {planLabel}
+                                    </div>
+                                </div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--color-gray-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {user.name}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {user.email}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '3px' }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                                        <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                                            {language === 'kk' ? 'Белсенді' : 'Активен'}
+                                        </span>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--color-gray-400)', marginLeft: 4 }}>
+                                            · {user.credits || 0} {language === 'kk' ? 'кредит' : 'кредитов'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Menu items */}
+                            <div style={{ padding: '8px' }}>
+                                {[
+                                    { href: '/profile', icon: <UserCircle2 size={16} />, label: language === 'kk' ? 'Профиль' : 'Профиль' },
+                                    { href: '/profile?tab=settings', icon: <Settings size={16} />, label: language === 'kk' ? 'Баптаулар' : 'Настройки' },
+                                    { href: '/pricing', icon: <Zap size={16} />, label: language === 'kk' ? 'Тариф' : 'Тариф' },
+                                ].map(item => (
+                                    <a key={item.href} href={item.href}
+                                        onClick={() => setShowDropdown(false)}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '10px', color: 'var(--color-gray-700)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500, transition: 'background 0.12s' }}
+                                        onMouseEnter={e => e.currentTarget.style.background = 'var(--color-gray-50)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                    >
+                                        <span style={{ color: 'var(--color-gray-400)' }}>{item.icon}</span>
+                                        {item.label}
+                                    </a>
+                                ))}
+                                <div style={{ height: '1px', background: 'var(--color-gray-100)', margin: '6px 0' }} />
+                                <button
+                                    onClick={handleLogout}
+                                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 10px', borderRadius: '10px', color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, transition: 'background 0.12s' }}
+                                    onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <LogOut size={16} />
+                                    {language === 'kk' ? 'Шығу' : 'Выйти'}
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )
