@@ -1,55 +1,8 @@
 import { useState } from 'react';
-import {
-    Check, X, Zap, Users, Building2, GraduationCap,
-    Coins, Play, ShoppingBag, BookOpen, Layers,
-    Send, BarChart2, Crown, Star, ArrowRight,
-    Clock, Image, MessageSquare, Globe
-} from 'lucide-react';
+import { Check, X, Zap, Building2, GraduationCap, Coins, Crown, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE } from '../api';
-
-// ── Token badge ───────────────────────────────────────────────
-function TokenBadge({ count }) {
-    return (
-        <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            background: 'linear-gradient(135deg,#f59e0b,#f97316)',
-            color: 'white', borderRadius: 20, padding: '2px 10px',
-            fontSize: '0.75rem', fontWeight: 800
-        }}>
-            <Coins size={11} /> {count} токенов
-        </span>
-    )
-}
-
-// ── Feature row ───────────────────────────────────────────────
-function Feature({ text, yes = true, highlight = false }) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '5px 0' }}>
-            <div style={{
-                width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                background: yes ? (highlight ? 'rgba(255,255,255,0.2)' : '#dcfce7') : 'transparent',
-                border: yes ? 'none' : '1px solid #e5e7eb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-                {yes
-                    ? <Check size={11} color={highlight ? 'white' : '#16a34a'} strokeWidth={3} />
-                    : <X size={10} color="#d1d5db" strokeWidth={2.5} />
-                }
-            </div>
-            <span style={{
-                fontSize: '0.875rem', lineHeight: 1.5,
-                color: yes
-                    ? (highlight ? 'rgba(255,255,255,0.9)' : '#374151')
-                    : '#9ca3af',
-                textDecoration: yes ? 'none' : 'none'
-            }}>
-                {text}
-            </span>
-        </div>
-    )
-}
 
 export default function Pricing() {
     const { language } = useLanguage();
@@ -61,91 +14,82 @@ export default function Pricing() {
     const plans = [
         {
             id: 'free',
-            icon: <GraduationCap size={22} />,
-            iconColor: '#6366f1',
+            icon: <GraduationCap size={20} />,
             name: L('Бесплатно', 'Тегін'),
-            tagline: L('Начните прямо сейчас', 'Қазір бастаңыз'),
+            sub: L('Начните без карты', 'Картасыз бастаңыз'),
             price: { monthly: 0, yearly: 0 },
-            tokens: 200,
-            highlight: false,
-            cta: L('Начать бесплатно', 'Тегін бастау'),
+            tokens: '200',
+            credits: '100',
             features: [
-                { text: L('100 AI-кредитов в месяц', 'Айына 100 AI-кредит'), yes: true },
-                { text: L('Генерация уроков и слайдов', 'Сабақ және слайд жасау'), yes: true },
-                { text: L('Публикация уроков — бесплатно', 'Сабақ жариялау — тегін'), yes: true },
-                { text: L('Маркетплейс: покупка уроков', 'Маркетплейс: сабақ сатып алу'), yes: true },
-                { text: L('200 токенов при регистрации', 'Тіркелгенде 200 токен'), yes: true },
-                { text: L('Реклама → токены (50/день)', 'Жарнама → токендер (50/күн)'), yes: true },
-                { text: L('Telegram Hub', 'Telegram Hub'), yes: false },
-                { text: L('Авто-фото в слайдах', 'Слайдтарда авто-фото'), yes: false },
-            ]
+                '100 AI-кредитов в месяц',
+                'Генерация уроков и слайдов',
+                'Публикация уроков — бесплатно',
+                'Маркетплейс — покупка уроков',
+                '200 стартовых токенов',
+                'Реклама → до 50 токенов/день',
+            ],
+            locked: ['Telegram Hub', 'Авто-фото в слайдах'],
         },
         {
             id: 'pro',
-            icon: <Zap size={22} />,
-            iconColor: '#6366f1',
+            icon: <Zap size={20} />,
             name: L('Учитель', 'Мұғалім'),
-            tagline: L('Для активных педагогов', 'Белсенді педагогтар үшін'),
+            sub: L('Самый популярный', 'Ең танымал'),
             price: { monthly: 3990, yearly: 2990 },
-            tokens: 500,
+            tokens: '500',
+            credits: '200',
             highlight: true,
-            badge: L('Популярный', 'Танымал'),
-            cta: L('Выбрать план', 'Жоспар таңдау'),
             features: [
-                { text: L('200 AI-кредитов в месяц', 'Айына 200 AI-кредит'), yes: true },
-                { text: L('Генерация уроков, слайдов, 3D-примеров', 'Сабақ, слайд, 3D-мысалдар'), yes: true },
-                { text: L('Авто-фото в слайдах (Unsplash)', 'Слайдтарда авто-фото'), yes: true },
-                { text: L('Краткосрочный план урока (AI)', 'AI арқылы қысқа мерзімді жоспар'), yes: true },
-                { text: L('Telegram Hub (1 класс)', 'Telegram Hub (1 сынып)'), yes: true },
-                { text: L('Маркетплейс: продажа своих уроков', 'Сабақтарды сату'), yes: true },
-                { text: L('500 токенов ежемесячно', 'Айына 500 токен'), yes: true },
-                { text: L('Аналитика и отчёты', 'Аналитика және есептер'), yes: true },
-            ]
+                '200 AI-кредитов в месяц',
+                'Уроки, слайды, краткосрочный план',
+                'Авто-фото в слайдах',
+                'Telegram Hub — 1 класс',
+                'Продажа своих уроков',
+                '500 токенов ежемесячно',
+                'Аналитика и отчёты',
+            ],
+            locked: [],
         },
         {
             id: 'premium',
-            icon: <Crown size={22} />,
-            iconColor: '#f59e0b',
+            icon: <Crown size={20} />,
             name: L('Премиум', 'Премиум'),
-            tagline: L('Всё без ограничений', 'Шексіз мүмкіндіктер'),
+            sub: L('Всё включено', 'Барлығы кіреді'),
             price: { monthly: 7990, yearly: 5990 },
-            tokens: 2000,
-            highlight: false,
-            badge: L('Лучший выбор', 'Ең жақсы'),
-            badgeGold: true,
-            cta: L('Выбрать Премиум', 'Премиум таңдау'),
+            tokens: '2 000',
+            credits: '∞',
             features: [
-                { text: L('Безлимитные AI-кредиты', 'Шексіз AI-кредиттер'), yes: true },
-                { text: L('Полная генерация уроков + слайды + фото', 'Толық сабақ генерациясы'), yes: true },
-                { text: L('Авто-фото (Unsplash) + визуальные материалы', 'Авто-фото + визуалды материалдар'), yes: true },
-                { text: L('Telegram Hub — все классы', 'Telegram Hub — барлық сыныптар'), yes: true },
-                { text: L('Маркетплейс: продажа без лимитов', 'Сатуда шектеу жоқ'), yes: true },
-                { text: L('2000 токенов ежемесячно', 'Айына 2000 токен'), yes: true },
-                { text: L('Приоритетная поддержка', 'Басымдықты қолдау'), yes: true },
-                { text: L('Live-уроки без ограничений', 'Live-сабақтар шексіз'), yes: true },
-            ]
+                'Безлимитные AI-кредиты',
+                'Уроки + слайды + 3D-примеры',
+                'Авто-фото и визуальные материалы',
+                'Telegram Hub — все классы',
+                'Продажа уроков без ограничений',
+                '2 000 токенов ежемесячно',
+                'Live-уроки без лимитов',
+                'Приоритетная поддержка',
+            ],
+            locked: [],
+            gold: true,
         },
         {
             id: 'school',
-            icon: <Building2 size={22} />,
-            iconColor: '#8b5cf6',
+            icon: <Building2 size={20} />,
             name: L('Школа', 'Мектеп'),
-            tagline: L('Для всей школы', 'Бүкіл мектеп үшін'),
+            sub: L('Для всей школы', 'Бүкіл мектеп'),
             price: { monthly: 29990, yearly: 22990 },
-            tokens: 10000,
-            highlight: false,
+            tokens: '10 000',
+            credits: '∞',
             contactOnly: true,
-            cta: L('Связаться с нами', 'Байланысу'),
             features: [
-                { text: L('До 50 учителей', '50 мұғалімге дейін'), yes: true },
-                { text: L('Безлимитные AI-кредиты', 'Шексіз AI-кредиттер'), yes: true },
-                { text: L('Все функции Премиум', 'Барлық Премиум функциялар'), yes: true },
-                { text: L('Общая библиотека уроков', 'Жалпы сабақ кітапханасы'), yes: true },
-                { text: L('Панель администратора', 'Әкімші панелі'), yes: true },
-                { text: L('10 000 токенов в месяц', 'Айына 10 000 токен'), yes: true },
-                { text: L('Персональный менеджер', 'Жеке менеджер'), yes: true },
-                { text: L('Брендинг и настройка', 'Брендинг және баптаулар'), yes: true },
-            ]
+                'До 50 учителей в одном аккаунте',
+                'Безлимитные AI-кредиты',
+                'Все функции Премиум',
+                'Общая библиотека уроков',
+                'Панель администратора',
+                '10 000 токенов в месяц',
+                'Персональный менеджер',
+            ],
+            locked: [],
         }
     ];
 
@@ -167,207 +111,205 @@ export default function Pricing() {
     };
 
     return (
-        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '40px 20px 80px', fontFamily: 'inherit' }}>
+        <div style={{ maxWidth: 1080, margin: '0 auto', padding: '36px 20px 80px' }}>
             <style>{`
-                @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-                .plan-card { transition: transform 0.2s, box-shadow 0.2s; }
-                .plan-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12) !important; }
+                .plan-hover { transition: box-shadow 0.18s, transform 0.18s; }
+                .plan-hover:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important; transform: translateY(-3px); }
             `}</style>
 
             {/* ── Header ── */}
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                <h1 style={{ fontSize: 'clamp(1.8rem,4vw,2.6rem)', fontWeight: 900, color: 'var(--color-gray-900)', margin: '0 0 10px', letterSpacing: '-0.5px' }}>
-                    {L('Тарифы', 'Тарифтер')}
+            <div style={{ marginBottom: 40 }}>
+                <h1 style={{ fontSize: 'clamp(1.6rem,3.5vw,2.2rem)', fontWeight: 900, color: 'var(--color-gray-900)', margin: '0 0 8px', letterSpacing: '-0.4px' }}>
+                    {L('Выберите план', 'Жоспар таңдаңыз')}
                 </h1>
-                <p style={{ color: 'var(--color-gray-500)', fontSize: '1rem', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.6 }}>
-                    {L('Публикация уроков — всегда бесплатно. Токены — ваша внутренняя валюта.', 'Сабақ жариялау — әрдайым тегін. Токендер — сіздің ішкі валютаңыз.')}
+                <p style={{ color: 'var(--color-gray-500)', fontSize: '0.95rem', margin: '0 0 24px', maxWidth: 460, lineHeight: 1.6 }}>
+                    {L(
+                        'Публикация уроков бесплатна для всех. Токены — внутренняя валюта платформы для покупки уроков коллег.',
+                        'Сабақ жариялау барлығына тегін. Токендер — платформаның ішкі валютасы.'
+                    )}
                 </p>
 
                 {/* Billing toggle */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'var(--color-gray-100)', borderRadius: 40, padding: '4px' }}>
+                <div style={{ display: 'inline-flex', background: '#f4f4f5', borderRadius: 10, padding: 3, gap: 2 }}>
                     {[
-                        { v: 'monthly', l: L('Месяц', 'Ай') },
-                        { v: 'yearly', l: L('Год −25%', 'Жыл −25%') }
+                        { v: 'monthly', l: L('Помесячно', 'Ай сайын') },
+                        { v: 'yearly', l: L('Годовой  −25%', 'Жылдық  −25%') }
                     ].map(o => (
                         <button key={o.v} onClick={() => setBilling(o.v)} style={{
-                            padding: '8px 20px', borderRadius: 36, border: 'none', cursor: 'pointer',
-                            fontWeight: 700, fontSize: '0.875rem', transition: 'all 0.15s',
+                            padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                            fontWeight: 600, fontSize: '0.84rem',
                             background: billing === o.v ? 'white' : 'transparent',
-                            color: billing === o.v ? 'var(--color-gray-900)' : 'var(--color-gray-500)',
-                            boxShadow: billing === o.v ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                            color: billing === o.v ? '#111827' : '#9ca3af',
+                            boxShadow: billing === o.v ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.12s'
                         }}>{o.l}</button>
                     ))}
                 </div>
             </div>
 
-            {/* ── Plans grid ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))', gap: 20, marginBottom: 56, alignItems: 'start' }}>
-                {plans.map((plan, idx) => {
+            {/* ── Plans ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 48 }}>
+                {plans.map(plan => {
                     const price = billing === 'yearly' ? plan.price.yearly : plan.price.monthly;
                     const isCurrent = user?.plan === plan.id;
-                    const isHighlight = plan.highlight;
-                    const isGold = plan.badgeGold;
 
                     return (
-                        <div key={plan.id} className="plan-card" style={{
-                            background: isHighlight
-                                ? 'linear-gradient(150deg,#4f46e5 0%,#7c3aed 100%)'
-                                : 'var(--color-white,white)',
-                            borderRadius: 20,
-                            padding: '28px 24px',
-                            border: isHighlight ? 'none' : isGold ? '2px solid #f59e0b' : '1px solid var(--color-gray-100)',
-                            boxShadow: isHighlight ? '0 12px 40px rgba(79,70,229,0.3)' : '0 2px 12px rgba(0,0,0,0.05)',
-                            display: 'flex', flexDirection: 'column', gap: 0,
-                            position: 'relative', overflow: 'hidden',
-                            animation: `fadeUp 0.4s ease ${idx * 0.07}s both`
+                        <div key={plan.id} className="plan-hover" style={{
+                            background: plan.highlight ? '#18181b' : 'white',
+                            border: plan.gold ? '2px solid #f59e0b'
+                                : plan.highlight ? 'none'
+                                : '1px solid #e5e7eb',
+                            borderRadius: 16,
+                            padding: '24px 22px',
+                            display: 'flex', flexDirection: 'column',
+                            position: 'relative',
+                            boxShadow: plan.highlight ? '0 8px 28px rgba(0,0,0,0.2)' : '0 1px 6px rgba(0,0,0,0.04)',
                         }}>
-                            {/* Badge */}
-                            {plan.badge && (
-                                <div style={{
-                                    position: 'absolute', top: 16, right: 16,
-                                    background: isGold ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.2)',
-                                    color: 'white', padding: '3px 10px', borderRadius: 20,
-                                    fontSize: '0.72rem', fontWeight: 800
-                                }}>{plan.badge}</div>
+                            {/* Tag */}
+                            {plan.gold && (
+                                <div style={{ position: 'absolute', top: -12, left: 22, background: '#f59e0b', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: 20 }}>
+                                    {L('Лучший выбор', 'Ең жақсы таңдау')}
+                                </div>
+                            )}
+                            {plan.highlight && (
+                                <div style={{ position: 'absolute', top: -12, left: 22, background: '#6366f1', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: 20 }}>
+                                    {L('Популярный', 'Танымал')}
+                                </div>
                             )}
                             {isCurrent && (
-                                <div style={{ position: 'absolute', top: 16, right: 16, background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 800 }}>
+                                <div style={{ position: 'absolute', top: -12, right: 22, background: '#dcfce7', color: '#15803d', fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: 20 }}>
                                     {L('Ваш план', 'Сіздің жоспарыңыз')}
                                 </div>
                             )}
 
                             {/* Icon + name */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: isHighlight ? 'rgba(255,255,255,0.15)' : plan.iconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isHighlight ? 'white' : plan.iconColor }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 18 }}>
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    background: plan.gold ? '#fef3c7' : plan.highlight ? 'rgba(255,255,255,0.1)' : '#f4f4f5',
+                                    color: plan.gold ? '#f59e0b' : plan.highlight ? 'white' : '#6366f1'
+                                }}>
                                     {plan.icon}
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: isHighlight ? 'white' : 'var(--color-gray-900)' }}>{plan.name}</div>
-                                    <div style={{ fontSize: '0.75rem', color: isHighlight ? 'rgba(255,255,255,0.65)' : 'var(--color-gray-400)' }}>{plan.tagline}</div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: plan.highlight ? 'white' : '#111827' }}>{plan.name}</div>
+                                    <div style={{ fontSize: '0.72rem', color: plan.highlight ? 'rgba(255,255,255,0.5)' : '#9ca3af' }}>{plan.sub}</div>
                                 </div>
                             </div>
 
                             {/* Price */}
                             <div style={{ marginBottom: 20 }}>
                                 {price === 0 ? (
-                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: isHighlight ? 'white' : 'var(--color-gray-900)' }}>
+                                    <span style={{ fontSize: '1.8rem', fontWeight: 900, color: plan.highlight ? 'white' : '#111827' }}>
                                         {L('Бесплатно', 'Тегін')}
-                                    </div>
+                                    </span>
                                 ) : (
-                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-                                        <span style={{ fontSize: '2rem', fontWeight: 900, color: isHighlight ? 'white' : 'var(--color-gray-900)', lineHeight: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                                        <span style={{ fontSize: '1.8rem', fontWeight: 900, color: plan.highlight ? 'white' : '#111827', lineHeight: 1 }}>
                                             {price.toLocaleString('ru-RU')}
                                         </span>
-                                        <span style={{ fontSize: '0.875rem', color: isHighlight ? 'rgba(255,255,255,0.6)' : 'var(--color-gray-400)', marginBottom: 4 }}>
+                                        <span style={{ fontSize: '0.8rem', color: plan.highlight ? 'rgba(255,255,255,0.45)' : '#9ca3af' }}>
                                             ₸/{L('мес', 'ай')}
                                         </span>
                                     </div>
                                 )}
-                                {billing === 'yearly' && price > 0 && (
-                                    <div style={{ fontSize: '0.75rem', color: isHighlight ? 'rgba(255,255,255,0.55)' : 'var(--color-gray-400)', marginTop: 3 }}>
-                                        {L(`= ${(price * 12).toLocaleString('ru-RU')} ₸ в год`, `= жылына ${(price * 12).toLocaleString('ru-RU')} ₸`)}
-                                    </div>
-                                )}
-                                <div style={{ marginTop: 8 }}>
-                                    <TokenBadge count={plan.tokens.toLocaleString('ru-RU')} />
+                                {/* Tokens */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
+                                    <Coins size={13} color="#f59e0b" />
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#6b7280' }}>
+                                        {plan.tokens} {L('токенов', 'токен')}
+                                        {plan.id !== 'free' && ` / ${L('мес', 'ай')}`}
+                                    </span>
                                 </div>
                             </div>
 
+                            {/* Divider */}
+                            <div style={{ height: 1, background: plan.highlight ? 'rgba(255,255,255,0.08)' : '#f3f4f6', marginBottom: 16 }} />
+
                             {/* Features */}
-                            <div style={{ flex: 1, marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                                 {plan.features.map((f, i) => (
-                                    <Feature key={i} text={f.text} yes={f.yes} highlight={isHighlight} />
+                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                                        <Check size={14} color={plan.highlight ? '#a5b4fc' : '#6366f1'} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
+                                        <span style={{ fontSize: '0.83rem', color: plan.highlight ? 'rgba(255,255,255,0.8)' : '#374151', lineHeight: 1.45 }}>{f}</span>
+                                    </div>
+                                ))}
+                                {plan.locked.map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                                        <X size={13} color="#d1d5db" strokeWidth={2} style={{ flexShrink: 0, marginTop: 2 }} />
+                                        <span style={{ fontSize: '0.83rem', color: '#c4c4c4', lineHeight: 1.45 }}>{f}</span>
+                                    </div>
                                 ))}
                             </div>
 
                             {/* CTA */}
-                            <button
-                                onClick={() => handleSubscribe(plan)}
-                                disabled={loading === plan.id || isCurrent}
+                            <button onClick={() => handleSubscribe(plan)} disabled={isCurrent || loading === plan.id}
                                 style={{
-                                    width: '100%', padding: '12px 0',
-                                    borderRadius: 12, border: 'none', cursor: isCurrent ? 'default' : 'pointer',
-                                    fontWeight: 700, fontSize: '0.9rem',
-                                    background: isCurrent ? 'rgba(255,255,255,0.15)'
-                                        : isHighlight ? 'white'
-                                        : isGold ? 'linear-gradient(135deg,#f59e0b,#f97316)'
-                                        : plan.id === 'school' ? '#111827'
-                                        : 'linear-gradient(135deg,#4f46e5,#7c3aed)',
-                                    color: isCurrent ? (isHighlight ? 'white' : 'var(--color-gray-500)')
-                                        : isHighlight ? '#4f46e5'
+                                    width: '100%', padding: '11px 0', borderRadius: 10, border: 'none',
+                                    cursor: isCurrent ? 'default' : 'pointer',
+                                    fontWeight: 700, fontSize: '0.875rem',
+                                    background: isCurrent ? (plan.highlight ? 'rgba(255,255,255,0.1)' : '#f4f4f5')
+                                        : plan.gold ? '#f59e0b'
+                                        : plan.highlight ? 'white'
+                                        : plan.id === 'school' ? '#18181b'
+                                        : '#6366f1',
+                                    color: isCurrent ? (plan.highlight ? 'rgba(255,255,255,0.4)' : '#9ca3af')
+                                        : plan.gold ? 'white'
+                                        : plan.highlight ? '#4f46e5'
                                         : 'white',
-                                    boxShadow: isCurrent ? 'none'
-                                        : isHighlight ? 'none'
-                                        : '0 4px 12px rgba(79,70,229,0.25)',
-                                    transition: 'opacity 0.15s',
-                                    opacity: loading === plan.id ? 0.7 : 1,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7
-                                }}
-                            >
-                                {loading === plan.id ? L('Загрузка...', 'Жүктелуде...')
-                                    : isCurrent ? L('Ваш текущий план', 'Ағымдағы жоспар')
-                                    : <>{plan.cta} <ArrowRight size={15} /></>}
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    opacity: loading === plan.id ? 0.6 : 1,
+                                    transition: 'opacity 0.15s'
+                                }}>
+                                {loading === plan.id ? '...'
+                                    : isCurrent ? L('Текущий план', 'Ағымдағы жоспар')
+                                    : plan.id === 'free' ? L('Это ваш план', 'Бұл сіздің жоспарыңыз')
+                                    : <>{plan.cta || plan.name} <ArrowRight size={14} /></>}
                             </button>
                         </div>
-                    )
+                    );
                 })}
             </div>
 
-            {/* ── Token system block ── */}
-            <div style={{ borderRadius: 20, border: '1px solid var(--color-gray-100)', background: 'var(--color-white,white)', padding: '32px 28px', marginBottom: 40 }}>
+            {/* ── Token section ── */}
+            <div style={{ borderRadius: 16, border: '1px solid #e5e7eb', padding: '28px 24px', background: 'white' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Coins size={20} color="white" />
-                    </div>
+                    <Coins size={20} color="#f59e0b" />
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-gray-900)' }}>
-                            {L('Система токенов', 'Токен жүйесі')}
+                        <div style={{ fontWeight: 800, color: '#111827', fontSize: '1rem' }}>
+                            {L('Токены — внутренняя валюта', 'Токендер — ішкі валюта')}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-500)' }}>
+                        <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
                             {L('1 токен = 1 тенге', '1 токен = 1 теңге')}
                         </div>
                     </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-                    {[
-                        { icon: <Play size={16} color="#6366f1" />, bg: '#eff6ff', title: L('Реклама', 'Жарнама'), desc: L('10 рекламных видео = 50 токенов/день', '10 жарнама видео = 50 токен/күн') },
-                        { icon: <ShoppingBag size={16} color="#10b981" />, bg: '#f0fdf4', title: L('Маркетплейс', 'Маркетплейс'), desc: L('Продавайте уроки за токены — цену ставите вы', 'Сабақтарыңызды токенге сатыңыз') },
-                        { icon: <BookOpen size={16} color="#f59e0b" />, bg: '#fffbeb', title: L('Покупка уроков', 'Сабақ сатып алу'), desc: L('Приобретайте уроки коллег за токены', 'Əріптестердің сабақтарын токенге алыңыз') },
-                        { icon: <Layers size={16} color="#8b5cf6" />, bg: '#f5f3ff', title: L('3D-материалы', 'Ресурстар'), desc: L('Презентации, краткосрочные планы, визуалы', 'Презентациялар, жоспарлар, визуалдар') },
-                    ].map((item, i) => (
-                        <div key={i} style={{ background: item.bg, borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 12 }}>
-                            <div style={{ flexShrink: 0, marginTop: 2 }}>{item.icon}</div>
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-gray-900)', marginBottom: 3 }}>{item.title}</div>
-                                <div style={{ fontSize: '0.78rem', color: 'var(--color-gray-500)', lineHeight: 1.5 }}>{item.desc}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
-            {/* ── What teachers save ── */}
-            <div style={{ borderRadius: 20, background: 'linear-gradient(135deg,#0f172a,#1e1b4b)', padding: '32px 28px', color: 'white' }}>
-                <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '1.1rem' }}>
-                    {L('Что даёт Urpaq.ai учителю', 'Urpaq.ai мұғалімге не береді')}
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
                     {[
-                        { icon: <Clock size={18} />, color: '#a5b4fc', val: L('3 часа', '3 сағат'), desc: L('экономии в неделю', 'апталық үнем') },
-                        { icon: <Zap size={18} />, color: '#fde68a', val: L('30 сек', '30 сек'), desc: L('на генерацию урока с AI', 'AI арқылы сабақ жасауға') },
-                        { icon: <MessageSquare size={18} />, color: '#6ee7b7', val: L('Свой', 'Өз'), desc: L('мессенджер для учеников', 'оқушыларға мессенджер') },
-                        { icon: <Globe size={18} />, color: '#c4b5fd', val: L('Экосистема', 'Экожүйе'), desc: L('учителей Казахстана', 'Қазақстан мұғалімдері') },
-                    ].map((s, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.06)', borderRadius: 12 }}>
-                            <div style={{ color: s.color }}>{s.icon}</div>
-                            <div>
-                                <div style={{ fontWeight: 800, fontSize: '1rem', color: s.color }}>{s.val}</div>
-                                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>{s.desc}</div>
-                            </div>
+                        {
+                            title: L('Бесплатное пополнение', 'Тегін толтыру'),
+                            desc: L('Смотрите 10 видео в день и получайте 50 токенов. Каждый день.', 'Күніне 10 бейне қараңыз — 50 токен алыңыз.'),
+                            color: '#6366f1', bg: '#f5f3ff'
+                        },
+                        {
+                            title: L('Покупайте уроки', 'Сабақ сатып алыңыз'),
+                            desc: L('Уроки, презентации, планы — приобретайте за токены у коллег.', 'Сабақтар мен презентацияларды əріптестерден токенге алыңыз.'),
+                            color: '#f59e0b', bg: '#fffbeb'
+                        },
+                        {
+                            title: L('Продавайте свои', 'Өзіңіздікін сатыңыз'),
+                            desc: L('Публикация бесплатна. Цену устанавливаете вы сами. Комиссии нет.', 'Жариялау тегін. Бағаны өзіңіз белгілейсіз. Комиссия жоқ.'),
+                            color: '#10b981', bg: '#f0fdf4'
+                        },
+                    ].map((item, i) => (
+                        <div key={i} style={{ background: item.bg, borderRadius: 12, padding: '16px 18px', borderLeft: `3px solid ${item.color}` }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#111827', marginBottom: 5 }}>{item.title}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.55 }}>{item.desc}</div>
                         </div>
                     ))}
                 </div>
             </div>
         </div>
-    )
+    );
 }
