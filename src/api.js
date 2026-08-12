@@ -394,6 +394,15 @@ export const marketplaceAPI = {
     earnAdReward: () => fetchAPI('/marketplace/earn', { method: 'POST' }),
 };
 
+// Schedule API
+export const scheduleAPI = {
+    getWeek: () => fetchAPI('/schedule'),
+    getToday: () => fetchAPI('/schedule/today'),
+    add: (item) => fetchAPI('/schedule', { method: 'POST', body: JSON.stringify(item) }),
+    update: (id, item) => fetchAPI(`/schedule/${id}`, { method: 'PUT', body: JSON.stringify(item) }),
+    remove: (id) => fetchAPI(`/schedule/${id}`, { method: 'DELETE' }),
+};
+
 export default {
     lessons: lessonsAPI,
     lessonFiles: lessonFilesAPI,

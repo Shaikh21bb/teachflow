@@ -6,7 +6,7 @@ import {
     Sparkles, UserCircle, School, X, ChevronRight, Target, 
     Award, Rocket, Star, LayoutTemplate, Coins, Play
 } from 'lucide-react'
-import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI } from '../api'
+import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI, scheduleAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -244,6 +244,7 @@ function Dashboard() {
     const [upcomingLessons, setUpcomingLessons] = useState([])
     const [loading, setLoading] = useState(true)
     const [teacherProfile, setTeacherProfile] = useState(null)
+    const [scheduleItems, setScheduleItems] = useState([])
 
     // Onboarding state
     const [showWelcome, setShowWelcome] = useState(false)
@@ -311,6 +312,8 @@ function Dashboard() {
 
         fetchData()
         fetchProfile()
+        // Load today's schedule
+        scheduleAPI.getToday().then(d => setScheduleItems(d.lessons || [])).catch(() => {})
     }, [language])
 
     // Load token balance
@@ -527,29 +530,34 @@ function Dashboard() {
             {/* Main Widgets */}
             <div className="widget-grid">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-                    {/* Upcoming Lessons */}
+                    {/* Upcoming / Today's schedule */}
                     <div className="widget">
                         <div className="widget-header">
-                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={20} /> {t('dashboard.upcomingLessons')}</h3>
-                            <Link to="/builder" className="btn btn-sm btn-secondary">+ {t('dashboard.createLesson')}</Link>
+                            <h3 className="widget-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Calendar size={20} /> {L('Сегодня', 'Бүгін')}
+                            </h3>
+                            <Link to="/schedule" className="btn btn-sm btn-secondary">{L('Расписание', 'Кесте')} →</Link>
                         </div>
                         <div className="widget-body">
-                            {upcomingLessons.length > 0 ? upcomingLessons.map((lesson, index) => (
-                                <div key={index} className="upcoming-lesson">
+                            {scheduleItems.length > 0 ? scheduleItems.map((item, i) => (
+                                <div key={item.id || i} className="upcoming-lesson">
                                     <div className="lesson-time">
-                                        <div className="lesson-time-hour">{new Date(lesson.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                                        <div className="lesson-time-hour">{item.start_time}</div>
                                     </div>
-                                    <div className={`lesson-color ${lesson.color || 'blue'}`}></div>
+                                    <div className="lesson-color" style={{ background: item.color || '#6366f1' }}></div>
                                     <div className="lesson-info">
-                                        <div className="lesson-name">{lesson.title || lesson.subject}</div>
-                                        <div className="lesson-class">{language === 'kk' ? 'Сынып' : 'Класс'} {lesson.class_name || lesson.grade}</div>
+                                        <div className="lesson-name">{item.title}</div>
+                                        <div className="lesson-class">{[item.subject, item.class_name].filter(Boolean).join(' · ')} {item.duration && `· ${item.duration} мин`}</div>
                                     </div>
-                                    <Link to={`/builder?id=${lesson.id}`} className="btn btn-sm btn-ghost">{language === 'kk' ? 'Ашу' : 'Открыть'} →</Link>
+                                    {item.lesson_id && (
+                                        <Link to={`/builder?edit=${item.lesson_id}`} className="btn btn-sm btn-ghost">{L('Открыть', 'Ашу')} →</Link>
+                                    )}
                                 </div>
                             )) : (
                                 <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-gray-500)' }}>
-                                    <Calendar size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                                    <p>{language === 'kk' ? 'Әзірге сабақтар жоқ' : 'Пока нет уроков'}</p>
+                                    <Calendar size={40} style={{ opacity: 0.2, marginBottom: '12px' }} />
+                                    <p style={{ margin: '0 0 12px' }}>{L('На сегодня уроков нет', 'Бүгін сабақтар жоқ')}</p>
+                                    <Link to="/schedule" className="btn btn-sm btn-primary">{L('+ Добавить', '+ Қосу')}</Link>
                                 </div>
                             )}
                         </div>

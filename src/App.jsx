@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -51,6 +51,7 @@ import TeacherPublicProfile from './pages/TeacherPublicProfile'
 import LessonTemplates from './pages/LessonTemplates'
 import ParentPortal from './pages/ParentPortal'
 import Marketplace from './pages/Marketplace'
+import Schedule from './pages/Schedule'
 
 function App() {
     return (
@@ -104,6 +105,7 @@ function App() {
 
                             {/* Marketplace */}
                             <Route path="/marketplace" element={<ProtectedRoute><DashboardLayout><Marketplace /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/schedule" element={<ProtectedRoute><DashboardLayout><Schedule /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -173,6 +175,7 @@ function DashboardLayout({ children }) {
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
         { path: '/my-lessons', icon: <BookOpen size={20} />, label: language === 'kk' ? 'Сабақтар' : 'Уроки', matchPaths: ['/my-lessons', '/builder', '/templates', '/library', '/open-lessons'] },
+        { path: '/schedule', icon: <CalendarDays size={20} />, label: language === 'kk' ? 'Кесте' : 'Расписание' },
         { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },

@@ -362,6 +362,24 @@ async function runMigrations() {
         `CREATE INDEX IF NOT EXISTS idx_mp_lesson ON marketplace_purchases(lesson_id)`,
         // Give existing users 200 starter tokens
         `UPDATE users SET token_balance = 200 WHERE token_balance = 0`,
+        // v16 - Lesson schedule
+        `CREATE TABLE IF NOT EXISTS lesson_schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            lesson_id INTEGER,
+            title TEXT NOT NULL,
+            subject TEXT,
+            class_name TEXT,
+            day_of_week INTEGER NOT NULL,
+            start_time TEXT NOT NULL,
+            duration INTEGER DEFAULT 45,
+            color TEXT DEFAULT '#6366f1',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE SET NULL
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_schedule_user ON lesson_schedule(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_schedule_day ON lesson_schedule(user_id, day_of_week)`,
     ];
 
     for (const sql of migrations) {
@@ -408,6 +426,7 @@ async function startServer() {
     const chatRouter = require('./routes/chat');
     const parentRouter = require('./routes/parent');
     const marketplaceRouter = require('./routes/marketplace');
+    const scheduleRouter = require('./routes/schedule');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -466,6 +485,7 @@ async function startServer() {
     app.use('/api/chat', chatRouter);
     app.use('/api/parent', parentRouter);
     app.use('/api/marketplace', marketplaceRouter);
+    app.use('/api/schedule', scheduleRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {
