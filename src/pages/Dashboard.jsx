@@ -4,9 +4,9 @@ import {
     Calendar, ClipboardCheck, Users, CheckCircle, ClipboardList, ClipboardEdit, 
     Zap, PenTool, BookOpen, Bell, Info, AlertCircle, MessageSquare,
     Sparkles, UserCircle, School, X, ChevronRight, Target, 
-    Award, Rocket, Star, LayoutTemplate
+    Award, Rocket, Star, LayoutTemplate, Coins, Play
 } from 'lucide-react'
-import { dashboardAPI, assignmentsAPI, aiAPI } from '../api'
+import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -249,6 +249,12 @@ function Dashboard() {
     const [showWelcome, setShowWelcome] = useState(false)
     const [showChecklist, setShowChecklist] = useState(true)
 
+    // Token / ad state
+    const [tokenBalance, setTokenBalance] = useState(user?.token_balance || 0)
+    const [adLoading, setAdLoading] = useState(false)
+    const [adResult, setAdResult] = useState(null) // { earned, remaining_today }
+    const [adWatching, setAdWatching] = useState(false)
+
     useEffect(() => {
         async function fetchData() {
             try {
@@ -307,6 +313,33 @@ function Dashboard() {
         fetchProfile()
     }, [language])
 
+    // Load token balance
+    useEffect(() => {
+        marketplaceAPI.getBalance().then(d => setTokenBalance(d.balance || 0)).catch(() => {})
+    }, [])
+
+    // Watch ad → earn tokens (simulated 5s video)
+    const handleWatchAd = async () => {
+        if (adWatching || adLoading) return
+        setAdWatching(true)
+        // Simulate watching a 5-second ad
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        setAdWatching(false)
+        setAdLoading(true)
+        try {
+            const result = await marketplaceAPI.earnAdReward()
+            setTokenBalance(prev => prev + (result.earned || 5))
+            setAdResult(result)
+            setTimeout(() => setAdResult(null), 4000)
+        } catch (err) {
+            if (err.message?.includes('DAILY_LIMIT')) {
+                setAdResult({ error: true, msg: L('Дневной лимит: 50 токенов', 'Күнделікті шегі: 50 токен') })
+                setTimeout(() => setAdResult(null), 3000)
+            }
+        }
+        setAdLoading(false)
+    }
+
     // Detect first visit — show welcome modal once per user
     useEffect(() => {
         if (!user?.id) return
@@ -348,6 +381,73 @@ function Dashboard() {
                 language={language}
                 profile={teacherProfile}
             />
+
+            {/* ── Token Widget ── */}
+            <div style={{
+                background: 'white', borderRadius: '14px', border: '1px solid #e5e7eb',
+                padding: '14px 18px', marginBottom: '16px',
+                display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.04)'
+            }}>
+                {/* Balance */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '10px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Coins size={18} color="#f59e0b" />
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#111827', lineHeight: 1 }}>
+                            {tokenBalance.toLocaleString('ru-RU')}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
+                            {L('токенов', 'токен')}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Ad button */}
+                <button
+                    onClick={handleWatchAd}
+                    disabled={adWatching || adLoading}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '7px',
+                        padding: '8px 16px', border: 'none', borderRadius: '9px',
+                        background: adWatching ? '#f3f4f6' : 'linear-gradient(135deg,#f59e0b,#f97316)',
+                        color: adWatching ? '#9ca3af' : 'white',
+                        fontWeight: 700, fontSize: '0.82rem', cursor: adWatching ? 'default' : 'pointer',
+                        transition: 'opacity 0.15s', opacity: adLoading ? 0.7 : 1,
+                        position: 'relative', overflow: 'hidden'
+                    }}
+                >
+                    {adWatching ? (
+                        <>
+                            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #d1d5db', borderTopColor: '#f59e0b', animation: 'spin 0.7s linear infinite' }} />
+                            {L('Смотрю рекламу...', 'Жарнама қаралуда...')}
+                        </>
+                    ) : (
+                        <><Play size={13} /> +5 {L('токенов за рекламу', 'токен жарнамаға')}</>
+                    )}
+                </button>
+
+                {/* Ad result flash */}
+                {adResult && !adResult.error && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#15803d', fontWeight: 700, fontSize: '0.82rem', animation: 'fadeUp 0.3s ease' }}>
+                        <CheckCircle size={14} /> +{adResult.earned} {L('токенов!', 'токен!')}
+                        {adResult.remaining_today > 0 && <span style={{ fontWeight: 400, color: '#6b7280' }}>· ещё {adResult.remaining_today} раз сегодня</span>}
+                    </div>
+                )}
+                {adResult?.error && (
+                    <div style={{ padding: '6px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#ef4444', fontWeight: 600, fontSize: '0.78rem' }}>
+                        {adResult.msg}
+                    </div>
+                )}
+
+                {/* Marketplace link */}
+                <Link to="/marketplace" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '5px', color: '#6366f1', fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}>
+                    {L('Маркетплейс', 'Маркетплейс')} <ChevronRight size={14} />
+                </Link>
+
+                <style>{`@keyframes spin { to { transform:rotate(360deg); } } @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }`}</style>
+            </div>
 
             {/* ── First Steps Checklist ── */}
             {showChecklist && (

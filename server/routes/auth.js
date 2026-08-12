@@ -234,7 +234,7 @@ router.post('/logout', async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
     try {
         const user = await getOne(
-            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login FROM users WHERE id = ?',
+            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login, token_balance FROM users WHERE id = ?',
             [req.user.userId]
         );
 
@@ -271,7 +271,7 @@ router.put('/profile', authenticateToken, validate(require('../middleware/valida
         await runQuery('UPDATE users SET name = ?, subjects = ? WHERE id = ?', [name, subjectsJson, req.user.userId]);
         
         const user = await getOne(
-            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login FROM users WHERE id = ?',
+            'SELECT id, name, email, role, subjects, credits, plan, billing_period_start, billing_period_end, created_at, last_login, token_balance FROM users WHERE id = ?',
             [req.user.userId]
         );
         user.subjects = JSON.parse(user.subjects || '[]');

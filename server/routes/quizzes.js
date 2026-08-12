@@ -207,6 +207,14 @@ router.post('/:id/attempts', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?)`,
             [req.params.id, student_name, JSON.stringify(answers), score || 0, max_score || 0, time_spent || 0]
         );
+
+        // ── Token reward for quiz owner ──────────────────────
+        // Give teacher 2 tokens per completed quiz attempt
+        try {
+            const { addTokens } = require('./marketplace');
+            await addTokens(quiz.user_id, 2, 'quiz_completed', `Ученик "${student_name}" прошёл тест "${quiz.title}"`, parseInt(req.params.id));
+        } catch { /* silent */ }
+
         res.status(201).json({ id: result.lastInsertRowid?.toString(), quiz_id: req.params.id, student_name, score, max_score });
     } catch (err) {
         console.error('Submit attempt error:', err);

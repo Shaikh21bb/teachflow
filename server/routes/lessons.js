@@ -222,6 +222,17 @@ router.get('/:id', async (req, res) => {
         }
 
         await runQuery('UPDATE lessons SET views_count = views_count + 1 WHERE id = ?', [lesson.id]);
+
+        // ── Token milestone rewards (10, 50, 100 views) ──────
+        const newViews = (lesson.views_count || 0) + 1;
+        const milestones = { 10: 10, 50: 25, 100: 50, 500: 100 };
+        if (milestones[newViews]) {
+            try {
+                const { addTokens } = require('./marketplace');
+                await addTokens(lesson.user_id, milestones[newViews], 'views_milestone', `${newViews} просмотров урока "${lesson.title}"`, lesson.id);
+            } catch { /* silent */ }
+        }
+
         const files = await getAll('SELECT * FROM lesson_files WHERE lesson_id = ? ORDER BY order_index', [lesson.id]);
         res.json({ ...lesson, files });
     } catch (err) {
@@ -315,6 +326,15 @@ router.put('/:id', authenticateToken, async (req, res) => {
         ]);
 
         const updated = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
+
+        // ── Token reward: first publish ──────────────────────
+        if (is_published && !existing.is_published) {
+            try {
+                const { addTokens } = require('./marketplace');
+                await addTokens(userId, 30, 'publish_bonus', `Первая публикация урока "${updated.title}"`, lessonId);
+            } catch { /* silent if marketplace not ready */ }
+        }
+
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });
