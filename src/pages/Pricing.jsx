@@ -1,663 +1,373 @@
-import React, { useState } from 'react';
-import { 
-    Check, ArrowRight, MessageCircle, 
-    Zap, Users, Building2, GraduationCap,
-    Sparkles, TrendingUp, Star, Clock, Bot, Target, Wallet
+import { useState } from 'react';
+import {
+    Check, X, Zap, Users, Building2, GraduationCap,
+    Coins, Play, ShoppingBag, BookOpen, Layers,
+    Send, BarChart2, Crown, Star, ArrowRight,
+    Clock, Image, MessageSquare, Globe
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE } from '../api';
 
-const Pricing = () => {
-    const { t, language } = useLanguage();
-    const { user } = useAuth();
-    const [billingCycle, setBillingCycle] = useState('monthly');
-    const [loading, setLoading] = useState(null);
+// ── Token badge ───────────────────────────────────────────────
+function TokenBadge({ count }) {
+    return (
+        <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            background: 'linear-gradient(135deg,#f59e0b,#f97316)',
+            color: 'white', borderRadius: 20, padding: '2px 10px',
+            fontSize: '0.75rem', fontWeight: 800
+        }}>
+            <Coins size={11} /> {count} токенов
+        </span>
+    )
+}
 
-    const L = (kk, ru) => language === 'kk' ? kk : ru;
+// ── Feature row ───────────────────────────────────────────────
+function Feature({ text, yes = true, highlight = false }) {
+    return (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '5px 0' }}>
+            <div style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                background: yes ? (highlight ? 'rgba(255,255,255,0.2)' : '#dcfce7') : 'transparent',
+                border: yes ? 'none' : '1px solid #e5e7eb',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                {yes
+                    ? <Check size={11} color={highlight ? 'white' : '#16a34a'} strokeWidth={3} />
+                    : <X size={10} color="#d1d5db" strokeWidth={2.5} />
+                }
+            </div>
+            <span style={{
+                fontSize: '0.875rem', lineHeight: 1.5,
+                color: yes
+                    ? (highlight ? 'rgba(255,255,255,0.9)' : '#374151')
+                    : '#9ca3af',
+                textDecoration: yes ? 'none' : 'none'
+            }}>
+                {text}
+            </span>
+        </div>
+    )
+}
+
+export default function Pricing() {
+    const { language } = useLanguage();
+    const { user } = useAuth();
+    const [billing, setBilling] = useState('monthly');
+    const [loading, setLoading] = useState(null);
+    const L = (ru, kk) => language === 'kk' ? kk : ru;
 
     const plans = [
         {
             id: 'free',
-            icon: <GraduationCap size={24} />,
-            iconBg: '#f0f9ff',
-            iconColor: '#0284c7',
-            name: L('Старт', 'Старт'),
-            tagline: L('Тегін, мәңгіге', 'Бесплатно, навсегда'),
+            icon: <GraduationCap size={22} />,
+            iconColor: '#6366f1',
+            name: L('Бесплатно', 'Тегін'),
+            tagline: L('Начните прямо сейчас', 'Қазір бастаңыз'),
             price: { monthly: 0, yearly: 0 },
-            priceLabel: L('тегін', 'бесплатно'),
+            tokens: 200,
             highlight: false,
-            cta: L('Қазір бастау', 'Начать сейчас'),
-            ctaStyle: 'outline',
+            cta: L('Начать бесплатно', 'Тегін бастау'),
             features: [
-                { text: L('3 AI-генерация айына', '3 AI-генерации в месяц'), available: true },
-                { text: L('5 сабақ жасауға болады', '5 уроков'), available: true },
-                { text: L('1 оқу сыныбы', '1 учебный класс'), available: true },
-                { text: L('Базалық конструктор', 'Базовый конструктор'), available: true },
-                { text: L('PDF экспорт', 'Экспорт в PDF'), available: true },
-                { text: L('AI-тест генераторы', 'AI-генератор тестов'), available: false },
-                { text: L('Аналитика', 'Аналитика'), available: false },
+                { text: L('100 AI-кредитов в месяц', 'Айына 100 AI-кредит'), yes: true },
+                { text: L('Генерация уроков и слайдов', 'Сабақ және слайд жасау'), yes: true },
+                { text: L('Публикация уроков — бесплатно', 'Сабақ жариялау — тегін'), yes: true },
+                { text: L('Маркетплейс: покупка уроков', 'Маркетплейс: сабақ сатып алу'), yes: true },
+                { text: L('200 токенов при регистрации', 'Тіркелгенде 200 токен'), yes: true },
+                { text: L('Реклама → токены (50/день)', 'Жарнама → токендер (50/күн)'), yes: true },
+                { text: L('Telegram Hub', 'Telegram Hub'), yes: false },
+                { text: L('Авто-фото в слайдах', 'Слайдтарда авто-фото'), yes: false },
             ]
         },
         {
             id: 'pro',
-            icon: <Zap size={24} />,
-            iconBg: '#eff6ff',
-            iconColor: '#2563eb',
-            name: L('Мұғалім', 'Учитель'),
-            tagline: L('Белсенді педагогтар үшін', 'Для активных педагогов'),
+            icon: <Zap size={22} />,
+            iconColor: '#6366f1',
+            name: L('Учитель', 'Мұғалім'),
+            tagline: L('Для активных педагогов', 'Белсенді педагогтар үшін'),
             price: { monthly: 3990, yearly: 2990 },
-            popular: true,
+            tokens: 500,
             highlight: true,
-            cta: L('Pro таңдау →', 'Выбрать →'),
-            ctaStyle: 'gradient',
-            badge: L('Ең танымал', 'Топ выбор'),
+            badge: L('Популярный', 'Танымал'),
+            cta: L('Выбрать план', 'Жоспар таңдау'),
             features: [
-                { text: L('60 AI-генерация айына', '60 AI-генераций в месяц'), available: true },
-                { text: L('Шексіз сабақтар', 'Безлимитные уроки'), available: true },
-                { text: L('5 оқу сыныбы', '5 учебных классов'), available: true },
-                { text: L('AI-тест генераторы', 'AI-генератор тестов'), available: true },
-                { text: L('Толық аналитика', 'Полная аналитика'), available: true },
-                { text: L('Telegram интеграциясы', 'Интеграция с Telegram'), available: true },
-                { text: L('Қолдау (24 сағат)', 'Поддержка (24ч)'), available: true },
-            ],
-            savings: L('Жылдық: 11,880 ₸ үнемдейсіз', 'Годовая: экономия 11,880 ₸')
+                { text: L('200 AI-кредитов в месяц', 'Айына 200 AI-кредит'), yes: true },
+                { text: L('Генерация уроков, слайдов, 3D-примеров', 'Сабақ, слайд, 3D-мысалдар'), yes: true },
+                { text: L('Авто-фото в слайдах (Unsplash)', 'Слайдтарда авто-фото'), yes: true },
+                { text: L('Краткосрочный план урока (AI)', 'AI арқылы қысқа мерзімді жоспар'), yes: true },
+                { text: L('Telegram Hub (1 класс)', 'Telegram Hub (1 сынып)'), yes: true },
+                { text: L('Маркетплейс: продажа своих уроков', 'Сабақтарды сату'), yes: true },
+                { text: L('500 токенов ежемесячно', 'Айына 500 токен'), yes: true },
+                { text: L('Аналитика и отчёты', 'Аналитика және есептер'), yes: true },
+            ]
         },
         {
-            id: 'team',
-            icon: <Users size={24} />,
-            iconBg: '#f5f3ff',
-            iconColor: '#7c3aed',
-            name: L('Команда', 'Команда'),
-            tagline: L('Оқу орталықтары үшін', 'Для учебных центров'),
-            price: { monthly: 12900, yearly: 9900 },
+            id: 'premium',
+            icon: <Crown size={22} />,
+            iconColor: '#f59e0b',
+            name: L('Премиум', 'Премиум'),
+            tagline: L('Всё без ограничений', 'Шексіз мүмкіндіктер'),
+            price: { monthly: 7990, yearly: 5990 },
+            tokens: 2000,
             highlight: false,
-            cta: L('Команда таңдау →', 'Выбрать Команда →'),
-            ctaStyle: 'dark',
+            badge: L('Лучший выбор', 'Ең жақсы'),
+            badgeGold: true,
+            cta: L('Выбрать Премиум', 'Премиум таңдау'),
             features: [
-                { text: L('300 AI-генерация айына', '300 AI-генераций в месяц'), available: true },
-                { text: L('5 мұғалім аккаунты', '5 аккаунтов учителей'), available: true },
-                { text: L('30 оқу сыныбына дейін', 'До 30 учебных классов'), available: true },
-                { text: L('Ортақ кітапхана', 'Общая библиотека'), available: true },
-                { text: L('Басқару панелі (базалық)', 'Панель управления (базовая)'), available: true },
-                { text: L('Командалық аналитика', 'Командная аналитика'), available: true },
-                { text: L('Басымдықты қолдау (4 сағат)', 'Приоритетная поддержка (4ч)'), available: true },
-            ],
-            savings: L('Жылдық: 35,400 ₸ үнемдейсіз', 'Годовая: экономия 35,400 ₸'),
-            tag: L('Жаңа', 'Новинка')
+                { text: L('Безлимитные AI-кредиты', 'Шексіз AI-кредиттер'), yes: true },
+                { text: L('Полная генерация уроков + слайды + фото', 'Толық сабақ генерациясы'), yes: true },
+                { text: L('Авто-фото (Unsplash) + визуальные материалы', 'Авто-фото + визуалды материалдар'), yes: true },
+                { text: L('Telegram Hub — все классы', 'Telegram Hub — барлық сыныптар'), yes: true },
+                { text: L('Маркетплейс: продажа без лимитов', 'Сатуда шектеу жоқ'), yes: true },
+                { text: L('2000 токенов ежемесячно', 'Айына 2000 токен'), yes: true },
+                { text: L('Приоритетная поддержка', 'Басымдықты қолдау'), yes: true },
+                { text: L('Live-уроки без ограничений', 'Live-сабақтар шексіз'), yes: true },
+            ]
         },
         {
             id: 'school',
-            icon: <Building2 size={24} />,
-            iconBg: '#fff7ed',
-            iconColor: '#c2410c',
-            name: L('Мектеп', 'Школа'),
-            tagline: L('Толық мектептер үшін', 'Для полноценных школ'),
-            price: { monthly: 39900, yearly: 29900 },
+            icon: <Building2 size={22} />,
+            iconColor: '#8b5cf6',
+            name: L('Школа', 'Мектеп'),
+            tagline: L('Для всей школы', 'Бүкіл мектеп үшін'),
+            price: { monthly: 29990, yearly: 22990 },
+            tokens: 10000,
             highlight: false,
-            cta: L('Бізбен хабарласу →', 'Связаться с нами →'),
-            ctaStyle: 'dark',
             contactOnly: true,
+            cta: L('Связаться с нами', 'Байланысу'),
             features: [
-                { text: L('1,500 AI-генерация айына', '1,500 AI-генераций в месяц'), available: true },
-                { text: L('30 мұғалімге дейін', 'До 30 учителей'), available: true },
-                { text: L('Шексіз сыныптар', 'Безлимитные классы'), available: true },
-                { text: L('Брендинг порталы', 'Брендирование портала'), available: true },
-                { text: L('Толық Admin-панель', 'Полная Админ-панель'), available: true },
-                { text: L('Жеке менеджер', 'Персональный менеджер'), available: true },
-                { text: L('API қол жеткізу', 'API-доступ'), available: true },
-            ],
-            savings: L('Жылдық: 119,600 ₸ үнемдейсіз', 'Годовая: экономия 119,600 ₸')
+                { text: L('До 50 учителей', '50 мұғалімге дейін'), yes: true },
+                { text: L('Безлимитные AI-кредиты', 'Шексіз AI-кредиттер'), yes: true },
+                { text: L('Все функции Премиум', 'Барлық Премиум функциялар'), yes: true },
+                { text: L('Общая библиотека уроков', 'Жалпы сабақ кітапханасы'), yes: true },
+                { text: L('Панель администратора', 'Әкімші панелі'), yes: true },
+                { text: L('10 000 токенов в месяц', 'Айына 10 000 токен'), yes: true },
+                { text: L('Персональный менеджер', 'Жеке менеджер'), yes: true },
+                { text: L('Брендинг и настройка', 'Брендинг және баптаулар'), yes: true },
+            ]
         }
     ];
 
     const handleSubscribe = async (plan) => {
         if (plan.id === 'free') return;
-        if (plan.contactOnly) {
-            window.open('https://wa.me/77771225784', '_blank');
-            return;
-        }
-
+        if (plan.contactOnly) { window.open('https://wa.me/77771225784', '_blank'); return; }
         setLoading(plan.id);
         try {
-            const response = await fetch(`${API_BASE}/kaspi/create-order`, {
+            const res = await fetch(`${API_BASE}/kaspi/create-order`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ planId: plan.id, billingCycle })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
+                body: JSON.stringify({ planId: plan.id, billingCycle: billing })
             });
-
-            const data = await response.json();
-            if (data.success && data.paymentUrl) {
-                window.location.href = data.paymentUrl;
-            } else {
-                alert(data.error || L('Қате шықты', 'Ошибка при создании заказа'));
-            }
-        } catch (error) {
-            console.error('Subscription error:', error);
-            alert(L('Төлемді бастау мүмкін болмады', 'Не удалось инициализировать оплату'));
-        } finally {
-            setLoading(null);
-        }
+            const data = await res.json();
+            if (data.success && data.paymentUrl) window.location.href = data.paymentUrl;
+            else alert(data.error || 'Ошибка');
+        } catch { alert('Ошибка соединения'); }
+        setLoading(null);
     };
 
-    const yearSavingsPercent = 25;
-
     return (
-        <div style={{ 
-            maxWidth: '1280px', 
-            margin: '0 auto', 
-            padding: '60px 24px 80px',
-            fontFamily: 'inherit'
-        }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '40px 20px 80px', fontFamily: 'inherit' }}>
             <style>{`
-                @keyframes priceFadeUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                .plan-card {
-                    animation: priceFadeUp 0.5s ease-out forwards;
-                    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
-                }
-                .plan-card:hover {
-                    transform: translateY(-8px) !important;
-                }
-                .cta-gradient {
-                    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
-                    color: white;
-                    border: none;
-                }
-                .cta-gradient:hover {
-                    opacity: 0.9;
-                    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
-                }
-                .cta-outline {
-                    background: transparent;
-                    color: #374151;
-                    border: 1.5px solid #e5e7eb;
-                }
-                .cta-outline:hover { background: #f9fafb; }
-                .cta-dark {
-                    background: #111827;
-                    color: white;
-                    border: none;
-                }
-                .cta-dark:hover { background: #1f2937; }
-                .feature-check { color: #16a34a; }
-                .feature-x { color: #d1d5db; }
-                .toggle-track {
-                    width: 52px; height: 28px;
-                    border-radius: 14px;
-                    background: #e5e7eb;
-                    border: none;
-                    position: relative;
-                    cursor: pointer;
-                    transition: background 0.3s ease;
-                    padding: 3px;
-                    display: flex;
-                    align-items: center;
-                }
-                .toggle-thumb {
-                    width: 22px; height: 22px;
-                    border-radius: 50%;
-                    background: white;
-                    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-                }
+                @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+                .plan-card { transition: transform 0.2s, box-shadow 0.2s; }
+                .plan-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.12) !important; }
             `}</style>
 
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-                <div style={{ 
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    background: '#eff6ff', color: '#2563eb',
-                    padding: '6px 16px', borderRadius: '20px',
-                    fontSize: '13px', fontWeight: 700,
-                    marginBottom: '20px'
-                }}>
-                    <Sparkles size={14} />
-                    {L('Urpaq.ai — Мұғалімдер үшін', 'Urpaq.ai — Для учителей')}
-                </div>
-                <h1 style={{ 
-                    fontSize: 'clamp(32px, 5vw, 52px)', 
-                    fontWeight: 900, 
-                    letterSpacing: '-0.03em',
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    marginBottom: '16px',
-                    lineHeight: 1.15
-                }}>
-                    {L('Тарифтік жоспарлар', 'Тарифные планы')}
+            {/* ── Header ── */}
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                <h1 style={{ fontSize: 'clamp(1.8rem,4vw,2.6rem)', fontWeight: 900, color: 'var(--color-gray-900)', margin: '0 0 10px', letterSpacing: '-0.5px' }}>
+                    {L('Тарифы', 'Тарифтер')}
                 </h1>
-                <p style={{ 
-                    fontSize: '18px', color: '#6b7280', 
-                    maxWidth: '520px', margin: '0 auto', lineHeight: 1.6
-                }}>
-                    {L(
-                        'Платформада жұмыс жасаңыз және нәтижені көріңіз. Бірінші клиенттен бастап маржа жоғары.',
-                        'Работайте на платформе и видьте результат. Высокая маржа с первого клиента.'
-                    )}
+                <p style={{ color: 'var(--color-gray-500)', fontSize: '1rem', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.6 }}>
+                    {L('Публикация уроков — всегда бесплатно. Токены — ваша внутренняя валюта.', 'Сабақ жариялау — әрдайым тегін. Токендер — сіздің ішкі валютаңыз.')}
                 </p>
 
-                {/* Billing Toggle */}
-                <div style={{ 
-                    display: 'inline-flex', alignItems: 'center', gap: '16px',
-                    background: '#f9fafb', border: '1px solid #e5e7eb',
-                    borderRadius: '16px', padding: '10px 20px',
-                    marginTop: '36px'
-                }}>
-                    <span style={{ 
-                        fontSize: '14px', fontWeight: billingCycle === 'monthly' ? 700 : 500,
-                        color: billingCycle === 'monthly' ? '#111827' : '#9ca3af',
-                        transition: 'all 0.2s'
-                    }}>
-                        {L('Айына', 'В месяц')}
-                    </span>
-                    <button 
-                        className="toggle-track"
-                        style={{
-                            background: billingCycle === 'monthly' 
-                                ? 'linear-gradient(135deg, #2563eb, #7c3aed)' 
-                                : 'linear-gradient(135deg, #16a34a, #15803d)'
-                        }}
-                        onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                    >
-                        <div 
-                            className="toggle-thumb"
-                            style={{ transform: billingCycle === 'yearly' ? 'translateX(24px)' : 'translateX(0)' }}
-                        />
-                    </button>
-                    <span style={{ 
-                        fontSize: '14px', fontWeight: billingCycle === 'yearly' ? 700 : 500,
-                        color: billingCycle === 'yearly' ? '#111827' : '#9ca3af',
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        transition: 'all 0.2s'
-                    }}>
-                        {L('Жылына', 'В год')}
-                        <span style={{
-                            background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                            color: 'white',
-                            fontSize: '11px', fontWeight: 800,
-                            padding: '2px 10px', borderRadius: '10px',
-                            letterSpacing: '0.02em'
-                        }}>
-                            -{yearSavingsPercent}%
-                        </span>
-                    </span>
+                {/* Billing toggle */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'var(--color-gray-100)', borderRadius: 40, padding: '4px' }}>
+                    {[
+                        { v: 'monthly', l: L('Месяц', 'Ай') },
+                        { v: 'yearly', l: L('Год −25%', 'Жыл −25%') }
+                    ].map(o => (
+                        <button key={o.v} onClick={() => setBilling(o.v)} style={{
+                            padding: '8px 20px', borderRadius: 36, border: 'none', cursor: 'pointer',
+                            fontWeight: 700, fontSize: '0.875rem', transition: 'all 0.15s',
+                            background: billing === o.v ? 'white' : 'transparent',
+                            color: billing === o.v ? 'var(--color-gray-900)' : 'var(--color-gray-500)',
+                            boxShadow: billing === o.v ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                        }}>{o.l}</button>
+                    ))}
                 </div>
             </div>
 
-            {/* Plans Grid */}
-            <div style={{ 
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))',
-                gap: '24px',
-                marginBottom: '64px',
-                alignItems: 'start'
-            }}>
+            {/* ── Plans grid ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))', gap: 20, marginBottom: 56, alignItems: 'start' }}>
                 {plans.map((plan, idx) => {
-                    const price = billingCycle === 'yearly' ? plan.price.yearly : plan.price.monthly;
-                    const isCurrentPlan = user?.plan === plan.id;
+                    const price = billing === 'yearly' ? plan.price.yearly : plan.price.monthly;
+                    const isCurrent = user?.plan === plan.id;
+                    const isHighlight = plan.highlight;
+                    const isGold = plan.badgeGold;
 
                     return (
-                        <div
-                            key={plan.id}
-                            className="plan-card"
-                            style={{
-                                background: plan.highlight 
-                                    ? 'linear-gradient(145deg, #1e40af 0%, #5b21b6 100%)'
-                                    : 'white',
-                                borderRadius: '24px',
-                                padding: '32px',
-                                boxShadow: plan.highlight 
-                                    ? '0 20px 60px rgba(37, 99, 235, 0.3)' 
-                                    : '0 4px 20px rgba(0,0,0,0.05)',
-                                border: plan.highlight 
-                                    ? 'none'
-                                    : '1px solid #f1f5f9',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                animationDelay: `${idx * 0.08}s`
-                            }}
-                        >
-                            {/* Popular Badge */}
+                        <div key={plan.id} className="plan-card" style={{
+                            background: isHighlight
+                                ? 'linear-gradient(150deg,#4f46e5 0%,#7c3aed 100%)'
+                                : 'var(--color-white,white)',
+                            borderRadius: 20,
+                            padding: '28px 24px',
+                            border: isHighlight ? 'none' : isGold ? '2px solid #f59e0b' : '1px solid var(--color-gray-100)',
+                            boxShadow: isHighlight ? '0 12px 40px rgba(79,70,229,0.3)' : '0 2px 12px rgba(0,0,0,0.05)',
+                            display: 'flex', flexDirection: 'column', gap: 0,
+                            position: 'relative', overflow: 'hidden',
+                            animation: `fadeUp 0.4s ease ${idx * 0.07}s both`
+                        }}>
+                            {/* Badge */}
                             {plan.badge && (
                                 <div style={{
-                                    position: 'absolute',
-                                    top: '20px', right: '20px',
-                                    background: 'rgba(255,255,255,0.2)',
-                                    backdropFilter: 'blur(8px)',
-                                    color: 'white',
-                                    padding: '4px 12px',
-                                    borderRadius: '20px',
-                                    fontSize: '12px', fontWeight: 700
-                                }}>
-                                    {plan.badge}
+                                    position: 'absolute', top: 16, right: 16,
+                                    background: isGold ? 'linear-gradient(135deg,#f59e0b,#f97316)' : 'rgba(255,255,255,0.2)',
+                                    color: 'white', padding: '3px 10px', borderRadius: 20,
+                                    fontSize: '0.72rem', fontWeight: 800
+                                }}>{plan.badge}</div>
+                            )}
+                            {isCurrent && (
+                                <div style={{ position: 'absolute', top: 16, right: 16, background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 800 }}>
+                                    {L('Ваш план', 'Сіздің жоспарыңыз')}
                                 </div>
                             )}
 
-                            {plan.tag && !plan.highlight && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '20px', right: '20px',
-                                    background: '#f5f3ff',
-                                    color: '#7c3aed',
-                                    padding: '4px 12px',
-                                    borderRadius: '20px',
-                                    fontSize: '12px', fontWeight: 700
-                                }}>
-                                    {plan.tag}
+                            {/* Icon + name */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: isHighlight ? 'rgba(255,255,255,0.15)' : plan.iconColor + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isHighlight ? 'white' : plan.iconColor }}>
+                                    {plan.icon}
                                 </div>
-                            )}
-
-                            {/* Icon */}
-                            <div style={{
-                                width: '48px', height: '48px',
-                                borderRadius: '14px',
-                                background: plan.highlight ? 'rgba(255,255,255,0.2)' : plan.iconBg,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: plan.highlight ? 'white' : plan.iconColor,
-                                marginBottom: '20px'
-                            }}>
-                                {plan.icon}
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: isHighlight ? 'white' : 'var(--color-gray-900)' }}>{plan.name}</div>
+                                    <div style={{ fontSize: '0.75rem', color: isHighlight ? 'rgba(255,255,255,0.65)' : 'var(--color-gray-400)' }}>{plan.tagline}</div>
+                                </div>
                             </div>
-
-                            {/* Name & Tagline */}
-                            <h3 style={{ 
-                                fontSize: '22px', fontWeight: 800,
-                                color: plan.highlight ? 'white' : '#111827',
-                                margin: '0 0 6px 0'
-                            }}>
-                                {plan.name}
-                            </h3>
-                            <p style={{ 
-                                fontSize: '13px',
-                                color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#6b7280',
-                                margin: '0 0 28px 0'
-                            }}>
-                                {plan.tagline}
-                            </p>
 
                             {/* Price */}
-                            <div style={{ marginBottom: '28px' }}>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                    {price === 0 ? (
-                                        <span style={{ 
-                                            fontSize: '40px', fontWeight: 900,
-                                            color: plan.highlight ? 'white' : '#111827',
-                                            letterSpacing: '-0.03em'
-                                        }}>
-                                            {L('Тегін', 'Бесплатно')}
+                            <div style={{ marginBottom: 20 }}>
+                                {price === 0 ? (
+                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: isHighlight ? 'white' : 'var(--color-gray-900)' }}>
+                                        {L('Бесплатно', 'Тегін')}
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>
+                                        <span style={{ fontSize: '2rem', fontWeight: 900, color: isHighlight ? 'white' : 'var(--color-gray-900)', lineHeight: 1 }}>
+                                            {price.toLocaleString('ru-RU')}
                                         </span>
-                                    ) : (
-                                        <>
-                                            <span style={{ 
-                                                fontSize: '40px', fontWeight: 900,
-                                                color: plan.highlight ? 'white' : '#111827',
-                                                letterSpacing: '-0.03em'
-                                            }}>
-                                                {price.toLocaleString()} ₸
-                                            </span>
-                                            <span style={{ 
-                                                fontSize: '14px',
-                                                color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#9ca3af'
-                                            }}>
-                                                /{L('ай', 'мес')}
-                                            </span>
-                                        </>
-                                    )}
+                                        <span style={{ fontSize: '0.875rem', color: isHighlight ? 'rgba(255,255,255,0.6)' : 'var(--color-gray-400)', marginBottom: 4 }}>
+                                            ₸/{L('мес', 'ай')}
+                                        </span>
+                                    </div>
+                                )}
+                                {billing === 'yearly' && price > 0 && (
+                                    <div style={{ fontSize: '0.75rem', color: isHighlight ? 'rgba(255,255,255,0.55)' : 'var(--color-gray-400)', marginTop: 3 }}>
+                                        {L(`= ${(price * 12).toLocaleString('ru-RU')} ₸ в год`, `= жылына ${(price * 12).toLocaleString('ru-RU')} ₸`)}
+                                    </div>
+                                )}
+                                <div style={{ marginTop: 8 }}>
+                                    <TokenBadge count={plan.tokens.toLocaleString('ru-RU')} />
                                 </div>
-                                {billingCycle === 'yearly' && plan.savings && price > 0 && (
-                                    <div style={{ 
-                                        marginTop: '8px',
-                                        fontSize: '12px',
-                                        color: plan.highlight ? 'rgba(255,255,255,0.6)' : '#16a34a',
-                                        fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', gap: '4px'
-                                    }}>
-                                        <Wallet size={12} /> {plan.savings}
-                                    </div>
-                                )}
-                                {billingCycle === 'monthly' && price > 0 && (
-                                    <div style={{ 
-                                        marginTop: '8px',
-                                        fontSize: '12px',
-                                        color: plan.highlight ? 'rgba(255,255,255,0.55)' : '#9ca3af'
-                                    }}>
-                                        {L('Жылдыққа ауысып үнемдеңіз', 'Перейдите на годовой и сэкономьте')}
-                                    </div>
-                                )}
                             </div>
 
-                            {/* Divider */}
-                            <div style={{ 
-                                height: '1px', 
-                                background: plan.highlight ? 'rgba(255,255,255,0.15)' : '#f1f5f9',
-                                marginBottom: '24px'
-                            }} />
-
                             {/* Features */}
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', flex: 1 }}>
-                                {plan.features.map((feature, i) => (
-                                    <li key={i} style={{ 
-                                        display: 'flex', alignItems: 'flex-start', gap: '10px',
-                                        marginBottom: '12px',
-                                        opacity: feature.available ? 1 : 0.45
-                                    }}>
-                                        <div style={{
-                                            width: '18px', height: '18px',
-                                            borderRadius: '50%',
-                                            background: feature.available 
-                                                ? (plan.highlight ? 'rgba(255,255,255,0.25)' : '#dcfce7')
-                                                : '#f3f4f6',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            flexShrink: 0,
-                                            marginTop: '2px'
-                                        }}>
-                                            <Check 
-                                                size={11} 
-                                                strokeWidth={3}
-                                                color={feature.available 
-                                                    ? (plan.highlight ? 'white' : '#16a34a')
-                                                    : '#9ca3af'
-                                                }
-                                            />
-                                        </div>
-                                        <span style={{ 
-                                            fontSize: '14px', lineHeight: '1.5',
-                                            color: plan.highlight 
-                                                ? (feature.available ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)')
-                                                : (feature.available ? '#374151' : '#9ca3af'),
-                                            textDecoration: feature.available ? 'none' : 'line-through'
-                                        }}>
-                                            {feature.text}
-                                        </span>
-                                    </li>
+                            <div style={{ flex: 1, marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                {plan.features.map((f, i) => (
+                                    <Feature key={i} text={f.text} yes={f.yes} highlight={isHighlight} />
                                 ))}
-                            </ul>
+                            </div>
 
-                            {/* CTA Button */}
+                            {/* CTA */}
                             <button
-                                disabled={loading === plan.id || isCurrentPlan}
                                 onClick={() => handleSubscribe(plan)}
-                                className={`cta-${plan.ctaStyle}`}
+                                disabled={loading === plan.id || isCurrent}
                                 style={{
-                                    width: '100%',
-                                    padding: '14px 20px',
-                                    borderRadius: '14px',
-                                    fontSize: '15px',
-                                    fontWeight: 700,
-                                    cursor: (loading === plan.id || isCurrentPlan) ? 'not-allowed' : 'pointer',
-                                    opacity: (loading === plan.id || isCurrentPlan) ? 0.6 : 1,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    gap: '8px',
-                                    transition: 'all 0.2s',
-                                    ...(plan.highlight ? {
-                                        background: 'white',
-                                        color: '#1e40af',
-                                        border: 'none',
-                                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
-                                    } : {})
+                                    width: '100%', padding: '12px 0',
+                                    borderRadius: 12, border: 'none', cursor: isCurrent ? 'default' : 'pointer',
+                                    fontWeight: 700, fontSize: '0.9rem',
+                                    background: isCurrent ? 'rgba(255,255,255,0.15)'
+                                        : isHighlight ? 'white'
+                                        : isGold ? 'linear-gradient(135deg,#f59e0b,#f97316)'
+                                        : plan.id === 'school' ? '#111827'
+                                        : 'linear-gradient(135deg,#4f46e5,#7c3aed)',
+                                    color: isCurrent ? (isHighlight ? 'white' : 'var(--color-gray-500)')
+                                        : isHighlight ? '#4f46e5'
+                                        : 'white',
+                                    boxShadow: isCurrent ? 'none'
+                                        : isHighlight ? 'none'
+                                        : '0 4px 12px rgba(79,70,229,0.25)',
+                                    transition: 'opacity 0.15s',
+                                    opacity: loading === plan.id ? 0.7 : 1,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7
                                 }}
                             >
-                                {loading === plan.id ? (
-                                    <span>{L('Жүктелуде...', 'Загрузка...')}</span>
-                                ) : isCurrentPlan ? (
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <Check size={14} strokeWidth={3} /> {L('Ағымдағы жоспар', 'Текущий план')}
-                                    </span>
-                                ) : (
-                                    <span>{plan.cta}</span>
-                                )}
+                                {loading === plan.id ? L('Загрузка...', 'Жүктелуде...')
+                                    : isCurrent ? L('Ваш текущий план', 'Ағымдағы жоспар')
+                                    : <>{plan.cta} <ArrowRight size={15} /></>}
                             </button>
-
-                            {plan.id === 'pro' && (
-                                <div style={{ 
-                                    marginTop: '12px', textAlign: 'center',
-                                    fontSize: '12px',
-                                    color: 'rgba(255,255,255,0.55)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                                }}>
-                                    <img src="/kaspi-logo.png" alt="Kaspi" style={{ width: '14px', height: '14px', borderRadius: '3px' }} />
-                                    <span style={{ color: plan.highlight ? 'rgba(255,255,255,0.55)' : '#9ca3af' }}>
-                                        {L('Kaspi.kz арқылы төлеу', 'Оплата через Kaspi.kz')}
-                                    </span>
-                                </div>
-                            )}
                         </div>
-                    );
+                    )
                 })}
             </div>
 
-            {/* ROI / Value Banner */}
-            <div style={{ 
-                background: 'linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%)',
-                borderRadius: '24px', padding: '40px',
-                marginBottom: '48px',
-                border: '1px solid #ddd6fe'
-            }}>
-                <h3 style={{ 
-                    textAlign: 'center', fontSize: '22px', fontWeight: 800,
-                    color: '#1e1b4b', marginBottom: '32px'
-                }}>
-                    {L('Неге Urpaq.ai-ға ақша жұмсау тиімді?', 'Почему Urpaq.ai окупается?')}
-                </h3>
-                <div style={{ 
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '24px'
-                }}>
+            {/* ── Token system block ── */}
+            <div style={{ borderRadius: 20, border: '1px solid var(--color-gray-100)', background: 'var(--color-white,white)', padding: '32px 28px', marginBottom: 40 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#f59e0b,#f97316)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Coins size={20} color="white" />
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-gray-900)' }}>
+                            {L('Система токенов', 'Токен жүйесі')}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--color-gray-500)' }}>
+                            {L('1 токен = 1 тенге', '1 токен = 1 теңге')}
+                        </div>
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
                     {[
-                        {
-                            icon: <Clock size={28} color="#6366f1" />,
-                            iconBg: 'rgba(99,102,241,0.08)',
-                            value: L('3 сағат/апта', '3 часа/неделю'),
-                            label: L('үнемделетін уақыт', 'экономия времени'),
-                            sub: L('Сабақ жоспарлауда', 'При планировании уроков')
-                        },
-                        {
-                            icon: <Bot size={28} color="#8b5cf6" />,
-                            iconBg: 'rgba(139,92,246,0.08)',
-                            value: L('60 AI-генерация', '60 AI-генераций'),
-                            label: L('"Мұғалім" тарифінде', 'в тарифе "Учитель"'),
-                            sub: L('Айына 3,990 ₸ = 66 ₸/генерация', '3,990 ₸/мес = 66 ₸/генерация')
-                        },
-                        {
-                            icon: <TrendingUp size={28} color="#10b981" />,
-                            iconBg: 'rgba(16,185,129,0.08)',
-                            value: L('1 платеж = жеткілікті', '1 платёж = достаточно'),
-                            label: L('шығынды жабу үшін', 'для покрытия расходов'),
-                            sub: L('Сервер: 3,200 ₸/ай', 'Сервер: 3,200 ₸/мес')
-                        },
-                        {
-                            icon: <Target size={28} color="#f59e0b" />,
-                            iconBg: 'rgba(245,158,11,0.08)',
-                            value: '94%',
-                            label: L('маржа', 'маржа'),
-                            sub: L('Мұғалім тарифінде', 'В тарифе Учитель')
-                        }
+                        { icon: <Play size={16} color="#6366f1" />, bg: '#eff6ff', title: L('Реклама', 'Жарнама'), desc: L('10 рекламных видео = 50 токенов/день', '10 жарнама видео = 50 токен/күн') },
+                        { icon: <ShoppingBag size={16} color="#10b981" />, bg: '#f0fdf4', title: L('Маркетплейс', 'Маркетплейс'), desc: L('Продавайте уроки за токены — цену ставите вы', 'Сабақтарыңызды токенге сатыңыз') },
+                        { icon: <BookOpen size={16} color="#f59e0b" />, bg: '#fffbeb', title: L('Покупка уроков', 'Сабақ сатып алу'), desc: L('Приобретайте уроки коллег за токены', 'Əріптестердің сабақтарын токенге алыңыз') },
+                        { icon: <Layers size={16} color="#8b5cf6" />, bg: '#f5f3ff', title: L('3D-материалы', 'Ресурстар'), desc: L('Презентации, краткосрочные планы, визуалы', 'Презентациялар, жоспарлар, визуалдар') },
                     ].map((item, i) => (
-                        <div key={i} style={{ 
-                            textAlign: 'center',
-                            background: 'white', borderRadius: '16px', padding: '24px',
-                            boxShadow: '0 2px 12px rgba(0,0,0,0.05)'
-                        }}>
-                            <div style={{ 
-                                width: '56px', height: '56px', borderRadius: '14px',
-                                background: item.iconBg, margin: '0 auto 12px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>
-                                {item.icon}
+                        <div key={i} style={{ background: item.bg, borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 12 }}>
+                            <div style={{ flexShrink: 0, marginTop: 2 }}>{item.icon}</div>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-gray-900)', marginBottom: 3 }}>{item.title}</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--color-gray-500)', lineHeight: 1.5 }}>{item.desc}</div>
                             </div>
-                            <div style={{ 
-                                fontSize: '22px', fontWeight: 900,
-                                color: '#1e40af', marginBottom: '4px'
-                            }}>
-                                {item.value}
-                            </div>
-                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>
-                                {item.label}
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#6b7280' }}>{item.sub}</div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Contact CTA */}
-            <div style={{ 
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                border: '1px solid #bae6fd',
-                borderRadius: '24px', padding: '48px 40px',
-                textAlign: 'center',
-                position: 'relative', overflow: 'hidden'
-            }}>
-                <div style={{
-                    position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-                    background: 'radial-gradient(ellipse at top right, rgba(14,165,233,0.15) 0%, transparent 60%)',
-                    pointerEvents: 'none'
-                }} />
-                <Star size={32} style={{ color: '#f59e0b', marginBottom: '16px' }} />
-                <h4 style={{ 
-                    fontSize: '26px', fontWeight: 800, color: '#0f172a',
-                    marginBottom: '12px'
-                }}>
-                    {L('Сұрақтар бар ма?', 'Есть вопросы?')}
-                </h4>
-                <p style={{ 
-                    color: '#475569', fontSize: '16px',
-                    marginBottom: '28px', maxWidth: '400px', margin: '0 auto 28px'
-                }}>
-                    {L(
-                        'Командамыз мектебіңіз үшін ең тиімді тарифті таңдауға көмектеседі.',
-                        'Наша команда поможет выбрать лучший план для вашей школы.'
-                    )}
-                </p>
-                <a 
-                    href="https://wa.me/77771225784"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '10px',
-                        background: '#25D366',
-                        color: 'white', fontWeight: 700, fontSize: '15px',
-                        padding: '14px 32px', borderRadius: '14px',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
-                    onMouseOut={e => e.currentTarget.style.opacity = '1'}
-                >
-                    <MessageCircle size={20} />
-                    {L('WhatsApp-та хабарласу', 'Написать в WhatsApp')}
-                </a>
+            {/* ── What teachers save ── */}
+            <div style={{ borderRadius: 20, background: 'linear-gradient(135deg,#0f172a,#1e1b4b)', padding: '32px 28px', color: 'white' }}>
+                <h3 style={{ margin: '0 0 20px', fontWeight: 800, fontSize: '1.1rem' }}>
+                    {L('Что даёт Urpaq.ai учителю', 'Urpaq.ai мұғалімге не береді')}
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+                    {[
+                        { icon: <Clock size={18} />, color: '#a5b4fc', val: L('3 часа', '3 сағат'), desc: L('экономии в неделю', 'апталық үнем') },
+                        { icon: <Zap size={18} />, color: '#fde68a', val: L('30 сек', '30 сек'), desc: L('на генерацию урока с AI', 'AI арқылы сабақ жасауға') },
+                        { icon: <MessageSquare size={18} />, color: '#6ee7b7', val: L('Свой', 'Өз'), desc: L('мессенджер для учеников', 'оқушыларға мессенджер') },
+                        { icon: <Globe size={18} />, color: '#c4b5fd', val: L('Экосистема', 'Экожүйе'), desc: L('учителей Казахстана', 'Қазақстан мұғалімдері') },
+                    ].map((s, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.06)', borderRadius: 12 }}>
+                            <div style={{ color: s.color }}>{s.icon}</div>
+                            <div>
+                                <div style={{ fontWeight: 800, fontSize: '1rem', color: s.color }}>{s.val}</div>
+                                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)' }}>{s.desc}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
-    );
-};
-
-export default Pricing;
+    )
+}
