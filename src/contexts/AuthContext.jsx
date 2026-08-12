@@ -74,47 +74,56 @@ export async function authFetch(url, options = {}) {
 
     let res = await fetch(url, { ...options, headers })
 
-    // Auto-refresh on TOKEN_EXPIRED
+    // Auto-refresh on any 401 if we have a refresh token
     if (res.status === 401) {
-        const body = await res.clone().json().catch(() => ({}))
-        if (body.code === 'TOKEN_EXPIRED') {
-            if (!isRefreshing) {
-                isRefreshing = true
-                try {
-                    const newToken = await refreshAccessToken()
-                    isRefreshing = false
-                    // Retry all queued requests
-                    refreshQueue.forEach((cb) => cb(newToken))
-                    refreshQueue = []
-                    // Retry original request
-                    return fetch(url, {
-                        ...options,
-                        headers: { ...headers, Authorization: `Bearer ${newToken}` },
-                    })
-                } catch {
-                    isRefreshing = false
-                    refreshQueue.forEach((cb) => cb(null))
-                    refreshQueue = []
-                    storage.clearTokens()
-                    window.location.href = '/login'
-                    return res
-                }
-            } else {
-                // Queue this request until refresh completes
-                return new Promise((resolve) => {
-                    refreshQueue.push((newToken) => {
-                        if (newToken) {
-                            resolve(
-                                fetch(url, {
-                                    ...options,
-                                    headers: { ...headers, Authorization: `Bearer ${newToken}` },
-                                })
-                            )
-                        } else {
-                            resolve(res)
-                        }
-                    })
+        const refreshToken = storage.getRefreshToken()
+
+        if (refreshToken && !isRefreshing) {
+            isRefreshing = true
+            try {
+                const newToken = await refreshAccessToken()
+                isRefreshing = false
+                refreshQueue.forEach(cb => cb(newToken))
+                refreshQueue = []
+                // Retry original request with new token
+                return fetch(url, {
+                    ...options,
+                    headers: { ...headers, Authorization: `Bearer ${newToken}` },
                 })
+            } catch {
+                isRefreshing = false
+                refreshQueue.forEach(cb => cb(null))
+                refreshQueue = []
+                storage.clearTokens()
+                // Only redirect if not already on an auth page
+                if (typeof window !== 'undefined' &&
+                    !window.location.pathname.startsWith('/login') &&
+                    !window.location.pathname.startsWith('/register')) {
+                    window.location.href = '/login'
+                }
+                return res
+            }
+        } else if (refreshToken && isRefreshing) {
+            // Another refresh is in progress — queue this request
+            return new Promise((resolve) => {
+                refreshQueue.push((newToken) => {
+                    if (newToken) {
+                        resolve(fetch(url, {
+                            ...options,
+                            headers: { ...headers, Authorization: `Bearer ${newToken}` },
+                        }))
+                    } else {
+                        resolve(res)
+                    }
+                })
+            })
+        } else {
+            // No refresh token — clear and redirect only if not on auth pages
+            storage.clearTokens()
+            if (typeof window !== 'undefined' &&
+                !window.location.pathname.startsWith('/login') &&
+                !window.location.pathname.startsWith('/register')) {
+                window.location.href = '/login'
             }
         }
     }
@@ -136,14 +145,15 @@ export function AuthProvider({ children }) {
             if (res.ok) {
                 const data = await res.json()
                 setUser(data.user)
-            } else {
-                // Could not recover — log out
+            } else if (res.status === 401 || res.status === 403) {
+                // Only clear tokens on explicit auth failure, not on server errors
                 storage.clearTokens()
                 setToken(null)
             }
+            // On 5xx or network error — keep user logged in, just don't update
         } catch {
-            storage.clearTokens()
-            setToken(null)
+            // Network error — don't log out, just set loading to false
+            // User might be offline temporarily
         } finally {
             setLoading(false)
         }

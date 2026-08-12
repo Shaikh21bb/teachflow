@@ -13,8 +13,8 @@ const { STARTER_CREDITS, PLAN_CREDIT_LIMITS, CREDIT_COSTS } = require('../utils/
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '';
-const ACCESS_TOKEN_TTL = '15m';
-const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+const ACCESS_TOKEN_TTL = '1h';  // Increased from 15m — refresh token handles security
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // Validate secrets at startup
 if (!JWT_SECRET || JWT_SECRET.length < 32) {

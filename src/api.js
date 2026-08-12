@@ -54,10 +54,14 @@ async function fetchAPI(endpoint, options = {}) {
 
     let res = await makeRequest(getToken());
 
-    // Auto-refresh if token expired
-    if (res.status === 401) {
-        const body = await res.clone().json().catch(() => ({}));
-        // Try refresh for ANY 401 when we have a refresh token
+    // Auto-refresh if token expired or invalid
+    if (res.status === 401 || res.status === 403) {
+        const body = await res.clone().json().catch(() => ({}))
+        // Don't try refresh for explicit permission errors (not auth)
+        if (body.code === 'FORBIDDEN' || res.status === 403) {
+            // Real permission error, not an auth issue — don't redirect
+            return res
+        }
         const refreshToken = getRefreshToken();
         if (refreshToken && !_isRefreshing) {
             _isRefreshing = true;
@@ -66,27 +70,27 @@ async function fetchAPI(endpoint, options = {}) {
                 _isRefreshing = false;
                 _refreshQueue.forEach(cb => cb(newToken));
                 _refreshQueue = [];
-                // Retry original request with new token
                 res = await makeRequest(newToken);
             } catch {
                 _isRefreshing = false;
                 _refreshQueue.forEach(cb => cb(null));
                 _refreshQueue = [];
                 clearTokens();
-                // Only redirect if we are in a browser context and on a protected page
-                if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+                if (typeof window !== 'undefined' &&
+                    !window.location.pathname.startsWith('/login') &&
+                    !window.location.pathname.startsWith('/register')) {
                     window.location.href = '/login';
                 }
                 throw new Error('Сессия истекла. Войдите снова.');
             }
         } else if (refreshToken && _isRefreshing) {
-            // Another request is already refreshing — queue this one
             await new Promise(resolve => _refreshQueue.push(resolve));
             res = await makeRequest(getToken());
-        } else {
-            // No refresh token at all
+        } else if (!refreshToken) {
             clearTokens();
-            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+            if (typeof window !== 'undefined' &&
+                !window.location.pathname.startsWith('/login') &&
+                !window.location.pathname.startsWith('/register')) {
                 window.location.href = '/login';
             }
             throw new Error(body.error || 'Ошибка авторизации');
