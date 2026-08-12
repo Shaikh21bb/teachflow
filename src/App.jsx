@@ -168,16 +168,15 @@ function DashboardLayout({ children }) {
 
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
-        { path: '/my-lessons', icon: <BookOpen size={20} />, label: t('nav.myLessons') },
-        { path: '/templates', icon: <LayoutTemplate size={20} />, label: language === 'kk' ? 'Үлгілер' : 'Шаблоны' },
-        { path: '/classes', icon: <Users size={20} />, label: t('nav.classes') },
-        { path: '/reports', icon: <BarChart size={20} />, label: t('nav.reports') },
-        { path: '/alfarabi-bot', icon: <Bot size={20} />, label: t('nav.alfarabi') },
-        { path: '/pricing', icon: <Zap size={20} />, label: language === 'kk' ? 'Тарифтер' : 'Тарифы' },
-    ]
-
-    const otherItems = [
-        { path: '/profile', icon: <UserCircle2 size={20} />, label: t('nav.profile') },
+        {
+            path: '/my-lessons',
+            icon: <BookOpen size={20} />,
+            label: language === 'kk' ? 'Сабақтар' : 'Уроки',
+            // Matches my-lessons, builder, templates, library, open-lessons
+            matchPaths: ['/my-lessons', '/builder', '/templates', '/library', '/open-lessons']
+        },
+        { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
+        { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
         {
             path: '/chat',
             icon: (
@@ -198,11 +197,13 @@ function DashboardLayout({ children }) {
                     )}
                 </span>
             ),
-            label: language === 'kk' ? 'Чаттар' : 'Чаты'
+            label: language === 'kk' ? 'Чат' : 'Чат'
         },
-        { path: '/telegram', icon: <TelegramIcon size={20} />, label: language === 'kk' ? 'Telegram Hub' : 'Telegram Hub' },
-        { path: '/integrations', icon: <Plug size={20} />, label: language === 'kk' ? 'Интеграция' : 'Интеграции' },
+        { path: '/pricing', icon: <Zap size={20} />, label: language === 'kk' ? 'Тариф' : 'Тариф' },
     ]
+
+    // Profile is shown as a footer block, not a nav item
+    // Settings, Integrations, Telegram, Help — merged into Profile page
 
     return (
         <div className="dashboard">
@@ -223,53 +224,30 @@ function DashboardLayout({ children }) {
 
                 <nav className="sidebar-nav">
                     <div className="sidebar-section">
-                        <div className="sidebar-section-title">{t('nav.menu')}</div>
                         {navItems.map(item => (
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
+                                className={({ isActive }) => {
+                                    const extraActive = item.matchPaths?.some(p => location.pathname.startsWith(p))
+                                    return 'sidebar-link' + (isActive || extraActive ? ' active' : '')
+                                }}
                                 data-label={item.label}
                             >
                                 <span className="sidebar-link-icon">{item.icon}</span>
                                 <span className="sidebar-link-label">{item.label}</span>
                             </NavLink>
                         ))}
-                    </div>
-
-                    <div className="sidebar-section">
-                        <div className="sidebar-section-title">{t('nav.other')}</div>
-                        {otherItems.map(item => (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
-                                data-label={item.label}
-                            >
-                                <span className="sidebar-link-icon">{item.icon}</span>
-                                <span className="sidebar-link-label">{item.label}</span>
-                            </NavLink>
-                        ))}
-                        <NavLink
-                            to="/settings"
-                            className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
-                            data-label={t('nav.settings')}
-                        >
-                            <span className="sidebar-link-icon"><Settings size={20} /></span>
-                            <span className="sidebar-link-label">{t('nav.settings')}</span>
-                        </NavLink>
-                        <a
-                            href="https://wa.me/77771225784"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="sidebar-link"
-                            data-label={t('nav.help')}
-                        >
-                            <span className="sidebar-link-icon"><HelpCircle size={20} /></span>
-                            <span className="sidebar-link-label">{t('nav.help')}</span>
-                        </a>
                     </div>
                 </nav>
+
+                {/* ── Account block at bottom ── */}
+                <div className="sidebar-account-block">
+                    <NavLink to="/profile" className={({ isActive }) => 'sidebar-account-link' + (isActive ? ' active' : '')}>
+                        <span className="sidebar-link-icon"><UserCircle2 size={20} /></span>
+                        <span className="sidebar-link-label">{language === 'kk' ? 'Аккаунт' : 'Аккаунт'}</span>
+                    </NavLink>
+                </div>
             </aside>
 
             <main className={"main-content " + (collapsed ? 'sidebar-collapsed' : '')}>
@@ -313,6 +291,7 @@ function DashboardLayout({ children }) {
 
 function MobileBottomNav({ items, unreadCount = 0 }) {
     const { t, language } = useLanguage()
+    // Show 5 items: home, lessons, classes, AI bot, profile
     const primaryItems = items.filter(i =>
         ['/dashboard', '/my-lessons', '/classes', '/alfarabi-bot'].includes(i.path)
     )
@@ -328,22 +307,12 @@ function MobileBottomNav({ items, unreadCount = 0 }) {
                     <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>{item.label}</span>
                 </NavLink>
             ))}
-            {/* Chat link with badge */}
-            <NavLink
-                to="/chat"
-                className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
-            >
+            {/* Chat with badge */}
+            <NavLink to="/chat" className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}>
                 <div className="bottom-nav-icon" style={{ position: 'relative' }}>
                     <MessageSquare size={20} />
                     {unreadCount > 0 && (
-                        <span style={{
-                            position: 'absolute', top: '-4px', right: '-6px',
-                            background: '#ef4444', color: 'white', borderRadius: '20px',
-                            padding: '0 3px', fontSize: '0.58rem', fontWeight: 800,
-                            minWidth: '13px', height: '13px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1.5px solid white'
-                        }}>
+                        <span style={{ position: 'absolute', top: '-4px', right: '-6px', background: '#ef4444', color: 'white', borderRadius: '20px', padding: '0 3px', fontSize: '0.58rem', fontWeight: 800, minWidth: '13px', height: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid white' }}>
                             {unreadCount > 9 ? '9+' : unreadCount}
                         </span>
                     )}
@@ -352,13 +321,11 @@ function MobileBottomNav({ items, unreadCount = 0 }) {
                     {language === 'kk' ? 'Чат' : 'Чат'}
                 </span>
             </NavLink>
-            <NavLink
-                to="/profile"
-                className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
-            >
+            {/* Profile */}
+            <NavLink to="/profile" className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}>
                 <div className="bottom-nav-icon"><UserCircle2 size={20} /></div>
                 <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
-                    {t('nav.profile')}
+                    {language === 'kk' ? 'Аккаунт' : 'Аккаунт'}
                 </span>
             </NavLink>
         </nav>

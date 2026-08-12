@@ -1058,6 +1058,43 @@ a:hover {
   overflow-x: hidden;
 }
 
+/* ── Sidebar account block (bottom) ── */
+.sidebar-account-block {
+  padding: var(--spacing-2) var(--spacing-2) var(--spacing-4);
+  border-top: 1px solid var(--color-gray-100);
+  flex-shrink: 0;
+}
+
+.sidebar-account-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.sidebar.collapsed .sidebar-account-link {
+  justify-content: center;
+  padding: var(--spacing-2);
+}
+
+.sidebar-account-link:hover {
+  background: var(--color-gray-50);
+  color: var(--color-gray-900);
+}
+
+.sidebar-account-link.active {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+}
+
 .sidebar-section {
   margin-bottom: var(--spacing-6);
 }
@@ -3624,4 +3661,4 @@ a:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+}

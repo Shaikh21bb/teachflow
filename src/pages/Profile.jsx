@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth, authFetch } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
     User, Users, CheckCircle, AlertCircle, Loader2,
     Instagram, Youtube, Send, Globe, MapPin, School,
     UserCheck, UserPlus, Search, Camera, Settings, ChevronRight,
-    BookOpen, Edit3, X, MessageSquare
+    BookOpen, Edit3, X, MessageSquare, BarChart2, Plug, HelpCircle,
+    Key, ExternalLink, Phone
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+
 import { uploadToCloudinary, chatAPI } from '../api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -22,7 +24,8 @@ export default function Profile() {
     const { user } = useAuth();
     const { t, language } = useLanguage();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('profile');
+    const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
     const [isEditing, setIsEditing] = useState(false);
     
     // Load states
@@ -188,8 +191,12 @@ export default function Profile() {
 
     // Simplify tabs for mobile
     const tabs = [
-        { id: 'profile', icon: <User size={18} />, label: t('profile.tabProfile') || (language === 'kk' ? 'Профиль' : 'Профиль') },
-        { id: 'colleagues', icon: <Users size={18} />, label: t('profile.tabColleagues') || (language === 'kk' ? 'Әріптестер' : 'Коллеги') },
+        { id: 'profile',     icon: <User size={18} />,         label: language === 'kk' ? 'Профиль'     : 'Профиль' },
+        { id: 'colleagues',  icon: <Users size={18} />,        label: language === 'kk' ? 'Әріптестер'  : 'Коллеги' },
+        { id: 'reports',     icon: <BarChart2 size={18} />,    label: language === 'kk' ? 'Есептер'     : 'Отчёты' },
+        { id: 'settings',    icon: <Settings size={18} />,     label: language === 'kk' ? 'Баптаулар'   : 'Настройки' },
+        { id: 'integrations',icon: <Plug size={18} />,         label: language === 'kk' ? 'Интеграция'  : 'Интеграции' },
+        { id: 'help',        icon: <HelpCircle size={18} />,   label: language === 'kk' ? 'Көмек'       : 'Помощь' },
     ];
 
     if (loading) {
@@ -602,11 +609,175 @@ export default function Profile() {
                     )}
                 </div>
             )}
+
+            {/* ════ TAB 3: REPORTS ════ */}
+            {activeTab === 'reports' && (
+                <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--color-gray-500)' }}>
+                    <BarChart2 size={44} color="#6366f1" style={{ marginBottom: 16 }} />
+                    <h3 style={{ margin: '0 0 8px', color: 'var(--color-gray-900)', fontWeight: 700 }}>
+                        {language === 'kk' ? 'Толық есептер' : 'Полная аналитика'}
+                    </h3>
+                    <p style={{ margin: '0 0 20px', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                        {language === 'kk'
+                            ? 'Оқушылардың үлгерімі, тест нәтижелері және белсенділік графиктері'
+                            : 'Успеваемость учеников, результаты тестов и графики активности'}
+                    </p>
+                    <Link to="/reports" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: 'var(--gradient-primary)', color: 'white', borderRadius: '12px', textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem' }}>
+                        {language === 'kk' ? 'Есептерге өту' : 'Открыть отчёты'} <ChevronRight size={16} />
+                    </Link>
+                </div>
+            )}
+
+            {/* ════ TAB 4: SETTINGS ════ */}
+            {activeTab === 'settings' && (
+                <div style={{ maxWidth: 520 }}>
+                    <div className="widget" style={{ padding: '24px', marginBottom: 16 }}>
+                        <h3 style={{ margin: '0 0 18px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Key size={18} color="#6366f1" />
+                            {language === 'kk' ? 'Құпия сөзді өзгерту' : 'Изменить пароль'}
+                        </h3>
+                        <PasswordChangeForm language={language} showMsg={showMsg} />
+                    </div>
+                    <div className="widget" style={{ padding: '24px' }}>
+                        <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Settings size={18} color="#6366f1" />
+                            {language === 'kk' ? 'Telegram & Интеграциялар' : 'Telegram & Интеграции'}
+                        </h3>
+                        <Link to="/telegram" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)', marginBottom: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#0088cc20', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Send size={18} color="#0088cc" />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Telegram Hub</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)' }}>{language === 'kk' ? 'Бот қосылымы' : 'Подключить бота'}</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={16} color="var(--color-gray-400)" />
+                        </Link>
+                        <Link to="/integrations" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Plug size={18} color="#6366f1" />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{language === 'kk' ? 'Барлық интеграциялар' : 'Все интеграции'}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)' }}>Teams, Google Classroom, AI</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={16} color="var(--color-gray-400)" />
+                        </Link>
+                    </div>
+                </div>
+            )}
+
+            {/* ════ TAB 5: INTEGRATIONS ════ */}
+            {activeTab === 'integrations' && (
+                <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--color-gray-500)' }}>
+                    <Plug size={44} color="#6366f1" style={{ marginBottom: 16 }} />
+                    <h3 style={{ margin: '0 0 8px', color: 'var(--color-gray-900)', fontWeight: 700 }}>
+                        {language === 'kk' ? 'Интеграциялар' : 'Интеграции'}
+                    </h3>
+                    <p style={{ margin: '0 0 20px', fontSize: '0.9rem' }}>
+                        {language === 'kk' ? 'Teams, Google Classroom, Telegram және басқалар' : 'Teams, Google Classroom, Telegram и другие сервисы'}
+                    </p>
+                    <Link to="/integrations" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: 'var(--gradient-primary)', color: 'white', borderRadius: '12px', textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem' }}>
+                        {language === 'kk' ? 'Интеграцияларға өту' : 'Открыть интеграции'} <ChevronRight size={16} />
+                    </Link>
+                </div>
+            )}
+
+            {/* ════ TAB 6: HELP ════ */}
+            {activeTab === 'help' && (
+                <div style={{ maxWidth: 560 }}>
+                    <div className="widget" style={{ padding: '24px', marginBottom: 16 }}>
+                        <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '1rem' }}>
+                            {language === 'kk' ? 'Қолдау' : 'Поддержка'}
+                        </h3>
+                        {[
+                            { icon: <Phone size={18} />, title: 'WhatsApp', desc: language === 'kk' ? 'Тікелей байланыс' : 'Прямой чат', href: 'https://wa.me/77771225784', color: '#22c55e' },
+                            { icon: <Send size={18} />, title: 'Telegram', desc: language === 'kk' ? 'Жедел жауап' : 'Быстрый ответ', href: 'https://t.me/urpaqai', color: '#0088cc' },
+                            { icon: <ExternalLink size={18} />, title: language === 'kk' ? 'Сайт' : 'Сайт', desc: 'urpaq.ai', href: 'https://urpaq.ai', color: '#6366f1' },
+                        ].map((item, i) => (
+                            <a key={i} href={item.href} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)', marginBottom: i < 2 ? 10 : 0, transition: 'box-shadow 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'}
+                                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                            >
+                                <div style={{ width: 38, height: 38, borderRadius: 10, background: item.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', color: item.color, flexShrink: 0 }}>
+                                    {item.icon}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{item.title}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-gray-500)' }}>{item.desc}</div>
+                                </div>
+                                <ChevronRight size={16} color="var(--color-gray-400)" />
+                            </a>
+                        ))}
+                    </div>
+                    <div className="widget" style={{ padding: '20px 24px' }}>
+                        <h3 style={{ margin: '0 0 12px', fontWeight: 700, fontSize: '0.95rem' }}>
+                            {language === 'kk' ? 'Жиі қойылатын сұрақтар' : 'Частые вопросы'}
+                        </h3>
+                        {[
+                            { q: language === 'kk' ? 'AI кредиттерін қалай толтыруға болады?' : 'Как пополнить AI-кредиты?', a: language === 'kk' ? 'Тариф бетінде Kaspi арқылы төлеңіз' : 'На странице Тариф оплатите через Kaspi' },
+                            { q: language === 'kk' ? 'Сабақты PDF-ке жүктеу?' : 'Как скачать урок в PDF?', a: language === 'kk' ? '"Сабақтар" бетінде ⋯ → PDF жүктеу' : 'В "Уроки" → ⋯ → Скачать PDF' },
+                            { q: language === 'kk' ? 'Тірі сабақты қалай өткіземін?' : 'Как провести Live-урок?', a: language === 'kk' ? '"Жүргізу" батырмасын басыңыз' : 'Нажмите кнопку "Провести" рядом с уроком' },
+                        ].map((faq, i) => (
+                            <div key={i} style={{ borderBottom: i < 2 ? '1px solid var(--color-gray-100)' : 'none', paddingBottom: i < 2 ? 12 : 0, paddingTop: i > 0 ? 12 : 0 }}>
+                                <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--color-gray-800)' }}>{faq.q}</p>
+                                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-gray-500)' }}>{faq.a}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
 
-// ── Colleague Card Component ─────────────────────────────────────────────────
+// ── Password Change Form (embedded in Settings tab) ──────────────────────────
+function PasswordChangeForm({ language, showMsg }) {
+    const API_BASE = import.meta.env.VITE_API_URL || '/api'
+    const L = (ru, kk) => language === 'kk' ? kk : ru
+    const [old, setOld] = useState('')
+    const [next, setNext] = useState('')
+    const [confirm, setConfirm] = useState('')
+    const [loading, setLoading] = useState(false)
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        if (next !== confirm) { showMsg(L('Пароли не совпадают', 'Құпия сөздер сәйкес келмейді'), 'error'); return }
+        if (next.length < 8) { showMsg(L('Минимум 8 символов', 'Кемінде 8 таңба'), 'error'); return }
+        setLoading(true)
+        try {
+            const res = await authFetch(`${API_BASE}/auth/password`, { method: 'PUT', body: JSON.stringify({ oldPassword: old, newPassword: next }) })
+            const data = await res.json()
+            if (res.ok) { showMsg(data.message || L('Пароль изменён!', 'Құпия сөз өзгертілді!'), 'success'); setOld(''); setNext(''); setConfirm('') }
+            else showMsg(data.error || L('Ошибка', 'Қате'), 'error')
+        } catch (err) { showMsg(err.message, 'error') }
+        setLoading(false)
+    }
+
+    return (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[
+                { val: old, set: setOld, label: L('Текущий пароль', 'Ағымдағы құпия сөз') },
+                { val: next, set: setNext, label: L('Новый пароль', 'Жаңа құпия сөз') },
+                { val: confirm, set: setConfirm, label: L('Подтвердить пароль', 'Растаңыз') },
+            ].map((f, i) => (
+                <div key={i}>
+                    <label className="label" style={{ fontSize: '0.82rem' }}>{f.label}</label>
+                    <input type="password" className="input" value={f.val} onChange={e => f.set(e.target.value)} required minLength={i > 0 ? 8 : 1} />
+                </div>
+            ))}
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 4 }}>
+                {loading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : L('Изменить пароль', 'Өзгерту')}
+            </button>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </form>
+    )
+}
 function ColleagueCard({ colleague, onToggle, toggling, t, language, navigate }) {
     const L = (ru, kk) => language === 'kk' ? kk : ru
     const [msgLoading, setMsgLoading] = useState(false)
