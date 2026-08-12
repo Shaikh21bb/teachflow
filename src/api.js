@@ -382,6 +382,18 @@ export const parentAPI = {
     getStudentData: (token) => fetch(`${API_BASE}/parent/${token}`).then(r => r.json()),
 };
 
+// Marketplace API
+export const marketplaceAPI = {
+    browse: (params = {}) => fetchAPI(`/marketplace?${new URLSearchParams(params)}`),
+    getMyPurchases: () => fetchAPI('/marketplace/my'),
+    getBalance: () => fetchAPI('/marketplace/balance'),
+    getTokenHistory: () => fetchAPI('/marketplace/tokens'),
+    buy: (lessonId) => fetchAPI(`/marketplace/buy/${lessonId}`, { method: 'POST' }),
+    sell: (lessonId, priceTokens) => fetchAPI(`/marketplace/sell/${lessonId}`, { method: 'POST', body: JSON.stringify({ price_tokens: priceTokens }) }),
+    unsell: (lessonId) => fetchAPI(`/marketplace/unsell/${lessonId}`, { method: 'POST' }),
+    earnAdReward: () => fetchAPI('/marketplace/earn', { method: 'POST' }),
+};
+
 export default {
     lessons: lessonsAPI,
     lessonFiles: lessonFilesAPI,

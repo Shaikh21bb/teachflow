@@ -330,6 +330,38 @@ async function runMigrations() {
         // v14 - Parent portal tokens
         `ALTER TABLE students ADD COLUMN parent_token TEXT`,
         `CREATE INDEX IF NOT EXISTS idx_students_parent_token ON students(parent_token) WHERE parent_token IS NOT NULL`,
+        // v15 - Token economy + Marketplace
+        `ALTER TABLE users ADD COLUMN token_balance INTEGER DEFAULT 0`,
+        `CREATE TABLE IF NOT EXISTS token_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            description TEXT,
+            ref_id INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_token_tx_user ON token_transactions(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_token_tx_type ON token_transactions(type)`,
+        `ALTER TABLE lessons ADD COLUMN price_tokens INTEGER DEFAULT 0`,
+        `ALTER TABLE lessons ADD COLUMN for_sale INTEGER DEFAULT 0`,
+        `CREATE TABLE IF NOT EXISTS marketplace_purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            buyer_id INTEGER NOT NULL,
+            seller_id INTEGER NOT NULL,
+            lesson_id INTEGER NOT NULL,
+            tokens_paid INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(buyer_id, lesson_id),
+            FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_mp_buyer ON marketplace_purchases(buyer_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_mp_lesson ON marketplace_purchases(lesson_id)`,
+        // Give existing users 200 starter tokens
+        `UPDATE users SET token_balance = 200 WHERE token_balance = 0`,
     ];
 
     for (const sql of migrations) {
@@ -375,6 +407,7 @@ async function startServer() {
     const liveRouter = require('./routes/live');
     const chatRouter = require('./routes/chat');
     const parentRouter = require('./routes/parent');
+    const marketplaceRouter = require('./routes/marketplace');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -432,6 +465,7 @@ async function startServer() {
     app.use('/api/live', liveRouter);
     app.use('/api/chat', chatRouter);
     app.use('/api/parent', parentRouter);
+    app.use('/api/marketplace', marketplaceRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {

@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -50,6 +50,7 @@ import TeacherChat from './pages/TeacherChat'
 import TeacherPublicProfile from './pages/TeacherPublicProfile'
 import LessonTemplates from './pages/LessonTemplates'
 import ParentPortal from './pages/ParentPortal'
+import Marketplace from './pages/Marketplace'
 
 function App() {
     return (
@@ -100,6 +101,9 @@ function App() {
 
                             {/* Parent portal — no auth */}
                             <Route path="/parent/:token" element={<ParentPortal />} />
+
+                            {/* Marketplace */}
+                            <Route path="/marketplace" element={<ProtectedRoute><DashboardLayout><Marketplace /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -168,13 +172,8 @@ function DashboardLayout({ children }) {
 
     const navItems = [
         { path: '/dashboard', icon: <Home size={20} />, label: t('nav.home') },
-        {
-            path: '/my-lessons',
-            icon: <BookOpen size={20} />,
-            label: language === 'kk' ? 'Сабақтар' : 'Уроки',
-            // Matches my-lessons, builder, templates, library, open-lessons
-            matchPaths: ['/my-lessons', '/builder', '/templates', '/library', '/open-lessons']
-        },
+        { path: '/my-lessons', icon: <BookOpen size={20} />, label: language === 'kk' ? 'Сабақтар' : 'Уроки', matchPaths: ['/my-lessons', '/builder', '/templates', '/library', '/open-lessons'] },
+        { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
         {
