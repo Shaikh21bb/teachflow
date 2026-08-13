@@ -6,7 +6,8 @@ import {
     Sparkles, UserCircle, School, X, ChevronRight, Target, 
     Award, Rocket, Star, LayoutTemplate, Coins, Play
 } from 'lucide-react'
-import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI, scheduleAPI } from '../api'
+import AdViewer from '../components/AdViewer'
+import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI, scheduleAPI, adAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -252,9 +253,8 @@ function Dashboard() {
 
     // Token / ad state
     const [tokenBalance, setTokenBalance] = useState(user?.token_balance || 0)
-    const [adLoading, setAdLoading] = useState(false)
-    const [adResult, setAdResult] = useState(null) // { earned, remaining_today }
-    const [adWatching, setAdWatching] = useState(false)
+    const [showAdViewer, setShowAdViewer] = useState(false)
+    const [adResult, setAdResult] = useState(null)
 
     useEffect(() => {
         async function fetchData() {
@@ -321,26 +321,16 @@ function Dashboard() {
         marketplaceAPI.getBalance().then(d => setTokenBalance(d.balance || 0)).catch(() => {})
     }, [])
 
-    // Watch ad → earn tokens (simulated 5s video)
-    const handleWatchAd = async () => {
-        if (adWatching || adLoading) return
-        setAdWatching(true)
-        // Simulate watching a 5-second ad
-        await new Promise(resolve => setTimeout(resolve, 5000))
-        setAdWatching(false)
-        setAdLoading(true)
-        try {
-            const result = await marketplaceAPI.earnAdReward()
-            setTokenBalance(prev => prev + (result.earned || 5))
-            setAdResult(result)
-            setTimeout(() => setAdResult(null), 4000)
-        } catch (err) {
-            if (err.message?.includes('DAILY_LIMIT')) {
-                setAdResult({ error: true, msg: L('Дневной лимит: 50 токенов', 'Күнделікті шегі: 50 токен') })
-                setTimeout(() => setAdResult(null), 3000)
-            }
-        }
-        setAdLoading(false)
+    // Watch ad → open AdViewer modal
+    const handleWatchAd = () => {
+        setShowAdViewer(true)
+    }
+
+    const handleAdComplete = (earned, newBalance) => {
+        setTokenBalance(newBalance || (tokenBalance + earned))
+        setAdResult({ earned, success: true })
+        setShowAdViewer(false)
+        setTimeout(() => setAdResult(null), 4000)
     }
 
     // Detect first visit — show welcome modal once per user
@@ -370,6 +360,14 @@ function Dashboard() {
 
     return (
         <div>
+            {/* ── Ad Viewer Modal ── */}
+            {showAdViewer && (
+                <AdViewer
+                    onComplete={handleAdComplete}
+                    onClose={() => setShowAdViewer(false)}
+                />
+            )}
+
             {/* ── Welcome Modal (first visit only) ── */}
             {showWelcome && (
                 <WelcomeModal
@@ -410,37 +408,19 @@ function Dashboard() {
                 {/* Ad button */}
                 <button
                     onClick={handleWatchAd}
-                    disabled={adWatching || adLoading}
                     style={{
                         display: 'flex', alignItems: 'center', gap: '7px',
                         padding: '8px 16px', border: 'none', borderRadius: '9px',
-                        background: adWatching ? '#f3f4f6' : 'linear-gradient(135deg,#f59e0b,#f97316)',
-                        color: adWatching ? '#9ca3af' : 'white',
-                        fontWeight: 700, fontSize: '0.82rem', cursor: adWatching ? 'default' : 'pointer',
-                        transition: 'opacity 0.15s', opacity: adLoading ? 0.7 : 1,
-                        position: 'relative', overflow: 'hidden'
+                        background: 'linear-gradient(135deg,#f59e0b,#f97316)',
+                        color: 'white', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                        boxShadow: '0 3px 8px rgba(245,158,11,0.3)'
                     }}
                 >
-                    {adWatching ? (
-                        <>
-                            <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #d1d5db', borderTopColor: '#f59e0b', animation: 'spin 0.7s linear infinite' }} />
-                            {L('Смотрю рекламу...', 'Жарнама қаралуда...')}
-                        </>
-                    ) : (
-                        <><Play size={13} /> +5 {L('токенов за рекламу', 'токен жарнамаға')}</>
-                    )}
+                    <Play size={13} /> {L('+токены за рекламу', '+токен жарнамаға')}
                 </button>
-
-                {/* Ad result flash */}
-                {adResult && !adResult.error && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#15803d', fontWeight: 700, fontSize: '0.82rem', animation: 'fadeUp 0.3s ease' }}>
+                {adResult?.success && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#15803d', fontWeight: 700, fontSize: '0.82rem' }}>
                         <CheckCircle size={14} /> +{adResult.earned} {L('токенов!', 'токен!')}
-                        {adResult.remaining_today > 0 && <span style={{ fontWeight: 400, color: '#6b7280' }}>· ещё {adResult.remaining_today} раз сегодня</span>}
-                    </div>
-                )}
-                {adResult?.error && (
-                    <div style={{ padding: '6px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#ef4444', fontWeight: 600, fontSize: '0.78rem' }}>
-                        {adResult.msg}
                     </div>
                 )}
 

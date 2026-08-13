@@ -392,7 +392,31 @@ export const marketplaceAPI = {
     buy: (lessonId) => fetchAPI(`/marketplace/buy/${lessonId}`, { method: 'POST' }),
     sell: (lessonId, priceTokens) => fetchAPI(`/marketplace/sell/${lessonId}`, { method: 'POST', body: JSON.stringify({ price_tokens: priceTokens }) }),
     unsell: (lessonId) => fetchAPI(`/marketplace/unsell/${lessonId}`, { method: 'POST' }),
-    earnAdReward: () => fetchAPI('/marketplace/earn', { method: 'POST' }),
+    // Ad reward now goes through admin route for proper ad tracking
+    earnAdReward: (adId) => adId
+        ? fetchAPI(`/admin/ads/${adId}/view`, { method: 'POST' })
+        : fetchAPI('/marketplace/earn', { method: 'POST' }),
+};
+
+// Ad API (public)
+export const adAPI = {
+    getCurrent: () => fetchAPI('/admin/ads/current'),
+    recordView: (adId) => fetchAPI(`/admin/ads/${adId}/view`, { method: 'POST' }),
+};
+
+// Admin API
+export const adminAPI = {
+    getStats: () => fetchAPI('/admin/stats'),
+    getUsers: (params = {}) => fetchAPI(`/admin/users?${new URLSearchParams(params)}`),
+    getUser: (id) => fetchAPI(`/admin/users/${id}`),
+    adjustTokens: (id, amount, reason) => fetchAPI(`/admin/users/${id}/tokens`, { method: 'PATCH', body: JSON.stringify({ amount, reason }) }),
+    changePlan: (id, plan) => fetchAPI(`/admin/users/${id}/plan`, { method: 'PATCH', body: JSON.stringify({ plan }) }),
+    blockUser: (id, block) => fetchAPI(`/admin/users/${id}/block`, { method: 'PATCH', body: JSON.stringify({ block }) }),
+    getAds: () => fetchAPI('/admin/ads'),
+    createAd: (ad) => fetchAPI('/admin/ads', { method: 'POST', body: JSON.stringify(ad) }),
+    updateAd: (id, ad) => fetchAPI(`/admin/ads/${id}`, { method: 'PUT', body: JSON.stringify(ad) }),
+    deleteAd: (id) => fetchAPI(`/admin/ads/${id}`, { method: 'DELETE' }),
+    toggleAd: (id) => fetchAPI(`/admin/ads/${id}/toggle`, { method: 'PATCH' }),
 };
 
 // Schedule API

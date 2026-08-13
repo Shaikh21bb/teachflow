@@ -380,6 +380,35 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_schedule_user ON lesson_schedule(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_schedule_day ON lesson_schedule(user_id, day_of_week)`,
+        // v17 - Ads system + admin role
+        `ALTER TABLE users ADD COLUMN role_admin INTEGER DEFAULT 0`,
+        `CREATE TABLE IF NOT EXISTS ads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT 'video',
+            url TEXT NOT NULL,
+            thumbnail_url TEXT,
+            duration INTEGER DEFAULT 15,
+            tokens_reward INTEGER DEFAULT 5,
+            link_url TEXT,
+            is_active INTEGER DEFAULT 1,
+            views_count INTEGER DEFAULT 0,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_ads_active ON ads(is_active)`,
+        `CREATE TABLE IF NOT EXISTS ad_views (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            ad_id INTEGER NOT NULL,
+            viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            tokens_earned INTEGER DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (ad_id) REFERENCES ads(id) ON DELETE CASCADE
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_ad_views_user ON ad_views(user_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_ad_views_ad ON ad_views(ad_id)`,
     ];
 
     for (const sql of migrations) {
@@ -427,6 +456,7 @@ async function startServer() {
     const parentRouter = require('./routes/parent');
     const marketplaceRouter = require('./routes/marketplace');
     const scheduleRouter = require('./routes/schedule');
+    const adminRouter = require('./routes/admin');
 
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
@@ -486,6 +516,7 @@ async function startServer() {
     app.use('/api/parent', parentRouter);
     app.use('/api/marketplace', marketplaceRouter);
     app.use('/api/schedule', scheduleRouter);
+    app.use('/api/admin', adminRouter);
 
     // Health check
     app.get('/api/health', (req, res) => {

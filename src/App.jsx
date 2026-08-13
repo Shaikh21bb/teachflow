@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -53,6 +53,7 @@ import ParentPortal from './pages/ParentPortal'
 import Marketplace from './pages/Marketplace'
 import Schedule from './pages/Schedule'
 import Leaderboard from './pages/Leaderboard'
+import AdminPanel from './pages/AdminPanel'
 
 function App() {
     return (
@@ -108,6 +109,7 @@ function App() {
                             <Route path="/marketplace" element={<ProtectedRoute><DashboardLayout><Marketplace /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/schedule" element={<ProtectedRoute><DashboardLayout><Schedule /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/leaderboard" element={<ProtectedRoute><DashboardLayout><Leaderboard /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/admin" element={<ProtectedRoute><DashboardLayout><AdminPanel /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -144,7 +146,7 @@ function ProtectedRoute({ children }) {
 function DashboardLayout({ children }) {
     const location = useLocation()
     const { t, language, toggleLanguage } = useLanguage()
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
 
     const [collapsed, setCollapsed] = useState(() => {
         try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch { return false }
@@ -210,6 +212,9 @@ function DashboardLayout({ children }) {
     // Profile is shown as a footer block, not a nav item
     // Settings, Integrations, Telegram, Help — merged into Profile page
 
+    // Admin link (only for admin users)
+    const isAdmin = user?.role_admin || user?.role === 'admin'
+
     return (
         <div className="dashboard">
             <aside className={"sidebar " + (collapsed ? 'collapsed' : '') + " hide-on-mobile"}>
@@ -248,6 +253,12 @@ function DashboardLayout({ children }) {
 
                 {/* ── Account block at bottom ── */}
                 <div className="sidebar-account-block">
+                    {isAdmin && (
+                        <NavLink to="/admin" className={({ isActive }) => 'sidebar-account-link' + (isActive ? ' active' : '')} style={{ marginBottom: 4, background: 'rgba(99,102,241,0.08)', color: '#6366f1' }}>
+                            <span className="sidebar-link-icon"><ShieldCheck size={20} /></span>
+                            <span className="sidebar-link-label" style={{ fontWeight: 700 }}>{language === 'kk' ? 'Əкімші' : 'Админ'}</span>
+                        </NavLink>
+                    )}
                     <NavLink to="/profile" className={({ isActive }) => 'sidebar-account-link' + (isActive ? ' active' : '')}>
                         <span className="sidebar-link-icon"><UserCircle2 size={20} /></span>
                         <span className="sidebar-link-label">{language === 'kk' ? 'Аккаунт' : 'Аккаунт'}</span>
