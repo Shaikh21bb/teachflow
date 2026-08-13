@@ -372,6 +372,7 @@ export const chatAPI = {
 // Public teacher profiles
 export const teachersAPI = {
     getProfile: (id) => fetchAPI(`/auth/teachers/${id}`),
+    getLeaderboard: (by = 'views', limit = 10) => fetchAPI(`/auth/leaderboard?by=${by}&limit=${limit}`),
 };
 
 // Parent Portal API

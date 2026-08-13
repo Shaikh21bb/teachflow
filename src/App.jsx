@@ -5,7 +5,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy
 } from 'lucide-react'
 import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
@@ -52,6 +52,7 @@ import LessonTemplates from './pages/LessonTemplates'
 import ParentPortal from './pages/ParentPortal'
 import Marketplace from './pages/Marketplace'
 import Schedule from './pages/Schedule'
+import Leaderboard from './pages/Leaderboard'
 
 function App() {
     return (
@@ -106,6 +107,7 @@ function App() {
                             {/* Marketplace */}
                             <Route path="/marketplace" element={<ProtectedRoute><DashboardLayout><Marketplace /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/schedule" element={<ProtectedRoute><DashboardLayout><Schedule /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/leaderboard" element={<ProtectedRoute><DashboardLayout><Leaderboard /></DashboardLayout></ProtectedRoute>} />
                         </Routes>
                     </BrowserRouter>
                 </AuthProvider>
@@ -179,6 +181,7 @@ function DashboardLayout({ children }) {
         { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
+        { path: '/leaderboard', icon: <Trophy size={20} />, label: language === 'kk' ? 'Рейтинг' : 'Рейтинг' },
         {
             path: '/chat',
             icon: (

@@ -394,6 +394,66 @@ router.put('/teacher-profile', authenticateToken, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// GET /api/auth/leaderboard — top teachers by views/sales
+// ──────────────────────────────────────────
+router.get('/leaderboard', async (req, res) => {
+    try {
+        const { by = 'views', limit = 10 } = req.query;
+        const lim = Math.min(parseInt(limit) || 10, 50);
+
+        let sql;
+        if (by === 'sales') {
+            sql = `
+                SELECT u.id, u.name,
+                    COALESCE(tp.avatar_url, u.avatar_url) as avatar_url,
+                    tp.school, tp.city,
+                    u.subjects,
+                    COALESCE(COUNT(mp.id), 0) as sales_count,
+                    COALESCE(SUM(l.views_count), 0) as total_views,
+                    COALESCE(COUNT(DISTINCT l.id), 0) as lesson_count
+                FROM users u
+                LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+                LEFT JOIN lessons l ON l.user_id = u.id AND l.is_published = 1 AND l.is_archived = 0
+                LEFT JOIN marketplace_purchases mp ON mp.seller_id = u.id
+                WHERE u.is_active = 1
+                GROUP BY u.id
+                ORDER BY sales_count DESC, total_views DESC
+                LIMIT ?`;
+        } else {
+            sql = `
+                SELECT u.id, u.name,
+                    COALESCE(tp.avatar_url, u.avatar_url) as avatar_url,
+                    tp.school, tp.city,
+                    u.subjects,
+                    COALESCE(SUM(l.views_count), 0) as total_views,
+                    COALESCE(COUNT(DISTINCT l.id), 0) as lesson_count,
+                    COALESCE(SUM(l.likes), 0) as total_likes
+                FROM users u
+                LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
+                LEFT JOIN lessons l ON l.user_id = u.id AND l.is_published = 1 AND l.is_archived = 0
+                WHERE u.is_active = 1
+                GROUP BY u.id
+                HAVING lesson_count > 0
+                ORDER BY total_views DESC, total_likes DESC
+                LIMIT ?`;
+        }
+
+        const teachers = await getAll(sql, [lim]);
+        const result = teachers.map((t, idx) => {
+            let subjects = [];
+            try { subjects = JSON.parse(t.subjects || '[]'); } catch {}
+            const badge = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : null;
+            return { ...t, subjects, rank: idx + 1, badge };
+        });
+
+        res.json({ teachers: result });
+    } catch (err) {
+        console.error('Leaderboard error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ──────────────────────────────────────────
 // GET /api/auth/teachers/:id
 // Public teacher profile — visible to anyone (no auth required)
 // ──────────────────────────────────────────

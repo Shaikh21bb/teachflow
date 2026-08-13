@@ -656,11 +656,14 @@ function Dashboard() {
                                 <Link to="/templates" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
                                     <BookOpen size={18} /> {language === 'kk' ? 'Үлгілер' : 'Шаблоны'}
                                 </Link>
-                                <Link to="/assignments" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
-                                    <ClipboardList size={18} /> {t('dashboard.newAssignment')}
+                                <Link to="/marketplace" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <Coins size={18} /> {language === 'kk' ? 'Маркет' : 'Маркет'}
                                 </Link>
-                                <Link to="/library" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
-                                    <BookOpen size={18} /> {t('nav.library')}
+                                <Link to="/schedule" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <Calendar size={18} /> {language === 'kk' ? 'Кесте' : 'Расписание'}
+                                </Link>
+                                <Link to="/leaderboard" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
+                                    <Star size={18} /> {language === 'kk' ? 'Рейтинг' : 'Рейтинг'}
                                 </Link>
                                 <Link to="/classes" className="btn btn-secondary" style={{ justifyContent: 'flex-start', gap: '8px' }}>
                                     <Users size={18} /> {t('classes.title')}
