@@ -427,11 +427,57 @@ async function runMigrations() {
 }
 
 // ──────────────────────────────────────────
+// Seed admin accounts (runs on every start, idempotent)
+// Reads credentials from environment variables
+// ──────────────────────────────────────────
+async function seedAdmins() {
+    const bcrypt = require('bcryptjs');
+    const { getOne: _getOne, runQuery: _runQuery } = require('./db/database');
+
+    // Pre-computed bcrypt hash for 'Urpaqai2026' (12 rounds)
+    // This is the HASH — the actual password cannot be recovered from it
+    const ADMIN_HASH = process.env.ADMIN_PASSWORD_HASH ||
+        '$2b$12$oL5jhyYHPWJbeq8gwYzs0eUyQ43BJR.SCTzOfcgzOQOFU5TD3XpHa';
+
+    const admins = [
+        { email: 'Shaqwork@gmail.com', name: 'Admin Shaq' },
+        { email: 'bekzansajhnazar@gmail.com', name: 'Admin Bekzan' }
+    ];
+
+    for (const admin of admins) {
+        try {
+            const existing = await _getOne(
+                'SELECT id, role_admin FROM users WHERE email = ?',
+                [admin.email]
+            );
+
+            if (existing) {
+                await _runQuery(
+                    "UPDATE users SET role_admin = 1, role = 'admin', credits = 9999, token_balance = 99999 WHERE email = ?",
+                    [admin.email]
+                );
+                console.log(`✅ Admin elevated: ${admin.email}`);
+            } else {
+                await _runQuery(
+                    `INSERT INTO users (name, email, password_hash, role, role_admin, credits, token_balance, plan, subjects)
+                     VALUES (?, ?, ?, 'admin', 1, 9999, 99999, 'premium', '[]')`,
+                    [admin.name, admin.email, ADMIN_HASH]
+                );
+                console.log(`✅ Admin created: ${admin.email}`);
+            }
+        } catch (e) {
+            console.warn(`Admin seed warning for ${admin.email}:`, e.message);
+        }
+    }
+}
+
+// ──────────────────────────────────────────
 // Start server
 // ──────────────────────────────────────────
 async function startServer() {
     await getDatabase();
     await runMigrations();
+    await seedAdmins();
 
     // Import routes
     const lessonsRouter = require('./routes/lessons');
