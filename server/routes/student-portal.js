@@ -217,6 +217,29 @@ router.post('/assignments/:id/submit', async (req, res) => {
             teacherCreditsRemaining: updatedTeacherBalance.credits,
             submitted_at: new Date().toISOString()
         });
+
+        // ── Notify teacher via in-app + Telegram ─────────────
+        try {
+            const { createNotification } = require('./notifications');
+            const student = await getOne('SELECT name FROM students WHERE id = ?', [req.student.studentId]);
+            await createNotification(
+                assignment.user_id,
+                'success',
+                `${student?.name || 'Ученик'} сдал задание "${assignment.title}" — ${grading.grade_label || grading.score + '/' + grading.max_score}`
+            );
+            // Telegram push to teacher
+            const { decrypt } = require('../utils/encryption');
+            const { sendMessage } = require('../utils/telegram');
+            const integration = await getOne(
+                'SELECT encrypted_token, chat_id FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
+                [assignment.user_id, 'telegram']
+            );
+            if (integration?.chat_id) {
+                const botToken = decrypt(integration.encrypted_token);
+                const msg = `✅ *Жаңа жұмыс тапсырылды*\n\n👤 ${student?.name || 'Оқушы'}\n📝 ${assignment.title}\n📊 Баға: *${grading.grade_label || grading.score + '/' + grading.max_score}*`;
+                sendMessage(botToken, integration.chat_id, msg).catch(() => {});
+            }
+        } catch { /* silent */ }
     } catch (err) {
         console.error('Submit assignment error:', err);
         res.status(500).json({ error: 'Не удалось проверить домашнюю работу' });

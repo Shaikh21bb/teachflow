@@ -134,6 +134,32 @@ router.post('/', validate(assignmentSchema), async (req, res) => {
 
         const id = await getLastInsertId();
         const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [id]);
+
+        // ── Auto-send Telegram notification to class students ──
+        try {
+            const { sendMessage } = require('../utils/telegram');
+            const { decrypt } = require('../utils/encryption');
+            const { getAll: getAllUtil } = require('../db/database');
+
+            const integration = await getOne(
+                'SELECT encrypted_token FROM integrations WHERE user_id = ? AND type = ? AND is_active = 1',
+                [req.user.userId, 'telegram']
+            );
+            if (integration) {
+                const botToken = decrypt(integration.encrypted_token);
+                const cls = await getOne('SELECT name FROM classes WHERE id = ?', [class_id]);
+                const tgStudents = await getAllUtil(
+                    'SELECT telegram_chat_id FROM students WHERE class_id = ? AND telegram_chat_id IS NOT NULL',
+                    [class_id]
+                );
+                const teacher = await getOne('SELECT name FROM users WHERE id = ?', [req.user.userId]);
+                const msgText = `📝 *Жаңа тапсырма*\n\n*${title}*\n📚 ${cls?.name || ''}\n${due_date ? `⏰ Мерзімі: ${due_date}` : ''}\n${instructions ? `\n${instructions}` : ''}\n\n_— ${teacher?.name || 'Мұғалім'}_`;
+                for (const s of tgStudents) {
+                    sendMessage(botToken, s.telegram_chat_id, msgText).catch(() => {});
+                }
+            }
+        } catch { /* silent — Telegram optional */ }
+
         res.status(201).json(assignment);
     } catch (err) {
         res.status(500).json({ error: err.message });
