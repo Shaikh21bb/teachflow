@@ -185,14 +185,17 @@ function SlideThumbnail({ slide, index, isCurrent, onClick, theme }) {
         youtube: 'Видео', image: 'Фото', video: 'Видео', end: 'Итог',
         objectives: 'Цели', content: slide.title || `Слайд ${index + 1}`,
         example: 'Пример', poll: 'Опрос', quiz_slide: 'Тест',
-        homework: 'Задание', summary: 'Итоги'
+        homework: 'Задание', summary: 'Итоги',
+        photo: 'Фото', infographic: 'Инфографика',
+        theme_card: 'Тема', statistics: 'Статистика'
     }[slide.type] || `Слайд ${index + 1}`
 
     const typeColor = {
         cover: '#6366f1', text: '#a5b4fc', youtube: '#ef4444',
         image: '#10b981', video: '#f59e0b', end: '#fbbf24',
         objectives: '#06b6d4', content: '#8b5cf6', example: '#f97316',
-        poll: '#ec4899', quiz_slide: '#3b82f6', homework: '#10b981', summary: '#6366f1'
+        poll: '#ec4899', quiz_slide: '#3b82f6', homework: '#10b981', summary: '#6366f1',
+        photo: '#10b981', infographic: '#f59e0b', theme_card: '#8b5cf6', statistics: '#3b82f6'
     }[slide.type] || T.accent
 
     return (
@@ -803,6 +806,89 @@ export default function Presentation() {
                                             <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 18px', background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '12px' }}>
                                                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: T.accent, flexShrink: 0, marginTop: '8px' }} />
                                                 <span style={{ fontSize: 'clamp(1rem,1.8vw,1.25rem)', color: T.text, lineHeight: 1.6 }}>{b}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── PHOTO ── */}
+                            {slide.type === 'photo' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', maxWidth: '800px' }}>
+                                    {slide.title && <h2 style={{ margin: 0, fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 800, color: T.text, textAlign: 'center' }}>{slide.title}</h2>}
+                                    {slide.image_url ? (
+                                        <img src={slide.image_url} alt={slide.caption || slide.title} style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.4)', objectFit: 'contain' }} />
+                                    ) : (
+                                        <div style={{ width: '100%', height: '300px', borderRadius: '20px', background: T.card, border: `2px dashed ${T.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.subtext }}>
+                                            Нет фото
+                                        </div>
+                                    )}
+                                    {slide.caption && <p style={{ margin: 0, color: T.subtext, fontSize: '0.95rem', textAlign: 'center', fontStyle: 'italic' }}>{slide.caption}</p>}
+                                </div>
+                            )}
+
+                            {/* ── VIDEO (slide type) ── */}
+                            {slide.type === 'video' && (() => {
+                                const ytm = slide.video_url?.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)
+                                return (
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                        {slide.title && <h2 style={{ margin: 0, fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 800, color: T.text }}>{slide.title}</h2>}
+                                        {ytm ? (
+                                            <div style={{ width: '100%', maxWidth: '900px', aspectRatio: '16/9', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+                                                <iframe src={`https://www.youtube.com/embed/${ytm[1]}?rel=0`} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen allow="accelerometer; autoplay; encrypted-media" />
+                                            </div>
+                                        ) : slide.video_url ? (
+                                            <video src={slide.video_url} controls style={{ maxWidth: '100%', maxHeight: '65vh', borderRadius: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} />
+                                        ) : (
+                                            <div style={{ padding: '40px', color: T.subtext }}>Нет видео</div>
+                                        )}
+                                        {slide.description && <p style={{ margin: 0, color: T.subtext, fontSize: '0.95rem', maxWidth: '700px', textAlign: 'center', lineHeight: 1.6 }}>{slide.description}</p>}
+                                    </div>
+                                )
+                            })()}
+
+                            {/* ── INFOGRAPHIC ── */}
+                            {slide.type === 'infographic' && (
+                                <div style={{ width: '100%', maxWidth: '860px' }}>
+                                    <h2 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: '0 0 32px', color: T.text, textAlign: 'center' }}>{slide.title}</h2>
+                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.items?.length || 2, 3)}, 1fr)`, gap: '16px' }}>
+                                        {(slide.items || []).map((item, i) => (
+                                            <div key={i} style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '16px', padding: '24px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <div style={{ fontSize: '2.5rem', lineHeight: 1 }}>{item.icon || '📊'}</div>
+                                                {item.value && <div style={{ fontWeight: 900, fontSize: 'clamp(1.5rem,3vw,2.5rem)', color: T.accent, lineHeight: 1 }}>{item.value}</div>}
+                                                <div style={{ fontSize: '0.9rem', color: T.subtext, lineHeight: 1.4 }}>{item.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── THEME CARD ── */}
+                            {slide.type === 'theme_card' && (
+                                <div style={{ width: '100%', maxWidth: '800px' }}>
+                                    <div style={{ background: slide.bg_color || T.accent, borderRadius: '24px', padding: 'clamp(32px,6vw,64px)', textAlign: 'center', boxShadow: `0 20px 60px ${(slide.bg_color || T.accent) + '40'}` }}>
+                                        <h1 style={{ fontSize: 'clamp(1.8rem,5vw,3.5rem)', fontWeight: 900, color: 'white', margin: '0 0 16px', lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+                                            {slide.title}
+                                        </h1>
+                                        {slide.subtitle && (
+                                            <p style={{ fontSize: 'clamp(1rem,2vw,1.4rem)', color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.6, maxWidth: '600px', marginInline: 'auto' }}>
+                                                {slide.subtitle}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ── STATISTICS ── */}
+                            {slide.type === 'statistics' && (
+                                <div style={{ width: '100%', maxWidth: '860px' }}>
+                                    <h2 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: '0 0 32px', color: T.text, textAlign: 'center' }}>{slide.title}</h2>
+                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.stats?.length || 2, 4)}, 1fr)`, gap: '20px' }}>
+                                        {(slide.stats || []).map((stat, i) => (
+                                            <div key={i} style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '20px', padding: '28px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg,${T.accent},${T.accent}80)` }} />
+                                                <div style={{ fontWeight: 900, fontSize: 'clamp(2rem,5vw,3.5rem)', color: T.accent, lineHeight: 1, marginBottom: '8px' }}>{stat.value}</div>
+                                                <div style={{ fontSize: '0.9rem', color: T.subtext, lineHeight: 1.4 }}>{stat.label}</div>
                                             </div>
                                         ))}
                                     </div>

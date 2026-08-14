@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react'
-import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2, Youtube, AlertCircle, ExternalLink, GripVertical, ChevronDown, ChevronUp, BookOpen, Target, Layers, HelpCircle, ClipboardList } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { Info, FileText, Eye, Image as ImageIcon, Video, FolderUp, Film, Paperclip, CheckCircle, XCircle, Edit, Plus, Clock, Save, Rocket, Loader2, Bot, LayoutList, Check, Trash2, Youtube, AlertCircle, ExternalLink, GripVertical, ChevronDown, ChevronUp, BookOpen, Target, Layers, HelpCircle, ClipboardList, BarChart2, Palette, Camera, TrendingUp, Play } from 'lucide-react'
 import { AiSparkIcon, ObjectivesIcon, HomeworkIcon, SummaryIcon, ExampleIcon } from '../components/Icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { lessonsAPI, lessonFilesAPI, uploadToCloudinary, aiAPI } from '../api'
@@ -216,13 +216,25 @@ export default function LessonBuilderNew() {
     const removeSlide = (id) => setSlides(prev => prev.filter(s => s._id !== id))
     const addSlide = (type) => {
         const defaults = {
-            cover: { title: 'Новый слайд', subtitle: '' },
-            objectives: { title: 'Цели урока', items: ['Цель 1', 'Цель 2'] },
-            content: { title: 'Новый слайд', bullets: ['Пункт 1', 'Пункт 2'] },
-            example: { title: 'Пример', content: '', highlight: '' },
-            poll: { question: 'Вопрос?', options: ['A) Вариант 1', 'B) Вариант 2', 'C) Вариант 3', 'D) Вариант 4'], correct: 'A' },
-            homework: { title: 'Домашнее задание', content: '', due: 'К следующему уроку' },
-            summary: { title: 'Итоги урока', items: ['Вывод 1', 'Вывод 2'] },
+            cover:       { title: 'Новый слайд', subtitle: '' },
+            objectives:  { title: 'Цели урока', items: ['Цель 1', 'Цель 2'] },
+            content:     { title: 'Новый слайд', bullets: ['Пункт 1', 'Пункт 2'] },
+            example:     { title: 'Пример', content: '', highlight: '' },
+            photo:       { title: '', caption: '', image_url: '' },
+            video:       { title: '', video_url: '', description: '' },
+            infographic: { title: 'Инфографика', items: [
+                { icon: '📊', label: 'Показатель 1', value: '' },
+                { icon: '📈', label: 'Показатель 2', value: '' },
+            ]},
+            theme_card:  { title: 'Главная мысль урока', subtitle: '', bg_color: '#6366f1' },
+            statistics:  { title: 'Статистика', stats: [
+                { value: '', label: 'Показатель 1' },
+                { value: '', label: 'Показатель 2' },
+                { value: '', label: 'Показатель 3' },
+            ]},
+            poll:        { question: 'Вопрос?', options: ['A) Вариант 1', 'B) Вариант 2', 'C) Вариант 3', 'D) Вариант 4'], correct: 'A' },
+            homework:    { title: 'Домашнее задание', content: '', due: 'К следующему уроку' },
+            summary:     { title: 'Итоги урока', items: ['Вывод 1', 'Вывод 2'] },
         }
         setSlides(prev => [...prev, {
             type, _id: `slide_${Date.now()}`,
@@ -916,14 +928,19 @@ export default function LessonBuilderNew() {
 
 // ─── SlideCard ────────────────────────────────────────
 const SLIDE_TYPE_META = {
-    cover:      { label: 'Обложка',         color: '#6366f1', Icon: BookOpen },
-    objectives: { label: 'Цели',            color: '#06b6d4', Icon: Target },
-    content:    { label: 'Контент',         color: '#8b5cf6', Icon: Layers },
-    example:    { label: 'Пример',          color: '#f97316', Icon: ExampleIcon },
-    poll:       { label: 'Опрос',           color: '#ec4899', Icon: HelpCircle },
-    quiz_slide: { label: 'Тест',            color: '#3b82f6', Icon: ClipboardList },
-    homework:   { label: 'Домашнее задание',color: '#10b981', Icon: HomeworkIcon },
-    summary:    { label: 'Итоги',           color: '#fbbf24', Icon: SummaryIcon },
+    cover:       { label: 'Обложка',         color: '#6366f1', Icon: BookOpen },
+    objectives:  { label: 'Цели',            color: '#06b6d4', Icon: Target },
+    content:     { label: 'Контент',         color: '#8b5cf6', Icon: Layers },
+    example:     { label: 'Пример',          color: '#f97316', Icon: ExampleIcon },
+    photo:       { label: 'Фото',            color: '#10b981', Icon: Camera },
+    video:       { label: 'Видео',           color: '#ef4444', Icon: Play },
+    infographic: { label: 'Инфографика',     color: '#f59e0b', Icon: BarChart2 },
+    theme_card:  { label: 'Тема урока',      color: '#8b5cf6', Icon: Palette },
+    statistics:  { label: 'Статистика',      color: '#3b82f6', Icon: TrendingUp },
+    poll:        { label: 'Опрос',           color: '#ec4899', Icon: HelpCircle },
+    quiz_slide:  { label: 'Тест',            color: '#3b82f6', Icon: ClipboardList },
+    homework:    { label: 'Домашнее задание',color: '#10b981', Icon: HomeworkIcon },
+    summary:     { label: 'Итоги',           color: '#fbbf24', Icon: SummaryIcon },
 }
 
 function SlideCard({ slide, index, onDragStart, onDragOver, onDragEnd, onUpdate, onUpdateItem, onRemove }) {
@@ -1095,9 +1112,220 @@ function SlideCard({ slide, index, onDragStart, onDragOver, onDragEnd, onUpdate,
                             />
                         </>
                     )}
+
+                    {/* ── PHOTO slide ── */}
+                    {slide.type === 'photo' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Preview */}
+                            {slide.image_url && (
+                                <div style={{ borderRadius: '10px', overflow: 'hidden', height: '160px', background: '#f3f4f6', position: 'relative' }}>
+                                    <img src={slide.image_url} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button onClick={() => onUpdate('image_url', '')} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.55)', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <XCircle size={14} />
+                                    </button>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <input
+                                    value={slide.image_url || ''}
+                                    onChange={e => onUpdate('image_url', e.target.value)}
+                                    className="builder-input" style={{ flex: 1, fontSize: '0.82rem' }}
+                                    placeholder="URL изображения (или загрузите ниже)"
+                                />
+                                <PhotoUploadButton onUrl={url => onUpdate('image_url', url)} color={meta.color} />
+                            </div>
+                            <input
+                                value={slide.caption || ''}
+                                onChange={e => onUpdate('caption', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem' }}
+                                placeholder="Подпись к фото (необязательно)"
+                            />
+                        </div>
+                    )}
+
+                    {/* ── VIDEO slide ── */}
+                    {slide.type === 'video' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <input
+                                value={slide.video_url || ''}
+                                onChange={e => onUpdate('video_url', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem' }}
+                                placeholder="YouTube ссылка или прямой URL видео"
+                            />
+                            {/* Preview */}
+                            {slide.video_url && (() => {
+                                const ytm = slide.video_url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&\s]+)/)
+                                if (ytm) return (
+                                    <div style={{ borderRadius: '10px', overflow: 'hidden', aspectRatio: '16/9', background: '#000' }}>
+                                        <iframe src={`https://www.youtube.com/embed/${ytm[1]}?rel=0`} style={{ width: '100%', height: '100%', border: 'none' }} allowFullScreen />
+                                    </div>
+                                )
+                                return null
+                            })()}
+                            <textarea
+                                value={slide.description || ''}
+                                onChange={e => onUpdate('description', e.target.value)}
+                                className="builder-input" rows={2}
+                                style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem' }}
+                                placeholder="Описание / вопросы для обсуждения..."
+                            />
+                        </div>
+                    )}
+
+                    {/* ── INFOGRAPHIC slide ── */}
+                    {slide.type === 'infographic' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>ДО 6 БЛОКОВ</p>
+                            {(slide.items || []).map((item, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <input
+                                        value={item.icon || ''}
+                                        onChange={e => {
+                                            const arr = [...slide.items]; arr[i] = { ...arr[i], icon: e.target.value }; onUpdate('items', arr)
+                                        }}
+                                        style={{ width: '44px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px', fontSize: '1.1rem', textAlign: 'center', outline: 'none', background: 'var(--color-gray-50,#f9fafb)' }}
+                                        placeholder="📊"
+                                    />
+                                    <input
+                                        value={item.value || ''}
+                                        onChange={e => {
+                                            const arr = [...slide.items]; arr[i] = { ...arr[i], value: e.target.value }; onUpdate('items', arr)
+                                        }}
+                                        className="builder-input" style={{ width: '80px', fontWeight: 800, fontSize: '1rem' }}
+                                        placeholder="95%"
+                                    />
+                                    <input
+                                        value={item.label || ''}
+                                        onChange={e => {
+                                            const arr = [...slide.items]; arr[i] = { ...arr[i], label: e.target.value }; onUpdate('items', arr)
+                                        }}
+                                        className="builder-input" style={{ flex: 1, fontSize: '0.85rem' }}
+                                        placeholder="Подпись..."
+                                    />
+                                    <button onClick={() => {
+                                        const arr = slide.items.filter((_, j) => j !== i); onUpdate('items', arr)
+                                    }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', flexShrink: 0 }}>
+                                        <Trash2 size={13} />
+                                    </button>
+                                </div>
+                            ))}
+                            {(slide.items || []).length < 6 && (
+                                <button onClick={() => onUpdate('items', [...(slide.items || []), { icon: '', value: '', label: '' }])}
+                                    style={{ background: 'none', border: `1px dashed ${meta.color}50`, borderRadius: '8px', padding: '5px 10px', color: meta.color, fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}>
+                                    + Добавить блок
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── THEME CARD slide ── */}
+                    {slide.type === 'theme_card' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <input
+                                value={slide.subtitle || ''}
+                                onChange={e => onUpdate('subtitle', e.target.value)}
+                                className="builder-input" style={{ fontSize: '0.85rem' }}
+                                placeholder="Дополнительный текст или цитата"
+                            />
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>Цвет фона:</label>
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#0f172a','#1e40af'].map(c => (
+                                        <button key={c} type="button" onClick={() => onUpdate('bg_color', c)} style={{ width: '22px', height: '22px', borderRadius: '50%', background: c, border: slide.bg_color === c ? '3px solid #111' : '2px solid transparent', cursor: 'pointer', flexShrink: 0 }} />
+                                    ))}
+                                </div>
+                                <input type="color" value={slide.bg_color || '#6366f1'} onChange={e => onUpdate('bg_color', e.target.value)} style={{ width: '28px', height: '28px', border: 'none', cursor: 'pointer', borderRadius: '6px', padding: 0 }} />
+                            </div>
+                            {/* Preview */}
+                            <div style={{ borderRadius: '10px', padding: '16px 20px', background: slide.bg_color || '#6366f1', marginTop: '4px' }}>
+                                <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'white', marginBottom: '4px' }}>{slide.title || 'Главная мысль'}</div>
+                                {slide.subtitle && <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>{slide.subtitle}</div>}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── STATISTICS slide ── */}
+                    {slide.type === 'statistics' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <p style={{ margin: '0 0 4px', fontSize: '0.75rem', color: '#9ca3af', fontWeight: 600 }}>ДО 4 ПОКАЗАТЕЛЕЙ</p>
+                            {(slide.stats || []).map((stat, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <input
+                                        value={stat.value || ''}
+                                        onChange={e => {
+                                            const arr = [...slide.stats]; arr[i] = { ...arr[i], value: e.target.value }; onUpdate('stats', arr)
+                                        }}
+                                        className="builder-input" style={{ width: '90px', fontWeight: 900, fontSize: '1.1rem', color: meta.color }}
+                                        placeholder="94%"
+                                    />
+                                    <input
+                                        value={stat.label || ''}
+                                        onChange={e => {
+                                            const arr = [...slide.stats]; arr[i] = { ...arr[i], label: e.target.value }; onUpdate('stats', arr)
+                                        }}
+                                        className="builder-input" style={{ flex: 1, fontSize: '0.85rem' }}
+                                        placeholder="Учеников сдали тест"
+                                    />
+                                    <button onClick={() => onUpdate('stats', slide.stats.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', flexShrink: 0 }}>
+                                        <Trash2 size={13} />
+                                    </button>
+                                </div>
+                            ))}
+                            {(slide.stats || []).length < 4 && (
+                                <button onClick={() => onUpdate('stats', [...(slide.stats || []), { value: '', label: '' }])}
+                                    style={{ background: 'none', border: `1px dashed ${meta.color}50`, borderRadius: '8px', padding: '5px 10px', color: meta.color, fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}>
+                                    + Добавить показатель
+                                </button>
+                            )}
+                            {/* Preview */}
+                            {(slide.stats || []).some(s => s.value) && (
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                    {(slide.stats || []).filter(s => s.value).map((s, i) => (
+                                        <div key={i} style={{ flex: 1, minWidth: '70px', background: `${meta.color}10`, borderRadius: '10px', padding: '10px 12px', textAlign: 'center', border: `1px solid ${meta.color}20` }}>
+                                            <div style={{ fontWeight: 900, fontSize: '1.3rem', color: meta.color }}>{s.value}</div>
+                                            <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '2px', lineHeight: 1.3 }}>{s.label}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
+    )
+}
+
+// ─── PhotoUploadButton ───────────────────────────────
+function PhotoUploadButton({ onUrl, color = '#10b981' }) {
+    const ref = useRef()
+    const [uploading, setUploading] = useState(false)
+
+    const handleFile = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        setUploading(true)
+        try {
+            const { uploadToCloudinary } = await import('../api')
+            const result = await uploadToCloudinary(file)
+            onUrl(result.secure_url)
+        } catch { /* silent */ }
+        setUploading(false)
+    }
+
+    return (
+        <>
+            <button type="button" onClick={() => ref.current?.click()} style={{
+                padding: '6px 12px', background: `${color}18`, border: `1px solid ${color}40`,
+                borderRadius: '8px', color, fontWeight: 700, fontSize: '0.78rem',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0,
+                opacity: uploading ? 0.7 : 1
+            }}>
+                {uploading ? <Loader2 size={13} style={{ animation: 'spin 0.7s linear infinite' }} /> : <Camera size={13} />}
+                {uploading ? '...' : 'Загрузить'}
+            </button>
+            <input ref={ref} type="file" accept="image/*" hidden onChange={handleFile} />
+        </>
     )
 }
 
