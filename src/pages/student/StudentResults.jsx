@@ -30,7 +30,7 @@ export default function StudentResults() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--color-slate-900)', color: 'white', fontFamily: '"Inter", sans-serif', padding: '40px 20px' }}>
+        <div className="student-portal" style={{ minHeight: '100vh', background: 'var(--color-slate-900)', color: 'white', fontFamily: '"Inter", sans-serif', padding: '40px 20px' }}>
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                 <button onClick={() => navigate('/student/dashboard')} style={{ background: 'transparent', border: 'none', color: 'var(--color-gray-400)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '30px' }}>
                     <ArrowLeft size={18} /> Басты бетке

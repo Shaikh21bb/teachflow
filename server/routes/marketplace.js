@@ -14,19 +14,20 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
-const { getOne, getAll, runQuery } = require('../db/database');
+const { getOne, getAll, runQuery, withTransaction } = require('../db/database');
 
 // ── Helper: credit/debit tokens ───────────────────────────────
 async function addTokens(userId, amount, type, description, refId = null) {
-    await runQuery(
-        `INSERT INTO token_transactions (user_id, amount, type, description, ref_id)
-         VALUES (?, ?, ?, ?, ?)`,
-        [userId, amount, type, description, refId]
-    );
-    await runQuery(
-        'UPDATE users SET token_balance = token_balance + ? WHERE id = ?',
-        [amount, userId]
-    );
+    if (!Number.isSafeInteger(amount)) throw Object.assign(new Error('Неверное количество токенов'), { status: 400 });
+    return withTransaction(async transaction => {
+        if (['publish_bonus', 'views_milestone'].includes(type)) {
+            const prior = await transaction.execute({ sql: 'SELECT id FROM token_transactions WHERE user_id = ? AND type = ? AND ref_id = ? AND amount = ?', args: [userId, type, refId, amount] });
+            if (prior.rows.length) return;
+        }
+        const result = await transaction.execute({ sql: 'UPDATE users SET token_balance = token_balance + ? WHERE id = ? AND token_balance + ? >= 0', args: [amount, userId, amount] });
+        if (!result.rowsAffected) throw Object.assign(new Error('Недостаточно токенов'), { status: 400 });
+        await transaction.execute({ sql: 'INSERT INTO token_transactions (user_id, amount, type, description, ref_id) VALUES (?, ?, ?, ?, ?)', args: [userId, amount, type, description, refId] });
+    });
 }
 
 // ── GET /api/marketplace — browse ────────────────────────────
@@ -171,98 +172,34 @@ router.post('/unsell/:id', authenticateToken, async (req, res) => {
 });
 
 // ── POST /api/marketplace/buy/:id ────────────────────────────
-router.post('/buy/:id', authenticateToken, async (req, res) => {
+router.post('/buy/:id', authenticateToken, async (req, res, next) => {
     try {
-        const lessonId = parseInt(req.params.id);
         const buyerId = req.user.userId;
-
-        const lesson = await getOne(
-            'SELECT id, user_id, title, price_tokens, for_sale, is_published FROM lessons WHERE id = ?',
-            [lessonId]
-        );
-        if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
-        if (!lesson.for_sale || !lesson.is_published) return res.status(400).json({ error: 'Урок недоступен для покупки' });
-        if (lesson.user_id === buyerId) return res.status(400).json({ error: 'Нельзя купить свой урок' });
-
-        // Check already bought
-        const existing = await getOne('SELECT id FROM marketplace_purchases WHERE buyer_id = ? AND lesson_id = ?', [buyerId, lessonId]);
-        if (existing) return res.status(400).json({ error: 'Вы уже купили этот урок' });
-
-        const price = lesson.price_tokens || 0;
-
-        if (price > 0) {
-            // Check buyer balance
-            const buyer = await getOne('SELECT token_balance FROM users WHERE id = ?', [buyerId]);
-            if ((buyer?.token_balance || 0) < price) {
-                return res.status(400).json({ error: 'Недостаточно токенов', code: 'NOT_ENOUGH_TOKENS', balance: buyer?.token_balance || 0, required: price });
+        const lessonId = Number(req.params.id);
+        const result = await withTransaction(async transaction => {
+            const lesson = (await transaction.execute({ sql: 'SELECT * FROM lessons WHERE id = ? AND for_sale = 1 AND is_published = 1 AND is_archived = 0', args: [lessonId] })).rows[0];
+            if (!lesson) throw Object.assign(new Error('Урок недоступен для покупки'), { status: 404 });
+            if (lesson.user_id === buyerId) throw Object.assign(new Error('Нельзя купить свой урок'), { status: 400 });
+            const existing = (await transaction.execute({ sql: 'SELECT id FROM marketplace_purchases WHERE buyer_id = ? AND lesson_id = ?', args: [buyerId, lessonId] })).rows[0];
+            if (existing) throw Object.assign(new Error('Вы уже купили этот урок'), { status: 409 });
+            const price = Number(lesson.price_tokens || 0);
+            const debit = await transaction.execute({ sql: 'UPDATE users SET token_balance = token_balance - ? WHERE id = ? AND token_balance >= ?', args: [price, buyerId, price] });
+            if (!debit.rowsAffected) throw Object.assign(new Error('Недостаточно токенов'), { status: 400 });
+            await transaction.execute({ sql: 'UPDATE users SET token_balance = token_balance + ? WHERE id = ?', args: [price, lesson.user_id] });
+            await transaction.execute({ sql: 'INSERT INTO marketplace_purchases (buyer_id, seller_id, lesson_id, tokens_paid) VALUES (?, ?, ?, ?)', args: [buyerId, lesson.user_id, lessonId, price] });
+            if (price) {
+                await transaction.execute({ sql: "INSERT INTO token_transactions (user_id, amount, type, description, ref_id) VALUES (?, ?, 'purchase', ?, ?)", args: [buyerId, -price, lesson.title, lessonId] });
+                await transaction.execute({ sql: "INSERT INTO token_transactions (user_id, amount, type, description, ref_id) VALUES (?, ?, 'sale', ?, ?)", args: [lesson.user_id, price, lesson.title, lessonId] });
             }
-            // Deduct from buyer
-            await addTokens(buyerId, -price, 'purchase', `Покупка урока "${lesson.title}"`, lessonId);
-            // Credit seller
-            await addTokens(lesson.user_id, price, 'sale', `Продажа урока "${lesson.title}"`, lessonId);
-        }
-
-        // Record purchase
-        await runQuery(
-            `INSERT INTO marketplace_purchases (buyer_id, seller_id, lesson_id, tokens_paid) VALUES (?, ?, ?, ?)`,
-            [buyerId, lesson.user_id, lessonId, price]
-        );
-
-        // Increment views for seller stat
-        await runQuery('UPDATE lessons SET views_count = views_count + 1 WHERE id = ?', [lessonId]);
-
-        // New balance
-        const updated = await getOne('SELECT token_balance FROM users WHERE id = ?', [buyerId]);
-
-        res.json({
-            success: true,
-            lesson_id: lessonId,
-            tokens_paid: price,
-            new_balance: updated?.token_balance || 0
+            const user = (await transaction.execute({ sql: 'SELECT token_balance FROM users WHERE id = ?', args: [buyerId] })).rows[0];
+            return { success: true, lesson_id: lessonId, tokens_paid: price, new_balance: user.token_balance };
         });
-    } catch (err) {
-        console.error('Buy lesson error:', err.message);
-        res.status(500).json({ error: err.message });
-    }
+        res.json(result);
+    } catch (error) { next(error); }
 });
 
 // ── POST /api/marketplace/earn — ad reward ────────────────────
-router.post('/earn', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const today = new Date().toISOString().split('T')[0];
-
-        // Count today's ad views
-        const todayCount = (await getOne(
-            `SELECT COUNT(*) as cnt FROM token_transactions
-             WHERE user_id = ? AND type = 'ad_reward' AND date(created_at) = ?`,
-            [userId, today]
-        ))?.cnt || 0;
-
-        const DAILY_LIMIT = 10;
-        const TOKENS_PER_AD = 5;
-
-        if (todayCount >= DAILY_LIMIT) {
-            return res.status(400).json({
-                error: 'Дневной лимит достигнут',
-                code: 'DAILY_LIMIT',
-                limit: DAILY_LIMIT,
-                earned_today: todayCount * TOKENS_PER_AD
-            });
-        }
-
-        await addTokens(userId, TOKENS_PER_AD, 'ad_reward', `Просмотр рекламы (${todayCount + 1}/${DAILY_LIMIT})`, null);
-
-        const updated = await getOne('SELECT token_balance FROM users WHERE id = ?', [userId]);
-        res.json({
-            success: true,
-            earned: TOKENS_PER_AD,
-            balance: updated?.token_balance || 0,
-            ads_today: todayCount + 1,
-            remaining_today: DAILY_LIMIT - todayCount - 1
-        });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+router.post('/earn', authenticateToken, (req, res) => res.status(400).json({ error: 'Откройте рекламный ролик, чтобы получить награду.' }));
 
 module.exports = router;
 module.exports.addTokens = addTokens;

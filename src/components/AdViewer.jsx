@@ -16,6 +16,7 @@ export default function AdViewer({ onComplete, onClose }) {
     const L = (ru, kk) => language === 'kk' ? kk : ru
 
     const [ad, setAd] = useState(null)
+    const [viewToken, setViewToken] = useState(null)
     const [loading, setLoading] = useState(true)
     const [phase, setPhase] = useState('loading') // loading | watching | done | error | no_ads
     const [countdown, setCountdown] = useState(0)
@@ -32,6 +33,7 @@ export default function AdViewer({ onComplete, onClose }) {
                     setPhase('no_ads')
                 } else {
                     setAd(data.ad)
+                    setViewToken(data.viewToken)
                     setCountdown(data.ad.duration || 15)
                     setPhase('watching')
                 }
@@ -64,7 +66,7 @@ export default function AdViewer({ onComplete, onClose }) {
         if (!ad || earning) return
         setEarning(true)
         try {
-            const result = await adAPI.recordView(ad.id)
+            const result = await adAPI.recordView(ad.id, viewToken)
             setEarnResult(result)
             setPhase('done')
             onComplete?.(result.earned || ad.tokens_reward || 5, result.balance)
@@ -74,7 +76,7 @@ export default function AdViewer({ onComplete, onClose }) {
             setPhase('done')
         }
         setEarning(false)
-    }, [ad, earning, onComplete])
+    }, [ad, viewToken, earning, onComplete])
 
     // Auto-claim when countdown hits 0
     useEffect(() => {

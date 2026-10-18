@@ -1,0 +1,109 @@
+:root {
+  --workspace-bg: #f5f7fa;
+  --workspace-border: #dfe5ec;
+  --color-slate-900: #13202b;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+}
+
+body { background-image: none; }
+.dashboard { background: var(--workspace-bg); }
+.dashboard .main-content { min-width: 0; width: calc(100% - var(--sidebar-width)); }
+.dashboard .main-content.sidebar-collapsed { width: calc(100% - 70px); }
+.dashboard .page-content { max-width: 1600px; margin: 0 auto; }
+.dashboard .page-title { font-size: 28px; line-height: 1.25; letter-spacing: 0; }
+.dashboard .page-subtitle { color: var(--color-gray-600); font-size: 14px; }
+.dashboard .widget-title { font-size: 16px; }
+.dashboard .widget, .dashboard .stat-card, .dashboard .card,
+.dashboard .lesson-card, .dashboard .assignment-card {
+  border-radius: 8px;
+  border: 1px solid var(--workspace-border);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
+}
+.dashboard .widget-header { padding: 16px 20px; }
+.dashboard .sidebar { border-right: 1px solid var(--workspace-border); box-shadow: none; }
+.dashboard .sidebar-link { min-height: 42px; border-radius: 6px; font-size: 14px; }
+.dashboard .sidebar-link.active { background: #edf3ff; color: #1d4ed8; }
+.dashboard .topbar { background: var(--color-white); border-color: var(--workspace-border); }
+.credit-balance { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--workspace-border); border-radius: 6px; color: var(--color-gray-800); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.credit-cost-list { margin-bottom: 32px; }
+.credit-cost-list h2 { font-size: 20px; margin-bottom: 16px; }
+.credit-cost-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--workspace-border); font-size: 14px; }
+.credit-cost-list strong { white-space: nowrap; }
+.dashboard .btn, .dashboard button, .dashboard input, .dashboard select, .dashboard textarea { letter-spacing: 0; }
+.dashboard .btn { border-radius: 6px; min-height: 36px; white-space: normal; }
+.dashboard .input, .dashboard .filter-select { border-radius: 6px; }
+.dashboard h1, .dashboard h2, .dashboard h3, .dashboard p { overflow-wrap: anywhere; }
+.dashboard svg, .student-portal svg { flex-shrink: 0; }
+.dashboard [role="alert"] { overflow-wrap: anywhere; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 3px;
+}
+button:disabled { cursor: not-allowed; opacity: .6; }
+.page-state {
+  min-height: 55vh; padding: 40px 20px; display: flex; align-items: center;
+  justify-content: center; flex-direction: column; gap: 16px; text-align: center;
+}
+.page-state h1 { font-size: 26px; }
+.page-state p { margin: 0; max-width: 480px; }
+.lesson-builder .builder-card { border-radius: 8px !important; box-shadow: 0 1px 3px rgb(16 24 40 / 4%) !important; }
+.lesson-builder .builder-card:hover { transform: none !important; box-shadow: 0 1px 3px rgb(16 24 40 / 4%) !important; }
+.theme-dark .lesson-builder .builder-card { background: var(--color-white) !important; }
+.lesson-builder .primary-btn, .lesson-builder .ghost-btn { border-radius: 6px; font: inherit; font-weight: 600; }
+.lesson-builder .builder-input { border-radius: 6px; }
+.review-form { display: flex; align-items: flex-end; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.review-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; flex: 1 1 180px; }
+.review-form label:first-child { flex: 0 1 100px; }
+.assignment-modal { background: var(--color-white) !important; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; }
+.student-portal { --color-gray-200: #e2e8f0; --color-gray-300: #cbd5e1; --color-gray-400: #a9b8c7; --color-gray-500: #94a3b8; }
+.student-portal h1, .student-portal h2, .student-portal h3 { color: inherit; overflow-wrap: anywhere; }
+.student-portal button, .student-portal a { max-width: 100%; }
+
+:root.theme-dark {
+  --workspace-bg: #15191e;
+  --workspace-border: #343b45;
+  --color-white: #1c2128;
+  --color-gray-50: #161a20;
+  --color-gray-100: #20262e;
+  --color-gray-200: #363e48;
+  --color-gray-300: #53606d;
+  --color-gray-400: #8996a5;
+  --color-gray-500: #a1adba;
+  --color-gray-600: #b9c4ce;
+  --color-gray-700: #d3dce4;
+  --color-gray-800: #e5eaf0;
+  --color-gray-900: #f5f7fa;
+}
+.theme-dark body { background-image: none !important; }
+.theme-dark .dashboard .sidebar-link.active { background: #253751; color: #a9c7ff; }
+.theme-dark .dashboard .credit-balance { color: #e5eaf0 !important; }
+
+@media (max-width: 767px) {
+  .dashboard .main-content, .dashboard .main-content.sidebar-collapsed { width: 100%; min-width: 0; margin-left: 0; }
+  .dashboard .page-content { padding: 16px 12px 96px !important; }
+  .dashboard .page-title { font-size: 24px; }
+  .dashboard .topbar { padding: 0 12px; gap: 8px; }
+  .dashboard .topbar-actions { gap: 4px; min-width: 0; }
+  .dashboard .mobile-header-logo { gap: 6px; min-width: 0; flex-shrink: 1; }
+  .dashboard .mobile-header-logo span { font-size: 15px !important; }
+  .dashboard .mobile-header-logo img { width: 26px !important; height: 26px !important; }
+  .dashboard .widget-header, .dashboard .widget-body { padding: 16px; }
+  .lesson-builder { padding: 12px 0 !important; }
+  .lesson-builder .builder-header { flex-wrap: wrap !important; }
+  .lesson-builder .builder-header > div { order: 3; flex-basis: 100%; min-width: 0; }
+  .lesson-builder .builder-header > div h1 { font-size: 22px !important; }
+  .lesson-builder .builder-header > button:last-child { margin-left: auto; }
+  .lesson-builder .step-tabs { gap: 4px !important; padding: 4px !important; }
+  .lesson-builder .step-tab { padding: 10px 6px !important; gap: 4px !important; font-size: 12px !important; }
+  .lesson-builder .step-tab > span { flex-shrink: 0; }
+  .assignment-modal { width: calc(100vw - 24px) !important; padding: 20px !important; }
+  .student-portal main > div { max-width: 100%; }
+  .v3-landing-wrapper h2 { font-size: 28px !important; }
+  .v3-landing-wrapper h3 { font-size: 22px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

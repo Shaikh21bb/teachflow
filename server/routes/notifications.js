@@ -40,6 +40,8 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const { type, text, target_user_id } = req.body;
+        if (typeof text !== 'string' || !text.trim() || text.length > 2000) return res.status(400).json({ error: 'Введите текст уведомления' });
+        if (target_user_id && target_user_id !== req.user.userId && req.user.role !== 'admin') return res.status(403).json({ error: 'Нет доступа' });
         const userId = target_user_id || req.user.userId;
         await runQuery(
             `INSERT INTO notifications (type, text, user_id) VALUES (?, ?, ?)`,

@@ -220,8 +220,8 @@ function Assignments() {
                     justifyContent: 'center',
                     zIndex: 1000
                 }} onClick={() => setShowModal(false)}>
-                    <div style={{
-                        background: 'white',
+                    <div className="assignment-modal" role="dialog" aria-modal="true" style={{
+                        background: 'var(--color-white)',
                         borderRadius: 'var(--radius-xl)',
                         padding: 'var(--spacing-8)',
                         width: '100%',
@@ -331,8 +331,8 @@ function Assignments() {
                     zIndex: 1000,
                     padding: '20px'
                 }} onClick={() => setReviewModal(null)}>
-                    <div style={{
-                        background: 'white',
+                    <div className="assignment-modal" role="dialog" aria-modal="true" style={{
+                        background: 'var(--color-white)',
                         borderRadius: 'var(--radius-xl)',
                         padding: 'var(--spacing-8)',
                         width: '100%',
@@ -375,7 +375,7 @@ function Assignments() {
                                                 fontWeight: 800,
                                                 height: 'fit-content'
                                             }}>
-                                                {sub.score}/{sub.max_score} · {language === 'kk' ? 'Баға' : 'Оценка'} {sub.grade_label}
+                                                {sub.status === 'pending' ? (language === 'kk' ? 'Тексеруді күтуде' : 'Ожидает проверки') : `${sub.score}/${sub.max_score} · ${language === 'kk' ? 'Баға' : 'Оценка'} ${sub.grade_label}`}
                                             </div>
                                         </div>
                                         <div style={{ whiteSpace: 'pre-wrap', background: 'var(--color-gray-50)', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
@@ -389,6 +389,25 @@ function Assignments() {
                                                 {sub.mistakes.map((m, idx) => <li key={idx}>{m}</li>)}
                                             </ul>
                                         )}
+                                        <form className="review-form" onSubmit={async event => {
+                                            event.preventDefault();
+                                            const form = event.currentTarget;
+                                            const button = form.querySelector('button');
+                                            button.disabled = true;
+                                            try {
+                                                await assignmentsAPI.gradeSubmission(reviewModal.assignment.id, sub.id, { score: Number(form.elements.score.value), feedback: form.elements.feedback.value });
+                                                await openReview(reviewModal.assignment);
+                                            } catch (error) { alert(error.message); }
+                                            finally { button.disabled = false; }
+                                        }}>
+                                            <label>{language === 'kk' ? 'Балл' : 'Балл'}
+                                                <input className="input" name="score" aria-label="Балл" type="number" required min="0" max={sub.max_score} defaultValue={sub.score ?? ''} />
+                                            </label>
+                                            <label>{language === 'kk' ? 'Пікір' : 'Комментарий'}
+                                                <input className="input" name="feedback" maxLength={2000} defaultValue={sub.status === 'pending' ? '' : sub.feedback} />
+                                            </label>
+                                            <button className="btn btn-primary" type="submit">{language === 'kk' ? 'Бағаны сақтау' : 'Сохранить оценку'}</button>
+                                        </form>
                                     </div>
                                 ))}
                             </div>

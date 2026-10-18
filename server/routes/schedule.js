@@ -15,8 +15,18 @@ const { getOne, getAll, runQuery } = require('../db/database');
 // We use 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun
 
 function getTodayDow() {
-    return new Date().getDay(); // 0=Sun
+    const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: process.env.APP_TIMEZONE || 'Asia/Almaty' }).format(new Date());
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(weekday);
 }
+
+router.use((req, res, next) => {
+    if (!['POST', 'PUT'].includes(req.method)) return next();
+    const { title, day_of_week, start_time, duration = 45 } = req.body;
+    if (typeof title !== 'string' || !title.trim() || title.length > 200 || !Number.isInteger(Number(day_of_week)) || Number(day_of_week) < 0 || Number(day_of_week) > 6 || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start_time || '') || !Number.isInteger(Number(duration)) || Number(duration) < 1 || Number(duration) > 600) {
+        return res.status(400).json({ error: 'Проверьте название, день недели, время и длительность' });
+    }
+    next();
+});
 
 // GET /api/schedule — full week
 router.get('/', authenticateToken, async (req, res) => {

@@ -29,6 +29,8 @@ export default function LessonBuilderNew() {
     const [step, setStep] = useState(0)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState(null)
+    const [loadError, setLoadError] = useState('')
+    const [loadingLesson, setLoadingLesson] = useState(Boolean(editId))
     const [aiLoading, setAiLoading] = useState(false)
 
     // Form state
@@ -61,6 +63,27 @@ export default function LessonBuilderNew() {
     const [fullGenerating, setFullGenerating] = useState(false)
     const dragSrcIndex = useRef(null)
 
+    useEffect(() => {
+        if (!editId) return;
+        let cancelled = false;
+        setLoadingLesson(true);
+        lessonsAPI.getById(editId).then(lesson => {
+            if (cancelled) return;
+            setForm(previous => ({ ...previous, ...lesson }));
+            let savedSlides = lesson.slides_json;
+            if (typeof savedSlides === 'string') savedSlides = JSON.parse(savedSlides || '[]');
+            setSlides((savedSlides || []).map((slide, i) => ({ ...slide, _id: `saved_${i}` })));
+            setContentMode(savedSlides?.length ? 'slides' : 'simple');
+            setLessonTheme(lesson.theme || 'dark');
+            setUploadedFiles((lesson.files || []).map(file => ({
+                id: file.id, tempId: `saved_${file.id}`, name: file.file_name, size: file.file_size,
+                type: file.file_type, status: 'done', url: file.file_url, public_id: file.public_id,
+            })));
+        }).catch(error => { if (!cancelled) setLoadError(error.message); })
+            .finally(() => { if (!cancelled) setLoadingLesson(false); });
+        return () => { cancelled = true; };
+    }, [editId]);
+
     // ── Auto-generate from template ──────────────────────────
     useEffect(() => {
         const templateId = searchParams.get('template')
@@ -68,7 +91,7 @@ export default function LessonBuilderNew() {
             const timer = setTimeout(() => { generateFullLesson() }, 700)
             return () => clearTimeout(timer)
         }
-    }, []) // eslint-disable-line
+    }, [])
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type })
@@ -81,6 +104,7 @@ export default function LessonBuilderNew() {
     // ─── Thumbnail upload ────────────────────────────
     const handleThumbnailUpload = async (file) => {
         if (!file) return
+        if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) { showToast('Выберите JPG, PNG, WebP или GIF', 'error'); return; }
         const tempId = 'thumb_' + Date.now()
         setUploadProgress(p => ({ ...p, [tempId]: 0 }))
         try {
@@ -90,7 +114,7 @@ export default function LessonBuilderNew() {
             setField('thumbnail_url', result.secure_url)
             showToast('Превью загружено!')
         } catch (e) {
-            showToast(e.message.includes('VITE_CLOUDINARY') ? 'Настройте Cloudinary в .env' : 'Ошибка загрузки превью', 'error')
+            showToast('Не удалось загрузить превью: ' + e.message, 'error')
         } finally {
             setUploadProgress(p => { const n = { ...p }; delete n[tempId]; return n })
         }
@@ -101,7 +125,7 @@ export default function LessonBuilderNew() {
         const arr = Array.from(files)
         for (const file of arr) {
             const tempId = 'file_' + Date.now() + Math.random()
-            const detectedType = FILE_TYPES[file.type] || 'text'
+            const detectedType = file.type.startsWith('image/') ? 'image' : FILE_TYPES[file.type] || 'text'
 
             // Optimistic entry
             setUploadedFiles(prev => [...prev, {
@@ -136,8 +160,13 @@ export default function LessonBuilderNew() {
         }
     }, [form.content_url])
 
-    const removeFile = (tempId) => {
+    const removeFile = async (tempId) => {
+        const file = uploadedFiles.find(item => item.tempId === tempId);
+        if (file?.status === 'uploading') return;
+        try { if (file?.id) await lessonFilesAPI.delete(file.id); }
+        catch (error) { showToast(error.message, 'error'); return; }
         setUploadedFiles(prev => prev.filter(f => f.tempId !== tempId))
+        setForm(previous => previous.content_url === file?.url ? { ...previous, content_url: '', file_type: 'text' } : previous);
     }
 
     const handleDrop = useCallback((e) => {
@@ -266,6 +295,9 @@ export default function LessonBuilderNew() {
 
     // ─── Save lesson ─────────────────────────────────
     const saveDraft = async (publish = false) => {
+        if (saving || loadingLesson || loadError) return;
+        if (Object.keys(uploadProgress).length) { showToast('Дождитесь завершения загрузки файлов', 'error'); return; }
+        if (uploadedFiles.some(file => file.status === 'error')) { showToast('Удалите файлы с ошибкой и загрузите их снова', 'error'); return; }
         if (!form.title.trim()) { showToast('Введите название урока', 'error'); return }
         setSaving(true)
         try {
@@ -284,11 +316,11 @@ export default function LessonBuilderNew() {
             }
 
             // Save file records
-            const doneFiles = uploadedFiles.filter(f => f.status === 'done')
+            const doneFiles = uploadedFiles.filter(f => f.status === 'done' && !f.id)
             for (let i = 0; i < doneFiles.length; i++) {
                 const f = doneFiles[i]
                 try {
-                    await lessonFilesAPI.create({
+                    const savedFile = await lessonFilesAPI.create({
                         lesson_id: lesson.id,
                         file_url: f.url,
                         file_name: f.name,
@@ -297,8 +329,9 @@ export default function LessonBuilderNew() {
                         public_id: f.public_id,
                         order_index: i
                     })
+                    setUploadedFiles(previous => previous.map(item => item.tempId === f.tempId ? { ...item, id: savedFile.id } : item));
                 } catch (fe) {
-                    console.warn('File record error:', fe.message)
+                    throw new Error('Урок сохранён, но файл "' + f.name + '" не прикреплён: ' + fe.message);
                 }
             }
 
@@ -329,7 +362,7 @@ export default function LessonBuilderNew() {
     };
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: form.title || 'Lesson_Plan',
     })
 
@@ -345,8 +378,11 @@ export default function LessonBuilderNew() {
         )
     }
 
+    if (loadingLesson) return <div className="page-state" role="status">Загрузка урока...</div>;
+    if (loadError) return <div className="page-state" role="alert"><AlertCircle size={28} /><p>{loadError}</p><button className="btn btn-secondary" onClick={() => navigate('/my-lessons')}>К моим урокам</button></div>;
+
     return (
-        <div style={{ maxWidth: '860px', margin: '0 auto', padding: '24px 16px' }}>
+        <div className="lesson-builder" style={{ maxWidth: '860px', margin: '0 auto', padding: '24px 16px' }}>
             {/* Toast */}
             {toast && (
                 <div style={{
@@ -367,7 +403,7 @@ export default function LessonBuilderNew() {
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+            <div className="builder-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
                 <button onClick={() => navigate('/my-lessons')} style={{
                     background: 'none', border: '1px solid var(--color-gray-200,#e5e7eb)', borderRadius: '10px',
                     padding: '8px 14px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-gray-600,#4b5563)',
@@ -440,7 +476,7 @@ export default function LessonBuilderNew() {
                         }}>
                             {i < step ? '✓' : i + 1}
                         </span>
-                        <span className="hide-on-mobile">{s}</span>
+                        <span className="builder-step-label">{s}</span>
                     </button>
                 ))}
             </div>
@@ -620,7 +656,7 @@ export default function LessonBuilderNew() {
                                 <button onClick={() => thumbnailInputRef.current?.click()} className="primary-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
                                     Выбрать изображение
                                 </button>
-                                <input ref={thumbnailInputRef} type="file" accept="image/*" hidden onChange={e => handleThumbnailUpload(e.target.files[0])} />
+                                <input ref={thumbnailInputRef} aria-label="Превью урока" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={e => { handleThumbnailUpload(e.target.files[0]); e.target.value = ''; }} />
                             </div>
                         </div>
                     </Card>
@@ -1306,7 +1342,6 @@ function PhotoUploadButton({ onUrl, color = '#10b981' }) {
         if (!file) return
         setUploading(true)
         try {
-            const { uploadToCloudinary } = await import('../api')
             const result = await uploadToCloudinary(file)
             onUrl(result.secure_url)
         } catch { /* silent */ }

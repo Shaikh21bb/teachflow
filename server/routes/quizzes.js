@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [title, subject || '', grade || '', JSON.stringify(questions), time_limit || null, description || '', req.user.userId]
         );
-        const quizId = await getLastInsertId();
+        const quizId = Number(result.lastInsertRowid);
         const quiz = await getOne('SELECT * FROM quizzes WHERE id = ?', [quizId]);
         res.status(201).json({ ...quiz, questions: JSON.parse(quiz.questions || '[]') });
     } catch (err) {
@@ -107,6 +107,7 @@ router.get('/:id', async (req, res) => {
             [req.params.id]
         );
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
+        if (quiz.user_id !== req.user.userId && req.user.role !== 'admin') return res.status(404).json({ error: 'Тест не найден' });
         res.json({ ...quiz, questions: JSON.parse(quiz.questions || '[]') });
     } catch (err) {
         console.error('Get quiz error:', err);
@@ -172,6 +173,9 @@ router.post('/:id/assign', async (req, res) => {
         const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
 
+        const targetClass = await getOne('SELECT id FROM classes WHERE id = ? AND user_id = ?', [Number(class_id), req.user.userId]);
+        if (!targetClass) return res.status(404).json({ error: 'Класс не найден' });
+
         // Check if assignment already exists
         const existing = await getOne('SELECT * FROM quiz_assignments WHERE quiz_id = ? AND class_id = ?', [req.params.id, class_id]);
         if (existing) {
@@ -195,25 +199,22 @@ router.post('/:id/assign', async (req, res) => {
  */
 router.post('/:id/attempts', async (req, res) => {
     try {
-        const { student_name, answers, score, max_score, time_spent } = req.body;
+        const { student_name, answers, time_spent } = req.body;
         if (!student_name || !answers) {
             return res.status(400).json({ error: 'Имя ученика и ответы обязательны' });
         }
-        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ?', [req.params.id]);
+        const quiz = await getOne('SELECT * FROM quizzes WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
         if (!quiz) return res.status(404).json({ error: 'Тест не найден' });
+        const questions = JSON.parse(quiz.questions || '[]');
+        if (!Array.isArray(answers) || answers.length !== questions.length || !questions.length) return res.status(400).json({ error: 'Неверный формат ответов' });
+        const max_score = questions.length;
+        const score = questions.reduce((sum, question, index) => sum + (answers[index] === question.correct ? 1 : 0), 0);
 
         const result = await runQuery(
             `INSERT INTO quiz_attempts (quiz_id, student_name, answers, score, max_score, time_spent)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [req.params.id, student_name, JSON.stringify(answers), score || 0, max_score || 0, time_spent || 0]
         );
-
-        // ── Token reward for quiz owner ──────────────────────
-        // Give teacher 2 tokens per completed quiz attempt
-        try {
-            const { addTokens } = require('./marketplace');
-            await addTokens(quiz.user_id, 2, 'quiz_completed', `Ученик "${student_name}" прошёл тест "${quiz.title}"`, parseInt(req.params.id));
-        } catch { /* silent */ }
 
         res.status(201).json({ id: result.lastInsertRowid?.toString(), quiz_id: req.params.id, student_name, score, max_score });
     } catch (err) {

@@ -1,5 +1,5 @@
 const { getOne, getAll, runQuery } = require('../db/database');
-const { PLAN_CREDIT_LIMITS, getCreditCost } = require('../utils/creditCosts');
+const { PLAN_CREDIT_LIMITS, getCreditCost, CREDIT_COSTS, STARTER_CREDITS } = require('../utils/creditCosts');
 
 const PLAN_LIMITS = {
     free: {
@@ -19,62 +19,43 @@ const PLAN_LIMITS = {
     }
 };
 
-/**
- * Middleware to check lesson creation limits
- */
 async function checkLessonLimit(req, res, next) {
     try {
         const userId = req.user.userId;
-        const user = await getOne('SELECT plan FROM users WHERE id = ?', [userId]);
-        const plan = user?.plan || 'free';
-        
-        const stats = await getOne('SELECT COUNT(*) as count FROM lessons WHERE user_id = ?', [userId]);
-        const count = stats?.count || 0;
-        
-        const limit = PLAN_LIMITS[plan].lessons;
-        
+        // Combined query — one round-trip instead of two
+        const row = await getOne(
+            `SELECT u.plan, COUNT(l.id) as count
+             FROM users u LEFT JOIN lessons l ON l.user_id = u.id AND l.is_archived = 0
+             WHERE u.id = ? GROUP BY u.id`,
+            [userId]
+        );
+        const plan = row?.plan || 'free';
+        const count = Number(row?.count || 0);
+        const limit = PLAN_LIMITS[plan]?.lessons ?? 999999;
         if (count >= limit) {
-            return res.status(403).json({ 
-                error: 'Превышен лимит уроков', 
-                message: `На вашем текущем тарифе (${plan}) можно создать не более ${limit} уроков.`,
-                limit_reached: true,
-                code: 'LIMIT_REACHED_LESSONS'
-            });
+            return res.status(403).json({ error: 'Превышен лимит уроков', message: `На тарифе ${plan} можно создать не более ${limit} уроков.`, limit_reached: true, code: 'LIMIT_REACHED_LESSONS' });
         }
-        
         next();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 }
 
-/**
- * Middleware to check class creation limits
- */
 async function checkClassLimit(req, res, next) {
     try {
         const userId = req.user.userId;
-        const user = await getOne('SELECT plan FROM users WHERE id = ?', [userId]);
-        const plan = user?.plan || 'free';
-        
-        const stats = await getOne('SELECT COUNT(*) as count FROM classes WHERE user_id = ?', [userId]);
-        const count = stats?.count || 0;
-        
-        const limit = PLAN_LIMITS[plan].classes;
-        
+        const row = await getOne(
+            `SELECT u.plan, COUNT(c.id) as count
+             FROM users u LEFT JOIN classes c ON c.user_id = u.id
+             WHERE u.id = ? GROUP BY u.id`,
+            [userId]
+        );
+        const plan = row?.plan || 'free';
+        const count = Number(row?.count || 0);
+        const limit = PLAN_LIMITS[plan]?.classes ?? 999999;
         if (count >= limit) {
-            return res.status(403).json({ 
-                error: 'Превышен лимит классов', 
-                message: `На вашем текущем тарифе (${plan}) можно создать не более ${limit} классов.`,
-                limit_reached: true,
-                code: 'LIMIT_REACHED_CLASSES'
-            });
+            return res.status(403).json({ error: 'Превышен лимит классов', message: `На тарифе ${plan} можно создать не более ${limit} классов.`, limit_reached: true, code: 'LIMIT_REACHED_CLASSES' });
         }
-        
         next();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 }
 
 /**
@@ -83,7 +64,7 @@ async function checkClassLimit(req, res, next) {
 async function checkAICredits(req, res, next) {
     try {
         const userId = req.user.userId;
-        const cost = Number(req.creditCost || req.body?.creditCost || 1);
+        const cost = Number(req.creditCost || 1);
         const user = await getOne('SELECT credits, plan FROM users WHERE id = ?', [userId]);
         
         if (!user || Number(user.credits || 0) < cost) {
@@ -115,18 +96,33 @@ function requireCredits(feature) {
 }
 
 /**
- * Deduct AI credits from user
+ * Deduct AI credits ATOMICALLY — returns { success, newBalance }
+ * Uses RETURNING to get new balance in one round-trip
  */
 async function deductAICredits(userId, amount = 1) {
+    if (!Number.isInteger(amount) || amount <= 0) throw new Error('Invalid credit amount');
     try {
         const result = await runQuery(
-            'UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?',
+            `UPDATE users SET credits = credits - ?
+             WHERE id = ? AND credits >= ?`,
             [amount, userId, amount]
         );
-        return Number(result.rowsAffected || 0) > 0;
+        if (!result.rowsAffected) return false;
+        return true;
     } catch (err) {
         console.error('Deduct credits error:', err);
         return false;
+    }
+}
+
+/**
+ * Refund credits (used when AI call fails after deduction)
+ */
+async function refundCredits(userId, amount) {
+    try {
+        await runQuery('UPDATE users SET credits = credits + ? WHERE id = ?', [amount, userId]);
+    } catch (err) {
+        console.error('Refund credits error:', err);
     }
 }
 
@@ -145,6 +141,11 @@ module.exports = {
     checkAICredits,
     requireCredits,
     deductAICredits,
+    refundCredits,
     getCreditBalance,
-    PLAN_LIMITS
+    getCreditCost,
+    CREDIT_COSTS,
+    PLAN_CREDIT_LIMITS,
+    STARTER_CREDITS,
+    PLAN_LIMITS,
 };

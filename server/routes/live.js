@@ -14,6 +14,7 @@ const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
 // ── In-memory SSE client registry ────────────────────────────
 // Map<sessionCode, Set<{res, studentName}>>
 const sseClients = new Map();
+const publicPoll = poll => poll ? { question: poll.question, options: poll.options } : null;
 
 function getClients(code) {
     if (!sseClients.has(code)) sseClients.set(code, new Set());
@@ -25,7 +26,7 @@ function pushToClients(code, eventName, data) {
     if (!clients) return;
     const payload = `event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
     for (const client of clients) {
-        try { client.res.write(payload); } catch { /* client disconnected */ }
+        try { client.res.write(payload); client.res.flush?.(); } catch { /* client disconnected */ }
     }
 }
 
@@ -43,6 +44,10 @@ router.post('/start', authenticateToken, async (req, res) => {
     try {
         const { lesson_id } = req.body;
         const teacherId = req.user.userId;
+        if (lesson_id) {
+            const lesson = await getOne('SELECT id FROM lessons WHERE id = ? AND user_id = ?', [Number(lesson_id), teacherId]);
+            if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+        }
 
         // Generate unique code
         let code;
@@ -51,7 +56,7 @@ router.post('/start', authenticateToken, async (req, res) => {
             code = generateCode();
             attempts++;
             if (attempts > 20) return res.status(500).json({ error: 'Не удалось создать код сессии' });
-        } while (await getOne('SELECT id FROM live_sessions WHERE code = ? AND status = ?', [code, 'active']));
+        } while (await getOne('SELECT id FROM live_sessions WHERE code = ?', [code]));
 
         // Close any existing active sessions for this teacher
         await runQuery(
@@ -88,7 +93,7 @@ router.get('/:code', async (req, res) => {
         if (!session) return res.status(404).json({ error: 'Сессия не найдена' });
         res.json({
             ...session,
-            active_poll: session.active_poll ? JSON.parse(session.active_poll) : null
+            active_poll: publicPoll(session.active_poll ? JSON.parse(session.active_poll) : null)
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -112,7 +117,7 @@ router.patch('/:code/slide', authenticateToken, async (req, res) => {
         // Push SSE event to all connected students
         pushToClients(code, 'slide-change', {
             slide_index: slide_index ?? session.current_slide_index,
-            active_poll: active_poll || null
+            active_poll: publicPoll(active_poll)
         });
 
         res.json({ success: true });
@@ -131,6 +136,8 @@ router.post('/:code/answer', async (req, res) => {
 
         const session = await getOne('SELECT * FROM live_sessions WHERE code = ? AND status = ?', [code, 'active']);
         if (!session) return res.status(404).json({ error: 'Активная сессия не найдена' });
+        if (!session.active_poll) return res.status(400).json({ error: 'Опрос не запущен' });
+        if (typeof student_name !== 'string' || student_name.length > 100 || typeof answer !== 'string' || answer.length > 2000) return res.status(400).json({ error: 'Неверный ответ' });
 
         // Append answer to answers JSON array
         let answers = [];
@@ -176,7 +183,7 @@ router.post('/:code/join', async (req, res) => {
         res.json({
             success: true,
             current_slide_index: session.current_slide_index,
-            active_poll: session.active_poll ? JSON.parse(session.active_poll) : null
+            active_poll: publicPoll(session.active_poll ? JSON.parse(session.active_poll) : null)
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -204,10 +211,11 @@ router.get('/:code/stats', async (req, res) => {
 router.delete('/:code', authenticateToken, async (req, res) => {
     try {
         const code = req.params.code.toUpperCase();
-        await runQuery(
+        const ended = await runQuery(
             'UPDATE live_sessions SET status = ? WHERE code = ? AND teacher_id = ?',
             ['ended', code, req.user.userId]
         );
+        if (!ended.rowsAffected) return res.status(404).json({ error: 'Сессия не найдена' });
         // Push end event to all students
         pushToClients(code, 'session-ended', { message: 'Урок завершён. Спасибо!' });
         // Clean up SSE clients

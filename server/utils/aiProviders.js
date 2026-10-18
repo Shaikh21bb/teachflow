@@ -84,7 +84,7 @@ async function chatWithGemini(userMessage, conversationHistory, language) {
     }
 
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         systemInstruction: SYSTEM_PROMPT + "\n\n" + context
     });
 
@@ -104,10 +104,10 @@ async function chatWithGroq(userMessage, conversationHistory, language) {
     ];
 
     const completion = await groq.chat.completions.create({
-        model: 'llama-3.1-70b-versatile',
+        model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 2048,
     });
 
     return completion.choices[0]?.message?.content || 'Извините, не могу ответить.';

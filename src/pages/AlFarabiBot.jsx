@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, MessageSquare, Trash2, User, Bot } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { aiAPI } from '../api'
 
 const STORAGE_KEY = 'urpaq_bot_chats'
 
@@ -139,7 +140,6 @@ function AlFarabiBot() {
         }
 
         try {
-            const { aiAPI } = await import('../api')
             const conversationHistory = newMessages.slice(-8).map(msg => ({
                 role: msg.type === 'user' ? 'user' : 'assistant',
                 content: msg.text

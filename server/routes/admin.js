@@ -23,7 +23,9 @@ const express = require('express');
 const router = express.Router();
 const { requireAdmin } = require('../middleware/adminAuth');
 const { authenticateToken } = require('../middleware/auth');
-const { getOne, getAll, runQuery } = require('../db/database');
+const { getOne, getAll, runQuery, withTransaction } = require('../db/database');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { addTokens } = require('./marketplace');
 
 // ══════════════════════════════════════════════════════════════
@@ -31,71 +33,46 @@ const { addTokens } = require('./marketplace');
 // ══════════════════════════════════════════════════════════════
 
 // GET /api/admin/ads/current — get a random active ad
-router.get('/ads/current', async (req, res) => {
+router.get('/ads/current', authenticateToken, async (req, res) => {
     try {
         const ads = await getAll(
             'SELECT id, title, type, url, thumbnail_url, duration, tokens_reward, link_url FROM ads WHERE is_active = 1 ORDER BY RANDOM() LIMIT 1'
         );
         if (!ads.length) return res.json({ ad: null });
-        res.json({ ad: ads[0] });
+        const viewToken = jwt.sign({ adId: ads[0].id, userId: req.user.userId, purpose: 'ad-view' }, process.env.JWT_SECRET,
+            { expiresIn: '10m', notBefore: Math.max(1, Number(ads[0].duration) || 15), jwtid: crypto.randomUUID() });
+        res.json({ ad: ads[0], viewToken });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // POST /api/admin/ads/:id/view — user watched ad, reward tokens
-router.post('/ads/:id/view', authenticateToken, async (req, res) => {
+router.post('/ads/:id/view', authenticateToken, async (req, res, next) => {
     try {
-        const adId = parseInt(req.params.id);
+        let ticket;
+        try { ticket = jwt.verify(req.body.viewToken || '', process.env.JWT_SECRET); }
+        catch (error) { return res.status(error.name === 'NotBeforeError' ? 425 : 403).json({ error: error.name === 'NotBeforeError' ? 'Дождитесь окончания просмотра' : 'Откройте рекламу заново' }); }
+        const adId = Number(req.params.id);
         const userId = req.user.userId;
-        const today = new Date().toISOString().split('T')[0];
-
-        const ad = await getOne('SELECT * FROM ads WHERE id = ? AND is_active = 1', [adId]);
-        if (!ad) return res.status(404).json({ error: 'Реклама не найдена' });
-
-        // Check daily limit (10 ad views = 50 tokens max per day)
-        const todayViews = await getOne(
-            `SELECT COUNT(*) as cnt FROM ad_views
-             WHERE user_id = ? AND date(viewed_at) = ?`,
-            [userId, today]
-        );
-        const DAILY_AD_LIMIT = 10;
-        if ((todayViews?.cnt || 0) >= DAILY_AD_LIMIT) {
-            return res.status(400).json({
-                error: 'Дневной лимит просмотров достигнут',
-                code: 'DAILY_LIMIT',
-                limit: DAILY_AD_LIMIT,
-                viewed_today: todayViews?.cnt || 0
-            });
-        }
-
-        const tokens = ad.tokens_reward || 5;
-
-        // Record view
-        await runQuery(
-            'INSERT INTO ad_views (user_id, ad_id, tokens_earned) VALUES (?, ?, ?)',
-            [userId, adId, tokens]
-        );
-
-        // Increment ad view count
-        await runQuery('UPDATE ads SET views_count = views_count + 1 WHERE id = ?', [adId]);
-
-        // Award tokens
-        await addTokens(userId, tokens, 'ad_reward', `Просмотр рекламы "${ad.title}"`, adId);
-
-        const updated = await getOne('SELECT token_balance FROM users WHERE id = ?', [userId]);
-        const remaining = DAILY_AD_LIMIT - (todayViews?.cnt || 0) - 1;
-
-        res.json({
-            success: true,
-            earned: tokens,
-            balance: updated?.token_balance || 0,
-            viewed_today: (todayViews?.cnt || 0) + 1,
-            remaining_today: Math.max(0, remaining)
+        if (ticket.purpose !== 'ad-view' || ticket.adId !== adId || ticket.userId !== userId) return res.status(403).json({ error: 'Неверное подтверждение просмотра' });
+        const result = await withTransaction(async transaction => {
+            const ad = (await transaction.execute({ sql: 'SELECT * FROM ads WHERE id = ? AND is_active = 1', args: [adId] })).rows[0];
+            if (!ad) throw Object.assign(new Error('Реклама не найдена'), { status: 404 });
+            const duplicate = (await transaction.execute({ sql: 'SELECT id FROM ad_views WHERE claim_token = ?', args: [ticket.jti] })).rows[0];
+            if (duplicate) throw Object.assign(new Error('Награда уже получена'), { status: 409 });
+            const count = (await transaction.execute({ sql: "SELECT COUNT(*) AS count FROM ad_views WHERE user_id = ? AND viewed_at >= date('now')", args: [userId] })).rows[0].count;
+            if (count >= 10) throw Object.assign(new Error('Дневной лимит просмотров достигнут'), { status: 400 });
+            const tokens = Math.max(0, Number(ad.tokens_reward) || 0);
+            await transaction.execute({ sql: 'INSERT INTO ad_views (user_id, ad_id, tokens_earned, claim_token) VALUES (?, ?, ?, ?)', args: [userId, adId, tokens, ticket.jti] });
+            await transaction.execute({ sql: 'UPDATE ads SET views_count = views_count + 1 WHERE id = ?', args: [adId] });
+            await transaction.execute({ sql: 'UPDATE users SET token_balance = token_balance + ? WHERE id = ?', args: [tokens, userId] });
+            await transaction.execute({ sql: "INSERT INTO token_transactions (user_id, amount, type, description, ref_id) VALUES (?, ?, 'ad_reward', ?, ?)", args: [userId, tokens, ad.title, adId] });
+            const user = (await transaction.execute({ sql: 'SELECT token_balance FROM users WHERE id = ?', args: [userId] })).rows[0];
+            return { success: true, earned: tokens, balance: user.token_balance, viewed_today: count + 1, remaining_today: 9 - count };
         });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        res.json(result);
+    } catch (error) { next(error); }
 });
 
 // ══════════════════════════════════════════════════════════════

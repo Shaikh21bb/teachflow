@@ -36,6 +36,7 @@ export default function StudentAssignment() {
                             max_score: data.submitted_max_score || data.max_score,
                             grade_label: data.grade_label,
                             feedback: data.feedback,
+                            status: data.status,
                             mistakes: data.mistakes || []
                         });
                     }
@@ -49,8 +50,8 @@ export default function StudentAssignment() {
     }, [id, navigate]);
 
     const handleSubmit = async () => {
-        if (answerText.trim().length < 10) {
-            setError('Жауап кемінде 10 таңбадан тұруы керек');
+        if (!answerText.trim()) {
+            setError('Жауапты жазыңыз');
             return;
         }
 
@@ -99,7 +100,7 @@ export default function StudentAssignment() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--color-slate-900)', color: 'white', fontFamily: '"Inter", sans-serif' }}>
+        <div className="student-portal" style={{ minHeight: '100vh', background: 'var(--color-slate-900)', color: 'white', fontFamily: '"Inter", sans-serif' }}>
             <header style={{
                 background: 'rgba(255,255,255,0.05)',
                 backdropFilter: 'blur(10px)',
@@ -207,11 +208,11 @@ export default function StudentAssignment() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '14px', marginBottom: '18px' }}>
                             <div style={{ background: 'rgba(0,0,0,0.22)', borderRadius: '16px', padding: '14px' }}>
                                 <div style={{ color: 'var(--color-gray-400)', fontSize: '13px' }}>Балл</div>
-                                <div style={{ fontSize: '24px', fontWeight: 900 }}>{result.score}/{result.max_score}</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900 }}>{result.score == null ? 'Тексеруді күтуде' : `${result.score}/${result.max_score}`}</div>
                             </div>
                             <div style={{ background: 'rgba(0,0,0,0.22)', borderRadius: '16px', padding: '14px' }}>
                                 <div style={{ color: 'var(--color-gray-400)', fontSize: '13px' }}>Баға</div>
-                                <div style={{ fontSize: '24px', fontWeight: 900 }}>{result.grade_label}</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900 }}>{result.grade_label || '-'}</div>
                             </div>
                         </div>
                         <p style={{ color: 'var(--color-gray-200)', lineHeight: 1.7, marginTop: 0 }}>{result.feedback}</p>

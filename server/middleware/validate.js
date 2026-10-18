@@ -6,12 +6,12 @@ const { z } = require('zod');
 
 const registerSchema = z.object({
     name: z
-        .string({ required_error: 'Имя обязательно' })
+        .string({ required_error: 'Имя обязательно' }).trim()
         .min(2, 'Имя должно быть минимум 2 символа')
         .max(100, 'Имя слишком длинное')
         .trim(),
     email: z
-        .string({ required_error: 'Email обязателен' })
+        .string({ required_error: 'Email обязателен' }).trim()
         .email('Неверный формат email')
         .toLowerCase()
         .trim(),
@@ -29,7 +29,7 @@ const registerSchema = z.object({
 
 const loginSchema = z.object({
     email: z
-        .string({ required_error: 'Email обязателен' })
+        .string({ required_error: 'Email обязателен' }).trim()
         .email('Неверный формат email')
         .toLowerCase()
         .trim(),
@@ -40,7 +40,7 @@ const loginSchema = z.object({
 
 const profileSchema = z.object({
     name: z
-        .string({ required_error: 'Имя обязательно' })
+        .string({ required_error: 'Имя обязательно' }).trim()
         .min(2, 'Имя должно быть минимум 2 символа')
         .max(100, 'Имя слишком длинное')
         .trim(),
@@ -77,7 +77,7 @@ const resetPasswordSchema = z.object({
 
 const lessonSchema = z.object({
     title: z
-        .string({ required_error: 'Название урока обязательно' })
+        .string({ required_error: 'Название урока обязательно' }).trim()
         .min(3, 'Название слишком короткое')
         .max(200, 'Название слишком длинное')
         .trim(),
@@ -96,7 +96,7 @@ const lessonSchema = z.object({
 
 const assignmentSchema = z.object({
     title: z
-        .string({ required_error: 'Название задания обязательно' })
+        .string({ required_error: 'Название задания обязательно' }).trim()
         .min(3, 'Название слишком короткое')
         .max(200)
         .trim(),
@@ -116,7 +116,7 @@ const assignmentSchema = z.object({
 
 const classSchema = z.object({
     name: z
-        .string({ required_error: 'Название класса обязательно' })
+        .string({ required_error: 'Название класса обязательно' }).trim()
         .min(1, 'Название класса обязательно')
         .max(100)
         .trim(),

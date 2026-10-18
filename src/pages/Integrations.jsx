@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { integrationsAPI, aiAPI, lessonsAPI, quizzesAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, authFetch } from '../contexts/AuthContext'
 import {
     CheckCircle, XCircle, Loader2, ExternalLink, Send,
     Download, Upload, Copy, AlertCircle, X, ChevronRight,
@@ -84,7 +84,6 @@ export default function Integrations() {
                 setConnected(p => ({ ...p, ai: { connected: true } }))
                 showToast(r.message || 'AI подключён!')
             } else if (modal === 'teams') {
-                const { authFetch } = await import('../contexts/AuthContext')
                 const API_BASE = import.meta.env.VITE_API_URL || '/api'
                 const r = await authFetch(`${API_BASE}/integrations/teams`, {
                     method: 'POST', body: JSON.stringify(formData)
@@ -113,7 +112,6 @@ export default function Integrations() {
     const handleTeamsSend = async () => {
         setTeamsSending(true)
         try {
-            const { authFetch } = await import('../contexts/AuthContext')
             const API_BASE = import.meta.env.VITE_API_URL || '/api'
             const r = await authFetch(`${API_BASE}/integrations/teams/send`, {
                 method: 'POST', body: JSON.stringify(teamsPayload)

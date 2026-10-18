@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 
 // ──────────────────────────────────────────
 // Helper: standard limiter response
@@ -16,7 +17,7 @@ const rateLimitHandler = (message) => (req, res) => {
 // ──────────────────────────────────────────
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10,
+    max: process.env.NODE_ENV === 'test' ? 1000 : 10,
     standardHeaders: true,
     legacyHeaders: false,
     handler: rateLimitHandler(
@@ -24,7 +25,7 @@ const authLimiter = rateLimit({
     ),
     keyGenerator: (req) => {
         // Fallback or request IP + optionally email
-        return (req.ip || req.connection.remoteAddress || 'unknown') + (req.body?.email ? `:${req.body.email}` : '');
+        return ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown');
     },
 });
 
@@ -48,7 +49,7 @@ const aiLimiter = rateLimit({
 // ──────────────────────────────────────────
 const generalLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 200,
+    max: process.env.NODE_ENV === 'test' ? 10000 : 200,
     standardHeaders: true,
     legacyHeaders: false,
     handler: rateLimitHandler(

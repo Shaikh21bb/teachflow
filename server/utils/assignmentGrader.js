@@ -2,7 +2,7 @@ const { chatWithAI, getAvailableProviders } = require('./aiProviders');
 
 function clampScore(value, maxScore) {
     const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return Math.round(maxScore * 0.7);
+    if (!Number.isFinite(numeric)) throw new Error('AI returned an invalid score');
     return Math.max(0, Math.min(maxScore, Math.round(numeric)));
 }
 
@@ -25,43 +25,10 @@ function parseJsonResponse(raw) {
     return JSON.parse(jsonMatch[0]);
 }
 
-function fallbackGrade({ answerText, answerKey = '', maxScore = 100, language = 'kk' }) {
-    const answer = String(answerText || '').trim();
-    const key = String(answerKey || '').trim();
-    const wordCount = answer.split(/\s+/).filter(Boolean).length;
-    let percent = 45;
-
-    if (wordCount >= 20) percent += 20;
-    if (wordCount >= 60) percent += 15;
-    if (/[.!?]$/.test(answer)) percent += 5;
-
-    if (key) {
-        const keyWords = key
-            .toLowerCase()
-            .split(/[^\p{L}\p{N}]+/u)
-            .filter(w => w.length > 3);
-        const unique = [...new Set(keyWords)].slice(0, 20);
-        const matched = unique.filter(w => answer.toLowerCase().includes(w)).length;
-        percent = Math.max(percent, 40 + Math.round((matched / Math.max(unique.length, 1)) * 50));
-    }
-
-    percent = Math.max(20, Math.min(95, percent));
-    const score = clampScore((percent / 100) * maxScore, maxScore);
-    const feedback = language === 'kk'
-        ? 'Жауап қабылданды. Негізгі ой бар, бірақ дәлелдерді нақтылап, шешім қадамдарын толық көрсету керек.'
-        : 'Ответ принят. Основная мысль есть, но стоит точнее раскрыть доказательства и показать шаги решения.';
-
+function fallbackGrade({ maxScore = 100, language = 'kk' }) {
     return {
-        score,
-        max_score: maxScore,
-        grade_label: getGradeLabel(score, maxScore),
-        feedback,
-        mistakes: [
-            language === 'kk'
-                ? 'Мұғалім берген үлгі жауаппен салыстырып, жетіспейтін тұстарды толықтырыңыз.'
-                : 'Сравните с эталонным ответом учителя и дополните недостающие части.'
-        ],
-        provider: 'fallback'
+        score: null, max_score: maxScore, grade_label: null, mistakes: [], provider: 'pending',
+        feedback: language === 'kk' ? 'Жауап сақталды. Мұғалімнің тексеруін күтуде.' : 'Ответ сохранён и ожидает проверки учителем.'
     };
 }
 
@@ -96,7 +63,7 @@ ${String(answerText).slice(0, 6000)}
     try {
         const raw = await chatWithAI(prompt, [], language);
         const parsed = parseJsonResponse(raw);
-        if (!parsed) throw new Error('AI returned non-JSON grading response');
+        if (!parsed || typeof parsed.score !== 'number' || typeof parsed.feedback !== 'string' || !parsed.feedback.trim()) throw new Error('Invalid grading response');
         const score = clampScore(parsed.score, maxScore);
         const mistakes = Array.isArray(parsed.mistakes) ? parsed.mistakes.slice(0, 5).map(String) : [];
 

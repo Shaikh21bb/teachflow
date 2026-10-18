@@ -8,6 +8,7 @@ const { runQuery, getOne } = require('../db/database');
 const { syncUserToGoogleSheets, updateLastLogin } = require('../utils/googleSheets');
 const { validate, registerSchema, loginSchema } = require('../middleware/validate');
 const { STARTER_CREDITS, PLAN_CREDIT_LIMITS, CREDIT_COSTS } = require('../utils/creditCosts');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 // Initialize Resend safely - if no key is provided, emails will fail gracefully or log to console
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -67,7 +68,7 @@ function safeUserPayload(user) {
 // ──────────────────────────────────────────
 // POST /api/auth/register
 // ──────────────────────────────────────────
-router.post('/register', validate(registerSchema), async (req, res) => {
+router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
     try {
         const { name, email, password, subjects } = req.body;
 
@@ -118,7 +119,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 // ──────────────────────────────────────────
 // POST /api/auth/login
 // ──────────────────────────────────────────
-router.post('/login', validate(loginSchema), async (req, res) => {
+router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
     try {
         const { email, password } = req.body;
 

@@ -23,7 +23,7 @@ export default function QuizReport() {
     // ── Print ref ────────────────────────────────────────────
     const printRef = useRef(null)
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: report?.quiz?.title || 'Квиз',
     })
 

@@ -1,17 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
-let API_BASE = import.meta.env.VITE_API_URL || '';
-if (!API_BASE) {
-    if (typeof window !== 'undefined') {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            API_BASE = 'http://localhost:3001/api';
-        } else {
-            API_BASE = '/api';
-        }
-    } else {
-        API_BASE = '/api';
-    }
-}
+import { API_BASE, authFetch, authStorage as storage } from '../lib/http'
+export { authFetch } from '../lib/http'
 
 const AuthContext = createContext()
 
@@ -23,113 +13,6 @@ export function useAuth() {
     return context
 }
 
-// ──────────────────────────────────────────
-// Token storage helpers
-// ──────────────────────────────────────────
-const storage = {
-    getToken: () => localStorage.getItem('auth_token'),
-    getRefreshToken: () => localStorage.getItem('auth_refresh_token'),
-    setTokens: (accessToken, refreshToken) => {
-        localStorage.setItem('auth_token', accessToken)
-        if (refreshToken) localStorage.setItem('auth_refresh_token', refreshToken)
-    },
-    clearTokens: () => {
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_refresh_token')
-    },
-}
-
-// ──────────────────────────────────────────
-// Authenticated fetch with auto-refresh
-// ──────────────────────────────────────────
-let isRefreshing = false
-let refreshQueue = [] // Pending requests during refresh
-
-async function refreshAccessToken() {
-    const refreshToken = storage.getRefreshToken()
-    if (!refreshToken) throw new Error('No refresh token')
-
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-    })
-
-    if (!res.ok) {
-        throw new Error('Refresh failed')
-    }
-
-    const data = await res.json()
-    storage.setTokens(data.token, data.refreshToken)
-    return data.token
-}
-
-export async function authFetch(url, options = {}) {
-    const token = storage.getToken()
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-    }
-
-    let res = await fetch(url, { ...options, headers })
-
-    // Auto-refresh on any 401 if we have a refresh token
-    if (res.status === 401) {
-        const refreshToken = storage.getRefreshToken()
-
-        if (refreshToken && !isRefreshing) {
-            isRefreshing = true
-            try {
-                const newToken = await refreshAccessToken()
-                isRefreshing = false
-                refreshQueue.forEach(cb => cb(newToken))
-                refreshQueue = []
-                // Retry original request with new token
-                return fetch(url, {
-                    ...options,
-                    headers: { ...headers, Authorization: `Bearer ${newToken}` },
-                })
-            } catch {
-                isRefreshing = false
-                refreshQueue.forEach(cb => cb(null))
-                refreshQueue = []
-                storage.clearTokens()
-                // Only redirect if not already on an auth page
-                if (typeof window !== 'undefined' &&
-                    !window.location.pathname.startsWith('/login') &&
-                    !window.location.pathname.startsWith('/register')) {
-                    window.location.href = '/login'
-                }
-                return res
-            }
-        } else if (refreshToken && isRefreshing) {
-            // Another refresh is in progress — queue this request
-            return new Promise((resolve) => {
-                refreshQueue.push((newToken) => {
-                    if (newToken) {
-                        resolve(fetch(url, {
-                            ...options,
-                            headers: { ...headers, Authorization: `Bearer ${newToken}` },
-                        }))
-                    } else {
-                        resolve(res)
-                    }
-                })
-            })
-        } else {
-            // No refresh token — clear and redirect only if not on auth pages
-            storage.clearTokens()
-            if (typeof window !== 'undefined' &&
-                !window.location.pathname.startsWith('/login') &&
-                !window.location.pathname.startsWith('/register')) {
-                window.location.href = '/login'
-            }
-        }
-    }
-
-    return res
-}
 
 // ──────────────────────────────────────────
 // Auth Provider
@@ -138,6 +21,16 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [token, setToken] = useState(storage.getToken)
+    useEffect(() => {
+        const expire = () => { setUser(null); setToken(null); };
+        const creditsChanged = event => setUser(current => current ? { ...current, credits: event.detail } : current);
+        window.addEventListener('auth:expired', expire);
+        window.addEventListener('credits:changed', creditsChanged);
+        return () => {
+            window.removeEventListener('auth:expired', expire);
+            window.removeEventListener('credits:changed', creditsChanged);
+        };
+    }, [])
 
     const fetchUserInfo = useCallback(async () => {
         try {
@@ -149,6 +42,7 @@ export function AuthProvider({ children }) {
                 // Only clear tokens on explicit auth failure, not on server errors
                 storage.clearTokens()
                 setToken(null)
+                setUser(null)
             }
             // On 5xx or network error — keep user logged in, just don't update
         } catch {

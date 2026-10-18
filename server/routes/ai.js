@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { chatWithAI, getAvailableProviders } = require('../utils/aiProviders');
 const { authenticateToken } = require('../middleware/auth');
-const { requireCredits, deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
+const { requireCredits, deductAICredits, refundCredits, getCreditBalance } = require('../middleware/planMiddleware');
 const { CREDIT_COSTS } = require('../utils/creditCosts');
 
 /**
  * POST /api/ai/chat
  * Chat with AI assistant (AlFarabiBot)
  */
-router.post('/chat', async (req, res) => {
+router.post('/chat', authenticateToken, requireCredits('ai_chat'), async (req, res) => {
     const language = req.body?.language || 'ru';
     try {
         const { message, conversationHistory = [] } = req.body;
@@ -22,8 +22,13 @@ router.post('/chat', async (req, res) => {
         }
 
         const aiResponse = await chatWithAI(message, conversationHistory, language);
+        const charged = await deductAICredits(req.user.userId, req.creditCost);
+        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        const balance = await getCreditBalance(req.user.userId);
         res.json({
             response: aiResponse,
+            creditsCharged: req.creditCost,
+            creditsRemaining: balance.credits,
             provider: getAvailableProviders().primary,
             timestamp: new Date().toISOString()
         });
@@ -50,16 +55,24 @@ router.post('/lesson-plan', authenticateToken, requireCredits('lesson_plan'), as
             return res.status(400).json({ error: 'topic и subject обязательны' });
         }
 
-        const prompt = language === 'kk'
-            ? `${grade}-сынып оқушыларына арналған "${topic}" тақырыбы бойынша ${subject} пәнінің ${duration} минуттық сабақ жоспарын жаз. Жоспарда болуы керек: 1. Мақсаттар, 2. Жабдықтар, 3. Кіріспе (5 мин), 4. Негізгі бөлім (${duration - 15} мин), 5. Қорытынды (5 мин), 6. Үй тапсырмасы, 7. Бағалау критерийлері. НАЗАР АУДАРЫҢЫЗ: Тек жоспардың өзін ғана жазыңыз. Сәлемдесу, қоштасу және басқа да артық сөздер жазбаңыз.`
-            : `Составь подробный план урока по предмету "${subject}" на тему "${topic}" для ${grade} класса, длительностью ${duration} минут. Включи: 1. Цели и задачи, 2. Оборудование, 3. Орг. момент (5 мин), 4. Основная часть (${duration - 15} мин — объяснение, практика), 5. Подведение итогов (5 мин), 6. Домашнее задание, 7. Критерии оценивания. ВАЖНО: Выведи строго только сам план урока. Не здоровайся, не прощайся и не пиши никаких вводных слов ("Рад помочь" и т.д.). Никакой воды, только структура.`;
-
-        const plan = await chatWithAI(prompt, [], language);
-        
+        // Deduct BEFORE AI call — prevents free generations if server crashes mid-request
         const charged = await deductAICredits(req.user.userId, req.creditCost);
-        if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+        if (charged === false) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
+
+        const prompt = language === 'kk'
+            ? `${grade}-сынып оқушыларына арналған "${topic}" тақырыбы бойынша ${subject} пәнінің ${duration} минуттық сабақ жоспарын жаз. Жоспарда болуы керек: 1. Мақсаттар, 2. Жабдықтар, 3. Кіріспе (5 мин), 4. Негізгі бөлім (${duration - 15} мин), 5. Қорытынды (5 мин), 6. Үй тапсырмасы, 7. Бағалау критерийлері. НАЗАР АУДАРЫҢЫЗ: Тек жоспардың өзін ғана жазыңыз.`
+            : `Составь подробный план урока по предмету "${subject}" на тему "${topic}" для ${grade} класса, длительностью ${duration} минут. Включи: 1. Цели и задачи, 2. Оборудование, 3. Орг. момент (5 мин), 4. Основная часть (${duration - 15} мин), 5. Подведение итогов (5 мин), 6. Домашнее задание, 7. Критерии оценивания. Только структура, без лишних слов.`;
+
+        let plan;
+        try {
+            plan = await chatWithAI(prompt, [], language);
+        } catch (err) {
+            // Refund credits if AI call fails
+            await refundCredits(req.user.userId, req.creditCost);
+            throw err;
+        }
+
         const balance = await getCreditBalance(req.user.userId);
-        
         res.json({ plan, topic, subject, grade, duration, creditsCharged: req.creditCost, creditsRemaining: balance.credits });
     } catch (err) {
         console.error('Lesson plan error:', err);
@@ -98,6 +111,7 @@ router.post('/quiz', authenticateToken, requireCredits('quiz_generation'), async
             questions = [];
         }
 
+        if (!Array.isArray(questions) || !questions.length || !questions.every(question => typeof question.question === 'string' && Array.isArray(question.options) && question.correct)) return res.status(502).json({ error: 'AI вернул некорректный тест. Кредиты не списаны.' });
         const charged = await deductAICredits(req.user.userId, req.creditCost);
         if (!charged) return res.status(403).json({ error: 'Недостаточно AI-кредитов', code: 'NO_AI_CREDITS' });
         const balance = await getCreditBalance(req.user.userId);

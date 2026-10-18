@@ -1,108 +1,5 @@
-export let API_BASE = import.meta.env.VITE_API_URL || '';
-if (!API_BASE) {
-    if (typeof window !== 'undefined') {
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            API_BASE = 'http://localhost:3001/api';
-        } else {
-            // Fallback for production if VITE_API_URL is missing
-            API_BASE = '/api'; 
-        }
-    } else {
-        API_BASE = '/api';
-    }
-}
-
-// ─── Token helpers ────────────────────────────────────────
-const getToken = () => localStorage.getItem('auth_token');
-const getRefreshToken = () => localStorage.getItem('auth_refresh_token');
-const setTokens = (access, refresh) => {
-    localStorage.setItem('auth_token', access);
-    if (refresh) localStorage.setItem('auth_refresh_token', refresh);
-};
-const clearTokens = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_refresh_token');
-};
-
-let _isRefreshing = false;
-let _refreshQueue = [];
-
-async function _doRefresh() {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) throw new Error('No refresh token');
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-    });
-    if (!res.ok) throw new Error('Refresh failed');
-    const data = await res.json();
-    setTokens(data.token, data.refreshToken);
-    return data.token;
-}
-
-// Generic fetch wrapper with auto token refresh
-async function fetchAPI(endpoint, options = {}) {
-    const makeRequest = (token) => fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            ...options.headers,
-        },
-    });
-
-    let res = await makeRequest(getToken());
-
-    // Auto-refresh if token expired or invalid
-    if (res.status === 401 || res.status === 403) {
-        const body = await res.clone().json().catch(() => ({}))
-        // Don't try refresh for explicit permission errors (not auth)
-        if (body.code === 'FORBIDDEN' || res.status === 403) {
-            // Real permission error, not an auth issue — don't redirect
-            return res
-        }
-        const refreshToken = getRefreshToken();
-        if (refreshToken && !_isRefreshing) {
-            _isRefreshing = true;
-            try {
-                const newToken = await _doRefresh();
-                _isRefreshing = false;
-                _refreshQueue.forEach(cb => cb(newToken));
-                _refreshQueue = [];
-                res = await makeRequest(newToken);
-            } catch {
-                _isRefreshing = false;
-                _refreshQueue.forEach(cb => cb(null));
-                _refreshQueue = [];
-                clearTokens();
-                if (typeof window !== 'undefined' &&
-                    !window.location.pathname.startsWith('/login') &&
-                    !window.location.pathname.startsWith('/register')) {
-                    window.location.href = '/login';
-                }
-                throw new Error('Сессия истекла. Войдите снова.');
-            }
-        } else if (refreshToken && _isRefreshing) {
-            await new Promise(resolve => _refreshQueue.push(resolve));
-            res = await makeRequest(getToken());
-        } else if (!refreshToken) {
-            clearTokens();
-            if (typeof window !== 'undefined' &&
-                !window.location.pathname.startsWith('/login') &&
-                !window.location.pathname.startsWith('/register')) {
-                window.location.href = '/login';
-            }
-            throw new Error(body.error || 'Ошибка авторизации');
-        }
-    }
-
-    if (!res.ok) {
-        const error = await res.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || 'API request failed');
-    }
-    return res.json();
-}
+import { API_BASE, requestAPI as fetchAPI } from './lib/http';
+export { API_BASE } from './lib/http';
 
 // Lessons API
 export const lessonsAPI = {
@@ -146,6 +43,7 @@ export const assignmentsAPI = {
     },
     getById: (id) => fetchAPI(`/assignments/${id}`),
     getSubmissions: (id) => fetchAPI(`/assignments/${id}/submissions`),
+    gradeSubmission: (id, submissionId, values) => fetchAPI(`/assignments/${id}/submissions/${submissionId}`, { method: 'PATCH', body: JSON.stringify(values) }),
     create: (assignment) => fetchAPI('/assignments', { method: 'POST', body: JSON.stringify(assignment) }),
     update: (id, assignment) => fetchAPI(`/assignments/${id}`, { method: 'PUT', body: JSON.stringify(assignment) }),
     delete: (id) => fetchAPI(`/assignments/${id}`, { method: 'DELETE' })
@@ -274,8 +172,11 @@ export async function createInlineImageAsset(file, options = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas is not supported');
 
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0, width, height);
     const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+    if (compressedDataUrl.length > 900000) throw new Error('Изображение слишком большое. Выберите меньшее изображение.');
 
     return {
         secure_url: compressedDataUrl,
@@ -284,19 +185,25 @@ export async function createInlineImageAsset(file, options = {}) {
     };
 }
 
-// Cloudinary authenticated upload (supports raw files, bypasses unsigned limit)
+// Images can be saved with the lesson even when cloud storage is unavailable.
 export async function uploadToCloudinary(file, onProgress) {
-    // 1. Get secure signature from our backend
-    const sigRes = await fetch(`${API_BASE}/cloudinary/signature`);
-    if (!sigRes.ok) {
-        const error = await sigRes.json().catch(() => ({}));
-        throw new Error(error.error || 'Signature failed');
+    if (!file || file.size <= 0) throw new Error('Выберите непустой файл');
+    const isImage = /^image\/(jpeg|png|webp|gif)$/.test(file.type);
+    if (file.size > (isImage ? 15 : 100) * 1024 * 1024) throw new Error(isImage ? 'Изображение должно быть меньше 15 МБ' : 'Файл должен быть меньше 100 МБ');
+    const inline = isImage ? await createInlineImageAsset(file) : null;
+    let credentials;
+    try {
+        credentials = await fetchAPI('/cloudinary/signature');
+    } catch (error) {
+        if (isImage && error.status === 503) {
+            onProgress?.(100);
+            return inline;
+        }
+        throw error;
     }
-    const { signature, timestamp, apiKey, cloudName, folder } = await sigRes.json();
-
-    // 2. Upload file securely
+    const { signature, timestamp, apiKey, cloudName, folder } = credentials;
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', inline?.secure_url || file);
     formData.append('folder', folder);
     formData.append('api_key', apiKey);
     formData.append('timestamp', timestamp);
@@ -304,32 +211,21 @@ export async function uploadToCloudinary(file, onProgress) {
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-
-        if (onProgress) {
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    onProgress(Math.round((e.loaded / e.total) * 100));
-                }
-            };
-        }
-
+        const resource = isImage ? 'image' : file.type.startsWith('video/') ? 'video' : 'raw';
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resource}/upload`);
+        xhr.timeout = 120000;
+        xhr.upload.onprogress = e => {
+            if (e.lengthComputable) onProgress?.(Math.round(e.loaded / e.total * 100));
+        };
         xhr.onload = () => {
-            if (xhr.status === 200) {
-                resolve(JSON.parse(xhr.responseText));
-            } else {
-                let errMsg = xhr.responseText;
-                try {
-                    const json = JSON.parse(xhr.responseText);
-                    errMsg = json.error ? json.error.message : errMsg;
-                } catch(e) {}
-                reject(new Error('Cloudinary: ' + errMsg));
-            }
+            let result;
+            try { result = JSON.parse(xhr.responseText); } catch { /* Show a readable error below. */ }
+            if (xhr.status >= 200 && xhr.status < 300 && result?.secure_url) resolve(result);
+            else reject(new Error(result?.error?.message || 'Не удалось загрузить файл в хранилище'));
         };
-        xhr.onerror = () => {
-            console.error('Cloudinary Network Error');
-            reject(new Error('Network error during upload (check CORS or Internet connection)'));
-        };
+        xhr.onerror = () => reject(new Error('Не удалось загрузить файл. Проверьте соединение.'));
+        xhr.ontimeout = () => reject(new Error('Загрузка заняла слишком много времени. Повторите попытку.'));
+        xhr.onabort = () => reject(new Error('Загрузка отменена'));
         xhr.send(formData);
     });
 }
@@ -401,7 +297,7 @@ export const marketplaceAPI = {
 // Ad API (public)
 export const adAPI = {
     getCurrent: () => fetchAPI('/admin/ads/current'),
-    recordView: (adId) => fetchAPI(`/admin/ads/${adId}/view`, { method: 'POST' }),
+    recordView: (adId, viewToken) => fetchAPI(`/admin/ads/${adId}/view`, { method: 'POST', body: JSON.stringify({ viewToken }) }),
 };
 
 // Admin API

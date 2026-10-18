@@ -296,7 +296,7 @@ export default function Quizzes() {
     }, [quizzes])
 
     return (
-        <div className="page-content" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
+        <div className="quiz-page" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 16px' }}>
             <MaterialsTabs />
             
             {/* Page Header */}

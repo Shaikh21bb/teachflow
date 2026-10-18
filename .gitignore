@@ -9,6 +9,10 @@ build/
 .env
 .env.local
 .env.production
+.env.*
+!.env.example
+playwright-report/
+test-results/
 
 # OS files
 .DS_Store

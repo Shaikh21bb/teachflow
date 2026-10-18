@@ -19,7 +19,15 @@ export default function StudentDashboard() {
         fetch(`${API_BASE}/student-portal/dashboard`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
-            .then(res => res.json())
+            .then(async res => {
+                const body = await res.json();
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('studentToken');
+                    navigate('/student/login');
+                }
+                if (!res.ok) throw new Error(body.error || 'Ошибка загрузки');
+                return body;
+            })
             .then(data => {
                 if (data.error) {
                     setError(data.error);
@@ -49,7 +57,7 @@ export default function StudentDashboard() {
         );
     }
 
-    if (error || !data) return null;
+    if (error || !data) return <div className="page-state" role="alert"><p>{error || 'Данные недоступны'}</p><button className="btn btn-secondary" onClick={() => window.location.reload()}>Повторить</button></div>;
 
     const { student, upcomingQuizzes, homeworkAssignments = [], recentAttempts } = data;
 
@@ -60,7 +68,7 @@ export default function StudentDashboard() {
     const progressPercent = Math.min(100, Math.max(0, (currentXpInLevel / 100) * 100));
 
     return (
-        <div style={{
+        <div className="student-portal" style={{
             minHeight: '100vh',
             background: 'var(--color-slate-900)',
             color: 'white',
@@ -171,7 +179,7 @@ export default function StudentDashboard() {
                                                 <div style={{ color: 'var(--color-gray-400)', fontSize: '13px', display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                                                     <span>Пән: {item.subject || 'Көрсетілмеген'}</span>
                                                     <span><Clock size={14} style={{ verticalAlign: '-2px' }} /> {item.due_date ? new Date(item.due_date).toLocaleDateString('kk-KZ') : 'Дедлайн жоқ'}</span>
-                                                    {submitted && <span style={{ color: '#34d399' }}>Баға: {item.grade_label} · {item.score}/{item.submitted_max_score || item.max_score}</span>}
+                                                    {submitted && <span style={{ color: '#34d399' }}>{item.submission_status === 'pending' ? 'Тексеруді күтуде' : `Баға: ${item.grade_label} · ${item.score}/${item.submitted_max_score || item.max_score}`}</span>}
                                                 </div>
                                             </div>
                                             <Link to={`/student/assignment/${item.id}`} style={{

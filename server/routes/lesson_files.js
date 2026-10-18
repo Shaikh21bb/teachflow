@@ -37,7 +37,7 @@ router.post('/', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Нет прав' });
         }
 
-        await runQuery(`
+        const result = await runQuery(`
             INSERT INTO lesson_files (lesson_id, file_url, file_name, file_size, file_type, public_id, order_index)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `, [
@@ -50,7 +50,7 @@ router.post('/', authenticateToken, async (req, res) => {
             order_index || 0
         ]);
 
-        const id = await getLastInsertId();
+        const id = Number(result.lastInsertRowid);
         const file = await getOne('SELECT * FROM lesson_files WHERE id = ?', [id]);
         res.status(201).json(file);
     } catch (err) {

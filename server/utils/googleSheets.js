@@ -1,7 +1,8 @@
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzUqJ0f4iosSX1jQALMQyQbLTFK3_x2BAq5zQfnbGalLf73R8GBuAEV4iNtOXtt5sqz/exec';
+const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL;
 
 // Sync new user to Google Sheets
 async function syncUserToGoogleSheets(user) {
+    if (!GOOGLE_SCRIPT_URL) return;
     try {
         const payload = {
             name: user.name,
@@ -26,6 +27,7 @@ async function syncUserToGoogleSheets(user) {
 
 // Update last login time in Google Sheets
 async function updateLastLogin(email) {
+    if (!GOOGLE_SCRIPT_URL) return;
     try {
         const payload = {
             email: email,

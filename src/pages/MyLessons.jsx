@@ -49,7 +49,7 @@ export default function MyLessons() {
     const printRef = useRef(null)
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: printLesson?.title || 'Урок',
         onAfterPrint: () => { setPrintLesson(null); setPrintSlides(null) }
     })

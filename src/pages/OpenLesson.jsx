@@ -206,7 +206,7 @@ function OpenLesson() {
     }
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: selectedLesson?.title || 'Lesson',
     })
 
@@ -467,6 +467,7 @@ function OpenLesson() {
                             </div>
                         )}
 
+                        {generating && (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', gap: '20px' }}>
                                 <div style={{
                                     width: '60px', height: '60px',

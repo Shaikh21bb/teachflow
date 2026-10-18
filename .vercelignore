@@ -1,0 +1,12 @@
+.env*
+node_modules
+server/node_modules
+server/tests
+tests
+test-results
+playwright-report
+app.py
+beton_lending
+beton_market_kz
+*.db
+*.sqlite

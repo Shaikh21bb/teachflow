@@ -4,15 +4,16 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { runQuery, getOne } = require('../db/database');
 const { authenticateStudent } = require('../middleware/studentAuth');
+const { authLimiter } = require('../middleware/rateLimiter');
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
 // POST /api/student/register
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
     try {
         const { invite_code, username, password, name } = req.body;
         
-        if (!invite_code || !username || !password || !name) {
+        if (![invite_code, username, password, name].every(value => typeof value === 'string' && value.trim()) || password.length < 8 || password.length > 128 || username.length > 64 || name.length > 100 || invite_code.length > 100) {
             return res.status(400).json({ error: 'Все поля обязательны' });
         }
 
@@ -50,11 +51,11 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/student/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        if (!username || !password) {
+        if (typeof username !== 'string' || typeof password !== 'string' || !username || !password || password.length > 128) {
             return res.status(400).json({ error: 'Введите имя пользователя и пароль' });
         }
 

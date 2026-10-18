@@ -19,6 +19,9 @@ export default function StudentQuiz() {
     const totalTimerId = useRef(null);
     const qTimerId = useRef(null);
     const startTime = useRef(Date.now());
+    const answersRef = useRef(answers);
+    const submittingRef = useRef(false);
+    answersRef.current = answers;
 
     useEffect(() => {
         const token = localStorage.getItem('studentToken');
@@ -47,36 +50,36 @@ export default function StudentQuiz() {
         if (timeLeft !== null && timeLeft > 0 && !isSubmitting) {
             totalTimerId.current = setInterval(() => {
                 setTimeLeft(prev => {
-                    if (prev <= 1) { clearInterval(totalTimerId.current); submitQuiz(); return 0; }
-                    return prev - 1;
+                    return Math.max(0, prev - 1);
                 });
             }, 1000);
             return () => clearInterval(totalTimerId.current);
         }
-    }, [timeLeft !== null, isSubmitting]); // eslint-disable-line
+    }, [timeLeft !== null, isSubmitting]);
+
+    useEffect(() => {
+        if (timeLeft === 0 && quiz && !isSubmitting) submitQuiz();
+    }, [timeLeft, quiz, isSubmitting]);
 
     // ── Per-question timer ──────────────────────────────────
+    const questionDuration = Number(quiz?.questions?.[currentQuestionIndex]?.time_limit || quiz?.question_time || 0);
     useEffect(() => {
-        if (!quiz?.question_time) return;
         clearInterval(qTimerId.current);
-        setQTimeLeft(quiz.question_time);
+        if (!questionDuration || isSubmitting) { setQTimeLeft(null); return; }
+        setQTimeLeft(questionDuration);
         qTimerId.current = setInterval(() => {
             setQTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(qTimerId.current);
-                    // Auto-advance to next question when time runs out
-                    setCurrentQuestionIndex(ci => {
-                        if (ci < quiz.questions.length - 1) return ci + 1;
-                        submitQuiz();
-                        return ci;
-                    });
-                    return quiz.question_time;
-                }
-                return prev - 1;
+                return Math.max(0, prev - 1);
             });
         }, 1000);
         return () => clearInterval(qTimerId.current);
-    }, [currentQuestionIndex, quiz?.question_time]); // eslint-disable-line
+    }, [currentQuestionIndex, questionDuration, isSubmitting]);
+
+    useEffect(() => {
+        if (qTimeLeft !== 0 || !quiz || isSubmitting) return;
+        if (currentQuestionIndex < quiz.questions.length - 1) setCurrentQuestionIndex(index => index + 1);
+        else submitQuiz();
+    }, [qTimeLeft, currentQuestionIndex, quiz, isSubmitting]);
 
     const handleSelectOption = (optionLabel) => {
         const newAnswers = [...answers];
@@ -92,7 +95,8 @@ export default function StudentQuiz() {
     };
 
     const submitQuiz = async () => {
-        if (isSubmitting) return;
+        if (submittingRef.current) return;
+        submittingRef.current = true;
         setIsSubmitting(true);
         clearInterval(totalTimerId.current);
         clearInterval(qTimerId.current);
@@ -101,7 +105,7 @@ export default function StudentQuiz() {
         try {
             const token = localStorage.getItem('studentToken');
             // Re-read answers from state via closure won't work in async; use a ref trick
-            const currentAnswers = answers;
+            const currentAnswers = answersRef.current;
             const res = await fetch(`${API_BASE}/student-portal/quizzes/${id}/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -113,8 +117,9 @@ export default function StudentQuiz() {
             } else {
                 setError(result.error || 'Ошибка отправки результатов');
                 setIsSubmitting(false);
+                submittingRef.current = false;
             }
-        } catch { setError('Ошибка сети'); setIsSubmitting(false); }
+        } catch { setError('Ошибка сети'); setIsSubmitting(false); submittingRef.current = false; }
     };
 
     if (loading) return <div style={{ minHeight: '100vh', background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Жүктелуде...</div>;
@@ -139,7 +144,7 @@ export default function StudentQuiz() {
     const qUrgent = quiz.question_time && qTimeLeft !== null && qTimeLeft <= Math.max(3, quiz.question_time * 0.2);
 
     return (
-        <div style={{ minHeight: '100vh', background: '#0f172a', color: 'white', fontFamily: '"Inter", sans-serif' }}>
+        <div className="student-portal" style={{ minHeight: '100vh', background: '#0f172a', color: 'white', fontFamily: '"Inter", sans-serif' }}>
             <header style={{
                 background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)',
                 borderBottom: '1px solid rgba(255,255,255,0.1)',

@@ -6,40 +6,29 @@ const { authenticateToken } = require('../middleware/auth');
 // Get dashboard statistics
 router.get('/stats', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
-        
-        // Count lessons for today by this user
+        const userId = req.user.id || req.user.userId;
         const today = new Date().toISOString().split('T')[0];
-        const lessonsToday = await getAll(
-            `SELECT COUNT(*) as count FROM lessons WHERE DATE(created_at) = ? AND user_id = ?`,
-            [today, userId]
-        );
 
-        // Count active assignments by this user
-        const activeAssignments = await getAll(
-            `SELECT COUNT(*) as count FROM assignments WHERE status = 'active' AND user_id = ?`,
-            [userId]
-        );
-
-        // Count total students in classes created by this user
-        const totalStudents = await getAll(
-            `SELECT COUNT(*) as count FROM students s
-             JOIN classes c ON s.class_id = c.id
-             WHERE c.user_id = ?`,
-            [userId]
-        );
-
-        // Count pending reviews (completed assignments by this user not yet graded)
-        const pendingReviews = await getAll(
-            `SELECT COUNT(*) as count FROM assignments WHERE status = 'completed' AND user_id = ?`,
-            [userId]
-        );
+        // Run all 4 queries IN PARALLEL — was 4 sequential round-trips, now 1 batch
+        const [lessonsToday, activeAssignments, totalStudents, pendingReviews,
+               totalLessons, totalClasses, totalAssignments] = await Promise.all([
+            getOne(`SELECT COUNT(*) as count FROM lessons WHERE DATE(created_at) = ? AND user_id = ?`, [today, userId]),
+            getOne(`SELECT COUNT(*) as count FROM assignments WHERE status = 'active' AND user_id = ?`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM students s JOIN classes c ON s.class_id = c.id WHERE c.user_id = ?`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM assignments WHERE status = 'completed' AND user_id = ?`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM lessons WHERE user_id = ? AND is_archived = 0`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM classes WHERE user_id = ?`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM assignments WHERE user_id = ?`, [userId]),
+        ]);
 
         res.json({
-            lessonsToday: lessonsToday[0]?.count || 0,
-            activeAssignments: activeAssignments[0]?.count || 0,
-            totalStudents: totalStudents[0]?.count || 0,
-            pendingReviews: pendingReviews[0]?.count || 0
+            lessonsToday:       Number(lessonsToday?.count)      || 0,
+            activeAssignments:  Number(activeAssignments?.count) || 0,
+            totalStudents:      Number(totalStudents?.count)      || 0,
+            pendingReviews:     Number(pendingReviews?.count)     || 0,
+            totalLessons:       Number(totalLessons?.count)       || 0,
+            totalClasses:       Number(totalClasses?.count)       || 0,
+            totalAssignments:   Number(totalAssignments?.count)   || 0,
         });
     } catch (error) {
         console.error('Dashboard stats error:', error);
@@ -50,7 +39,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
 // Get upcoming lessons
 router.get('/upcoming-lessons', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId;
         
         const lessons = await getAll(
             `SELECT l.*, c.name as class_name 

@@ -3,52 +3,56 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const { getDatabase, getOne, getAll, runQuery } = require('./db/database');
+const compression = require('compression');
+const { getDatabase, getOne, getAll, runQuery, SCHEMA_VERSION } = require('./db/database');
 const { authLimiter, aiLimiter, generalLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1));
 
 // ──────────────────────────────────────────
-// Middleware
+// Middleware — ORDER MATTERS
 // ──────────────────────────────────────────
+// 1. Compression (must be first to compress all responses)
+app.use(compression({ level: 6, threshold: 1024 }));
+
+// 2. Security headers
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(morgan('dev'));
 
-// Replaced static array with dynamic function in the cors config below
+// 3. Logging (use 'combined' in production — 'dev' is too slow)
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// 4. CORS
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        
-        // Allow localhost and any vercel app subdomains
         if (
-            origin.startsWith('http://localhost') || 
-            origin.endsWith('.vercel.app') || 
-            origin === 'https://urpaq.ai' || 
+            /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+            origin.endsWith('.vercel.app') ||
+            origin === 'https://urpaq.ai' ||
             origin === 'https://www.urpaq.ai' ||
             (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL)
         ) {
             callback(null, true);
         } else {
-            console.log("CORS blocked origin:", origin);
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true
 }));
-app.use(express.json({ limit: '2mb' }));
 
-// ──────────────────────────────────────────
-// Global rate limiting (DDoS protection)
-// ──────────────────────────────────────────
+// 5. Rate limiting BEFORE body parsing (reject abusers early)
 app.use('/api/', generalLimiter);
+
+// 6. Body parsing
+app.use(express.json({ limit: '2mb' }));
 
 // ──────────────────────────────────────────
 // Run additive migrations (safe to re-run)
 // ──────────────────────────────────────────
 async function runMigrations() {
+    if (await getOne('SELECT version FROM app_schema_versions WHERE version = ?', [SCHEMA_VERSION])) return;
     const migrations = [
         // v1 columns
         `ALTER TABLE users ADD COLUMN subjects TEXT DEFAULT '[]'`,
@@ -360,8 +364,6 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_mp_buyer ON marketplace_purchases(buyer_id)`,
         `CREATE INDEX IF NOT EXISTS idx_mp_lesson ON marketplace_purchases(lesson_id)`,
-        // Give existing users 200 starter tokens
-        `UPDATE users SET token_balance = 200 WHERE token_balance = 0`,
         // v16 - Lesson schedule
         `CREATE TABLE IF NOT EXISTS lesson_schedule (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -409,6 +411,18 @@ async function runMigrations() {
         )`,
         `CREATE INDEX IF NOT EXISTS idx_ad_views_user ON ad_views(user_id)`,
         `CREATE INDEX IF NOT EXISTS idx_ad_views_ad ON ad_views(ad_id)`,
+        `ALTER TABLE ad_views ADD COLUMN claim_token TEXT`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_ad_views_claim ON ad_views(claim_token) WHERE claim_token IS NOT NULL`,
+        // v18 - Performance indexes
+        `CREATE INDEX IF NOT EXISTS idx_lessons_pub_views ON lessons(is_published, is_archived, views_count)`,
+        `CREATE INDEX IF NOT EXISTS idx_lessons_pub_likes ON lessons(is_published, is_archived, likes)`,
+        `CREATE INDEX IF NOT EXISTS idx_lessons_user_pub ON lessons(user_id, is_published, is_archived)`,
+        `CREATE INDEX IF NOT EXISTS idx_students_class_id ON students(class_id)`,
+        `CREATE INDEX IF NOT EXISTS idx_saved_materials_user_type ON saved_materials(user_id, type)`,
+        `CREATE INDEX IF NOT EXISTS idx_assignments_user_status ON assignments(user_id, status)`,
+        `CREATE INDEX IF NOT EXISTS idx_token_tx_user_date ON token_transactions(user_id, created_at)`,
+        `CREATE INDEX IF NOT EXISTS idx_ad_views_user_date ON ad_views(user_id, viewed_at)`,
+        `CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)`,
     ];
 
     for (const sql of migrations) {
@@ -417,12 +431,12 @@ async function runMigrations() {
         } catch (e) {
             // Silently ignore "already exists" / "duplicate column" errors
             if (!e.message?.toLowerCase().includes('already exists') &&
-                !e.message?.toLowerCase().includes('duplicate column') &&
-                !e.message?.toLowerCase().includes('unique constraint')) {
-                console.warn('Migration warning:', e.message?.split('\n')[0]);
+                !e.message?.toLowerCase().includes('duplicate column')) {
+                throw e;
             }
         }
     }
+    await runQuery('INSERT OR IGNORE INTO app_schema_versions (version) VALUES (?)', [SCHEMA_VERSION]);
     console.log('✅ Migrations complete');
 }
 
@@ -434,15 +448,12 @@ async function seedAdmins() {
     const bcrypt = require('bcryptjs');
     const { getOne: _getOne, runQuery: _runQuery } = require('./db/database');
 
-    // Pre-computed bcrypt hash for 'Urpaqai2026' (12 rounds)
-    // This is the HASH — the actual password cannot be recovered from it
-    const ADMIN_HASH = process.env.ADMIN_PASSWORD_HASH ||
-        '$2b$12$oL5jhyYHPWJbeq8gwYzs0eUyQ43BJR.SCTzOfcgzOQOFU5TD3XpHa';
+    // Administrator bootstrap is explicitly configured by the deployment owner.
+    const ADMIN_HASH = process.env.ADMIN_PASSWORD_HASH;
+    const emails = (process.env.ADMIN_EMAILS || '').split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
+    if (!ADMIN_HASH || emails.length === 0) return;
 
-    const admins = [
-        { email: 'Shaqwork@gmail.com', name: 'Admin Shaq' },
-        { email: 'bekzansajhnazar@gmail.com', name: 'Admin Bekzan' }
-    ];
+    const admins = emails.map(email => ({ email, name: 'Administrator' }));
 
     for (const admin of admins) {
         try {
@@ -453,14 +464,14 @@ async function seedAdmins() {
 
             if (existing) {
                 await _runQuery(
-                    "UPDATE users SET role_admin = 1, role = 'admin', credits = 9999, token_balance = 99999 WHERE email = ?",
+                    "UPDATE users SET role_admin = 1, role = 'admin' WHERE email = ?",
                     [admin.email]
                 );
                 console.log(`✅ Admin elevated: ${admin.email}`);
             } else {
                 await _runQuery(
                     `INSERT INTO users (name, email, password_hash, role, role_admin, credits, token_balance, plan, subjects)
-                     VALUES (?, ?, ?, 'admin', 1, 9999, 99999, 'premium', '[]')`,
+                     VALUES (?, ?, ?, 'admin', 1, 5, 0, 'free', '[]')`,
                     [admin.name, admin.email, ADMIN_HASH]
                 );
                 console.log(`✅ Admin created: ${admin.email}`);
@@ -474,7 +485,7 @@ async function seedAdmins() {
 // ──────────────────────────────────────────
 // Start server
 // ──────────────────────────────────────────
-async function startServer() {
+async function initializeApp() {
     await getDatabase();
     await runMigrations();
     await seedAdmins();
@@ -507,13 +518,13 @@ async function startServer() {
     // Initialize Google Sheets headers (optional, won't crash if unavailable)
     try {
         const { ensureSheetHeaders } = require('./utils/googleSheets');
-        await ensureSheetHeaders();
+        ensureSheetHeaders().catch(error => console.warn('Google Sheets skipped:', error.message));
     } catch (e) {
         console.log('Google Sheets skipped:', e.message);
     }
 
     // Helper route for secure Cloudinary signed uploads
-    app.get('/api/cloudinary/signature', (req, res) => {
+    app.get('/api/cloudinary/signature', require('./middleware/auth').authenticateToken, (req, res) => {
         const apiSecret = process.env.CLOUDINARY_API_SECRET;
         const apiKey = process.env.CLOUDINARY_API_KEY;
         const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -539,7 +550,7 @@ async function startServer() {
     });
 
     // API Routes
-    app.use('/api/auth', authLimiter, authRouter);          // 🔒 10 req/15min per IP+email
+    app.use('/api/auth', authRouter);
     app.use('/api/lessons', lessonsRouter);
     app.use('/api/lesson-files', lessonFilesRouter);
     app.use('/api/assignments', assignmentsRouter);
@@ -566,36 +577,43 @@ async function startServer() {
 
     // Health check
     app.get('/api/health', (req, res) => {
-        res.json({ status: 'ok', version: '2.0', timestamp: new Date().toISOString() });
+        res.json({ status: 'ok', version: '2.0', revision: (process.env.RENDER_GIT_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA || 'local').slice(0, 8), timestamp: new Date().toISOString() });
     });
+
+    app.use('/api', (req, res) => res.status(404).json({ error: 'API endpoint not found' }));
 
     // Global Error Handler
     app.use((err, req, res, next) => {
-        console.error('❌ Server Error:', err.stack);
-        res.status(err.status || 500).json({
-            error: true,
-            message: err.message || 'Internal Server Error',
+        if (!err.status || err.status >= 500) console.error('Server Error:', err.stack);
+        const status = err.status || 500;
+        res.status(status).json({
+            error: status === 413 ? 'Файл слишком большой. Используйте файл меньшего размера.' : status >= 500 ? 'Ошибка сервера. Повторите попытку позже.' : err.message,
             ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
         });
     });
 
-    // Start
-    app.listen(PORT, () => {
-        console.log(`
-  ╔════════════════════════════════════════╗
-  ║     Urpaq.ai API Server v2.0           ║
-  ╠════════════════════════════════════════╣
-  ║  🚀 Server: http://localhost:${PORT}       ║
-  ║  📚 API:    http://localhost:${PORT}/api   ║
-  ║  🤖 AI:     /api/ai/lesson-plan        ║
-  ║  🔌 Hooks:  /api/webhooks/telegram/:id ║
-  ╚════════════════════════════════════════╝
-    `);
+    return app;
+}
+
+let readyPromise;
+app.ready = () => {
+    if (!readyPromise) readyPromise = initializeApp().catch(error => { readyPromise = null; throw error; });
+    return readyPromise;
+};
+
+async function startServer() {
+    await app.ready();
+    const server = app.listen(PORT, () => {
+        console.log(`🚀 Urpaq.ai API running on port ${PORT}`);
     });
+    // Prevent socket hang-up behind nginx/Vercel reverse proxy
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    return server;
 }
 
 if (require.main === module) {
-    startServer().catch(console.error);
+    startServer().catch(error => { console.error(error); process.exitCode = 1; });
 }
 
 module.exports = app;

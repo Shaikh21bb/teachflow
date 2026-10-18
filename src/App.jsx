@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
+import RouteBoundary from './components/RouteBoundary'
 import { 
     Home, BookOpen, LayoutTemplate, Library, 
     ClipboardList, Users, BarChart, Bot, 
@@ -8,52 +9,53 @@ import {
     PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck
 } from 'lucide-react'
 import Landing from './pages/Landing'
-import Dashboard from './pages/Dashboard'
-import LibraryPage from './pages/Library'
-import LessonBuilder from './pages/LessonBuilder'
-import Assignments from './pages/Assignments'
-import ClassDashboard from './pages/ClassDashboard'
-import Reports from './pages/Reports'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import AlFarabiBot from './pages/AlFarabiBot'
-import OpenLesson from './pages/OpenLesson'
-import MyLessons from './pages/MyLessons'
-import Integrations from './pages/Integrations'
-import Quizzes from './pages/Quizzes'
-import QuizReport from './pages/QuizReport'
-import SettingsPage from './pages/Settings'
-import ProfilePage from './pages/Profile'
-import TelegramHub from './pages/TelegramHub'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Pricing from './pages/Pricing'
-import MockPayment from './pages/MockPayment'
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const LibraryPage = lazy(() => import('./pages/Library'));
+const LessonBuilder = lazy(() => import('./pages/LessonBuilder'));
+const Assignments = lazy(() => import('./pages/Assignments'));
+const ClassDashboard = lazy(() => import('./pages/ClassDashboard'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const AlFarabiBot = lazy(() => import('./pages/AlFarabiBot'));
+const OpenLesson = lazy(() => import('./pages/OpenLesson'));
+const MyLessons = lazy(() => import('./pages/MyLessons'));
+const Integrations = lazy(() => import('./pages/Integrations'));
+const Quizzes = lazy(() => import('./pages/Quizzes'));
+const QuizReport = lazy(() => import('./pages/QuizReport'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+const ProfilePage = lazy(() => import('./pages/Profile'));
+const TelegramHub = lazy(() => import('./pages/TelegramHub'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const MockPayment = lazy(() => import('./pages/MockPayment'));
 
-import StudentLogin from './pages/student/StudentLogin'
-import StudentRegister from './pages/student/StudentRegister'
-import StudentDashboard from './pages/student/StudentDashboard'
-import StudentQuiz from './pages/student/StudentQuiz'
-import StudentResults from './pages/student/StudentResults'
-import StudentAssignment from './pages/student/StudentAssignment'
-import JoinLesson from './pages/JoinLesson'
+const StudentLogin = lazy(() => import('./pages/student/StudentLogin'));
+const StudentRegister = lazy(() => import('./pages/student/StudentRegister'));
+const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const StudentQuiz = lazy(() => import('./pages/student/StudentQuiz'));
+const StudentResults = lazy(() => import('./pages/student/StudentResults'));
+const StudentAssignment = lazy(() => import('./pages/student/StudentAssignment'));
+const JoinLesson = lazy(() => import('./pages/JoinLesson'));
 
 import GlobalSearch from './components/GlobalSearch'
 import { TelegramIcon } from './components/Icons'
 import NotificationBell from './components/NotificationBell'
 import InstallPrompt from './components/InstallPrompt'
-import Presentation from './pages/Presentation'
+const Presentation = lazy(() => import('./pages/Presentation'));
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthProvider, useAuth, authFetch } from './contexts/AuthContext'
+import { chatAPI } from './api'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
-import TeacherChat from './pages/TeacherChat'
-import TeacherPublicProfile from './pages/TeacherPublicProfile'
-import LessonTemplates from './pages/LessonTemplates'
-import ParentPortal from './pages/ParentPortal'
-import Marketplace from './pages/Marketplace'
-import Schedule from './pages/Schedule'
-import Leaderboard from './pages/Leaderboard'
-import AdminPanel from './pages/AdminPanel'
+const TeacherChat = lazy(() => import('./pages/TeacherChat'));
+const TeacherPublicProfile = lazy(() => import('./pages/TeacherPublicProfile'));
+const LessonTemplates = lazy(() => import('./pages/LessonTemplates'));
+const ParentPortal = lazy(() => import('./pages/ParentPortal'));
+const Marketplace = lazy(() => import('./pages/Marketplace'));
+const Schedule = lazy(() => import('./pages/Schedule'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 
 function App() {
     return (
@@ -61,6 +63,7 @@ function App() {
             <LanguageProvider>
                 <AuthProvider>
                     <BrowserRouter>
+                        <RouteBoundary><Suspense fallback={<div className="page-state" role="status">Жүктелуде / Загрузка...</div>}>
                         <Routes>
                             <Route path="/" element={<Landing />} />
                             <Route path="/login" element={<Login />} />
@@ -110,7 +113,9 @@ function App() {
                             <Route path="/schedule" element={<ProtectedRoute><DashboardLayout><Schedule /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/leaderboard" element={<ProtectedRoute><DashboardLayout><Leaderboard /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/admin" element={<ProtectedRoute><DashboardLayout><AdminPanel /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="*" element={<div className="page-state"><h1>404</h1><p>Страница не найдена / Бет табылмады</p><Link className="btn btn-primary" to="/">На главную</Link></div>} />
                         </Routes>
+                        </Suspense></RouteBoundary>
                     </BrowserRouter>
                 </AuthProvider>
             </LanguageProvider>
@@ -158,7 +163,6 @@ function DashboardLayout({ children }) {
         if (!isAuthenticated) return
         const fetchUnread = async () => {
             try {
-                const { chatAPI } = await import('./api')
                 const data = await chatAPI.getUnreadCount()
                 setUnreadCount(data.count || 0)
             } catch { /* silent */ }
@@ -276,6 +280,7 @@ function DashboardLayout({ children }) {
                     <GlobalSearch />
 
                     <div className="topbar-actions">
+                            <Link to="/pricing" className="credit-balance" title={language === 'kk' ? 'AI кредиттері' : 'AI-кредиты'}><Zap size={15} /><span>{user?.credits ?? 0}</span><span className="hide-on-mobile">AI</span></Link>
                         <ThemeToggleButton />
                         <button
                             onClick={toggleLanguage}
@@ -361,7 +366,6 @@ function UserProfile() {
         if (!user) return
         const loadAvatar = async () => {
             try {
-                const { authFetch } = await import('./contexts/AuthContext')
                 const res = await authFetch(`${API_BASE}/auth/teacher-profile`)
                 if (res.ok) {
                     const data = await res.json()

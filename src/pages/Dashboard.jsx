@@ -9,7 +9,7 @@ import {
 import AdViewer from '../components/AdViewer'
 import { dashboardAPI, assignmentsAPI, aiAPI, marketplaceAPI, scheduleAPI, adAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth, authFetch } from '../contexts/AuthContext'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -101,9 +101,9 @@ function ProfileCompletionBar({ language, profile }) {
     return (
         <Link to="/profile" style={{ textDecoration: 'none', display: 'block', marginBottom: '16px' }}>
             <div style={{
-                background: 'white', borderRadius: '14px',
+                borderRadius: '14px',
                 padding: '14px 18px', border: '1px solid var(--color-primary-100)',
-                background: 'linear-gradient(to right, #eff6ff, white)',
+                background: 'var(--color-white)',
                 display: 'flex', alignItems: 'center', gap: '14px',
                 boxShadow: '0 2px 8px rgba(99,102,241,0.08)',
                 transition: 'box-shadow 0.2s'
@@ -156,7 +156,7 @@ function FirstStepsWidget({ language, stats, onDismiss }) {
     if (doneCount === steps.length) return null
 
     return (
-        <div style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--color-gray-100)', padding: '18px 20px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <div style={{ background: 'var(--color-white)', borderRadius: '8px', border: '1px solid var(--color-gray-200)', padding: '18px 20px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg,#f59e0b,#f97316)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -297,7 +297,6 @@ function Dashboard() {
 
         async function fetchProfile() {
             try {
-                const { authFetch } = await import('../contexts/AuthContext')
                 const res = await authFetch(`${API_BASE}/auth/teacher-profile`)
                 if (res.ok) {
                     const data = await res.json()
@@ -385,7 +384,7 @@ function Dashboard() {
 
             {/* ── Token Widget ── */}
             <div style={{
-                background: 'white', borderRadius: '14px', border: '1px solid #e5e7eb',
+                background: 'var(--color-white)', borderRadius: '8px', border: '1px solid var(--color-gray-200)',
                 padding: '14px 18px', marginBottom: '16px',
                 display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap',
                 boxShadow: '0 1px 6px rgba(0,0,0,0.04)'
@@ -593,12 +592,11 @@ function Dashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
                     {/* Plan Management Widget */}
                     <div className="widget" style={{ 
-                        background: 'var(--gradient-primary)', 
-                        color: 'white',
-                        border: 'none'
+                        background: 'var(--color-white)',
+                        color: 'var(--color-gray-900)'
                     }}>
-                        <div className="widget-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                            <h3 className="widget-title" style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="widget-header" style={{ borderBottom: '1px solid var(--color-gray-200)' }}>
+                            <h3 className="widget-title" style={{ color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Zap size={20} /> {language === 'kk' ? 'Жазылым' : 'Подписка'}
                             </h3>
                         </div>
@@ -608,11 +606,11 @@ function Dashboard() {
                                     <span>{language === 'kk' ? 'AI Кредиттер' : 'AI Кредиты'}</span>
                                     <span>{user?.credits || 0} / {user?.creditLimit || (user?.plan === 'pro' ? 100 : (user?.plan === 'school' ? 500 : 5))}</span>
                                 </div>
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }}>
+                                <div style={{ width: '100%', height: '6px', background: 'var(--color-gray-200)', borderRadius: '3px' }}>
                                     <div style={{ 
                                         width: `${Math.min(100, ((user?.credits || 0) / (user?.creditLimit || (user?.plan === 'pro' ? 100 : (user?.plan === 'school' ? 500 : 5)))) * 100)}%`, 
                                         height: '100%', 
-                                        background: 'white', 
+                                        background: '#16a34a',
                                         borderRadius: '3px' 
                                     }}></div>
                                 </div>

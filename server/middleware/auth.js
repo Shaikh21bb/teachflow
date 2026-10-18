@@ -19,7 +19,7 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'Токен не предоставлен', code: 'NO_TOKEN' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, async (err, user) => {
         if (err) {
             if (err.name === 'TokenExpiredError') {
                 return res.status(401).json({
@@ -27,10 +27,18 @@ function authenticateToken(req, res, next) {
                     code: 'TOKEN_EXPIRED',
                 });
             }
-            return res.status(403).json({ error: 'Неверный токен', code: 'INVALID_TOKEN' });
+            return res.status(401).json({ error: 'Неверный токен', code: 'INVALID_TOKEN' });
         }
-        req.user = user;
-        next();
+        if (!Number.isInteger(user.userId) || !['teacher', 'admin'].includes(user.role)) {
+            return res.status(403).json({ error: 'Доступ разрешён только учителям', code: 'FORBIDDEN' });
+        }
+        try {
+            const { getOne } = require('../db/database');
+            const account = await getOne('SELECT role, is_active FROM users WHERE id = ?', [user.userId]);
+            if (!account?.is_active) return res.status(401).json({ error: 'Аккаунт недоступен', code: 'ACCOUNT_DISABLED' });
+            req.user = { ...user, role: account.role };
+            next();
+        } catch (error) { next(error); }
     });
 }
 

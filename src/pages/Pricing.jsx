@@ -13,84 +13,23 @@ export default function Pricing() {
 
     const plans = [
         {
-            id: 'free',
-            icon: <GraduationCap size={20} />,
-            name: L('Бесплатно', 'Тегін'),
-            sub: L('Начните без карты', 'Картасыз бастаңыз'),
-            price: { monthly: 0, yearly: 0 },
-            tokens: '200',
-            credits: '100',
-            features: [
-                '100 AI-кредитов в месяц',
-                'Генерация уроков и слайдов',
-                'Публикация уроков — бесплатно',
-                'Маркетплейс — покупка уроков',
-                '200 стартовых токенов',
-                'Реклама → до 50 токенов/день',
-            ],
-            locked: ['Telegram Hub', 'Авто-фото в слайдах'],
+            id: 'free', icon: <GraduationCap size={20} />, name: L('Бесплатно', 'Тегін'),
+            sub: L('Стартовый доступ', 'Бастапқы қолжетімділік'),
+            price: { monthly: 0, yearly: 0 }, credits: 5,
+            features: [L('5 AI-кредитов при регистрации', 'Тіркелгенде 5 AI-кредит'), L('До 5 уроков и 1 класс', '5 сабақ және 1 сыныпқа дейін'), L('Сохранение и PDF', 'Сақтау және PDF')], locked: [],
         },
         {
-            id: 'pro',
-            icon: <Zap size={20} />,
-            name: L('Учитель', 'Мұғалім'),
-            sub: L('Самый популярный', 'Ең танымал'),
-            price: { monthly: 3990, yearly: 2990 },
-            tokens: '500',
-            credits: '200',
-            highlight: true,
-            features: [
-                '200 AI-кредитов в месяц',
-                'Уроки, слайды, краткосрочный план',
-                'Авто-фото в слайдах',
-                'Telegram Hub — 1 класс',
-                'Продажа своих уроков',
-                '500 токенов ежемесячно',
-                'Аналитика и отчёты',
-            ],
-            locked: [],
+            id: 'pro', icon: <Zap size={20} />, name: 'Pro', sub: L('Для учителя', 'Мұғалімге'),
+            price: { monthly: 4990, yearly: 4990 }, credits: 100, highlight: true, contactOnly: true,
+            features: [L('100 AI-кредитов', '100 AI-кредит'), L('До 10 классов', '10 сыныпқа дейін'), L('Уроки, тесты и обратная связь', 'Сабақтар, тесттер және кері байланыс')], locked: [],
+            cta: L('Подключить через поддержку', 'Қолдау арқылы қосу'),
         },
         {
-            id: 'premium',
-            icon: <Crown size={20} />,
-            name: L('Премиум', 'Премиум'),
-            sub: L('Всё включено', 'Барлығы кіреді'),
-            price: { monthly: 7990, yearly: 5990 },
-            tokens: '2 000',
-            credits: '∞',
-            features: [
-                'Безлимитные AI-кредиты',
-                'Уроки + слайды + 3D-примеры',
-                'Авто-фото и визуальные материалы',
-                'Telegram Hub — все классы',
-                'Продажа уроков без ограничений',
-                '2 000 токенов ежемесячно',
-                'Live-уроки без лимитов',
-                'Приоритетная поддержка',
-            ],
-            locked: [],
-            gold: true,
+            id: 'school', icon: <Building2 size={20} />, name: L('Школа', 'Мектеп'), sub: L('Для учебной команды', 'Оқу тобына'),
+            price: { monthly: 29900, yearly: 29900 }, credits: 500, contactOnly: true,
+            features: [L('500 AI-кредитов', '500 AI-кредит'), L('Расширенный лимит классов', 'Сыныптардың кеңейтілген лимиті'), L('Аналитика и отчёты', 'Аналитика және есептер')], locked: [],
+            cta: L('Связаться с поддержкой', 'Қолдауға жазу'),
         },
-        {
-            id: 'school',
-            icon: <Building2 size={20} />,
-            name: L('Школа', 'Мектеп'),
-            sub: L('Для всей школы', 'Бүкіл мектеп'),
-            price: { monthly: 29990, yearly: 22990 },
-            tokens: '10 000',
-            credits: '∞',
-            contactOnly: true,
-            features: [
-                'До 50 учителей в одном аккаунте',
-                'Безлимитные AI-кредиты',
-                'Все функции Премиум',
-                'Общая библиотека уроков',
-                'Панель администратора',
-                '10 000 токенов в месяц',
-                'Персональный менеджер',
-            ],
-            locked: [],
-        }
     ];
 
     const handleSubscribe = async (plan) => {
@@ -129,26 +68,11 @@ export default function Pricing() {
                     )}
                 </p>
 
-                {/* Billing toggle */}
-                <div style={{ display: 'inline-flex', background: '#f4f4f5', borderRadius: 10, padding: 3, gap: 2 }}>
-                    {[
-                        { v: 'monthly', l: L('Помесячно', 'Ай сайын') },
-                        { v: 'yearly', l: L('Годовой  −25%', 'Жылдық  −25%') }
-                    ].map(o => (
-                        <button key={o.v} onClick={() => setBilling(o.v)} style={{
-                            padding: '7px 18px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                            fontWeight: 600, fontSize: '0.84rem',
-                            background: billing === o.v ? 'white' : 'transparent',
-                            color: billing === o.v ? '#111827' : '#9ca3af',
-                            boxShadow: billing === o.v ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                            transition: 'all 0.12s'
-                        }}>{o.l}</button>
-                    ))}
-                </div>
+                <p style={{ color: 'var(--color-gray-600)', fontSize: 14 }}>{L('Стартовые 5 кредитов начисляются один раз. Остаток: ', 'Бастапқы 5 кредит бір рет беріледі. Қалдық: ')}<strong>{user?.credits ?? 0}</strong></p>
             </div>
 
             {/* ── Plans ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 48 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16, marginBottom: 48 }}>
                 {plans.map(plan => {
                     const price = billing === 'yearly' ? plan.price.yearly : plan.price.monthly;
                     const isCurrent = user?.plan === plan.id;
@@ -217,8 +141,7 @@ export default function Pricing() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 7 }}>
                                     <Coins size={13} color="#f59e0b" />
                                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: plan.highlight ? 'rgba(255,255,255,0.7)' : '#6b7280' }}>
-                                        {plan.tokens} {L('токенов', 'токен')}
-                                        {plan.id !== 'free' && ` / ${L('мес', 'ай')}`}
+                                        {plan.credits} AI-{L('кредитов', 'кредит')}
                                     </span>
                                 </div>
                             </div>
@@ -271,6 +194,16 @@ export default function Pricing() {
                 })}
             </div>
 
+            <div className="credit-cost-list">
+                <h2>{L('Стоимость AI-действий', 'AI әрекеттерінің құны')}</h2>
+                {[
+                    ['open_lesson', L('Открытый урок', 'Ашық сабақ')], ['lesson_plan', L('План урока', 'Сабақ жоспары')],
+                    ['generate_lesson', L('Полный урок со слайдами', 'Слайдтары бар толық сабақ')], ['quiz_generation', L('Создание теста', 'Тест жасау')],
+                    ['homework_grading', L('Проверка одной работы', 'Бір жұмысты тексеру')], ['ai_chat', L('Сообщение AI-боту', 'AI-ботқа хабарлама')],
+                    ['summarize', L('Краткое содержание', 'Қысқаша мазмұн')], ['translate', L('Перевод', 'Аударма')],
+                ].map(([key, title]) => <div key={key}><span>{title}</span><strong>{user?.creditCosts?.[key] ?? '-'} {L('кр.', 'кр.')}</strong></div>)}
+            </div>
+
             {/* ── Token section ── */}
             <div style={{ borderRadius: 16, border: '1px solid #e5e7eb', padding: '28px 24px', background: 'white' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -280,7 +213,7 @@ export default function Pricing() {
                             {L('Токены — внутренняя валюта', 'Токендер — ішкі валюта')}
                         </div>
                         <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                            {L('1 токен = 1 тенге', '1 токен = 1 теңге')}
+                            {L('Для покупки материалов коллег', 'Әріптестердің материалдарын сатып алуға')}
                         </div>
                     </div>
                 </div>

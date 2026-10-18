@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
+const { getOne, getAll, runQuery, withTransaction } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 const { chatWithAI } = require('../utils/aiProviders');
 const { requireCredits, deductAICredits, getCreditBalance } = require('../middleware/planMiddleware');
@@ -136,13 +136,13 @@ router.post('/', authenticateToken, async (req, res) => {
     try {
         const { title, subject, grade, topic, objectives, content, class_id } = req.body;
 
-        await runQuery(
+        const inserted = await runQuery(
             `INSERT INTO open_lessons (title, subject, grade, topic, objectives, content, class_id, user_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [title, subject, grade || null, topic, objectives, content, class_id || null, req.user.userId]
         );
 
-        const id = await getLastInsertId();
+        const id = Number(inserted.lastInsertRowid);
         const lesson = await getOne('SELECT * FROM open_lessons WHERE id = ?', [id]);
         res.status(201).json(lesson);
     } catch (err) {
@@ -174,17 +174,19 @@ router.post('/:id/teams', authenticateToken, async (req, res) => {
     try {
         const lessonId = parseInt(req.params.id);
         const { teams } = req.body; // array of { team_name, student_ids, task }
+        const lesson = await getOne('SELECT id, class_id FROM open_lessons WHERE id = ? AND user_id = ?', [lessonId, req.user.userId]);
+        if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
+        if (!Array.isArray(teams) || teams.length > 30) return res.status(400).json({ error: 'Неверный список команд' });
+        const allowedStudents = new Set((await getAll('SELECT id FROM students WHERE class_id = ?', [lesson.class_id])).map(student => student.id));
+        if (!teams.every(team => typeof team.team_name === 'string' && team.team_name.trim() && team.team_name.length <= 100 && Array.isArray(team.student_ids) && team.student_ids.every(id => allowedStudents.has(id)))) return res.status(400).json({ error: 'Проверьте названия команд и список учеников' });
 
-        // Delete existing teams first
-        await runQuery('DELETE FROM lesson_teams WHERE open_lesson_id = ?', [lessonId]);
-
-        // Insert new teams
-        for (const team of teams) {
-            await runQuery(
-                'INSERT INTO lesson_teams (open_lesson_id, team_name, student_ids, task) VALUES (?, ?, ?, ?)',
-                [lessonId, team.team_name, JSON.stringify(team.student_ids || []), team.task || '']
-            );
-        }
+        await withTransaction(async transaction => {
+            await transaction.execute({ sql: 'DELETE FROM lesson_teams WHERE open_lesson_id = ?', args: [lessonId] });
+            for (const team of teams) await transaction.execute({
+                sql: 'INSERT INTO lesson_teams (open_lesson_id, team_name, student_ids, task) VALUES (?, ?, ?, ?)',
+                args: [lessonId, team.team_name, JSON.stringify(team.student_ids), team.task || '']
+            });
+        });
 
         const savedTeams = await getAll('SELECT * FROM lesson_teams WHERE open_lesson_id = ? ORDER BY id', [lessonId]);
         res.json(savedTeams.map(t => ({

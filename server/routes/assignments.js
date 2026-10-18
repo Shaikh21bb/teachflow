@@ -1,5 +1,6 @@
 const express = require('express');
-const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
+const { getOne, getAll, runQuery } = require('../db/database');
+const { getGradeLabel } = require('../utils/assignmentGrader');
 const { authenticateToken } = require('../middleware/auth');
 const { validate, assignmentSchema } = require('../middleware/validate');
 
@@ -16,12 +17,11 @@ router.get('/', async (req, res) => {
 
         let sql = `
             SELECT a.*, c.name as class_name, c.subject as subject,
-                   COUNT(DISTINCT s.id) as class_total,
-                   COUNT(DISTINCT sub.id) as submission_count
+                   (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) as class_total,
+                   (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id) as submission_count,
+                   (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id AND sub.status = 'graded') as graded_count
             FROM assignments a
             LEFT JOIN classes c ON a.class_id = c.id
-            LEFT JOIN students s ON s.class_id = c.id
-            LEFT JOIN assignment_submissions sub ON sub.assignment_id = a.id
             WHERE a.user_id = ?
         `;
 
@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
             ...a,
             total: Number(a.class_total || a.total || 0),
             submitted: Number(a.submission_count || a.submitted || 0),
-            status: Number(a.submission_count || 0) > 0 && Number(a.class_total || a.total || 0) > 0 && Number(a.submission_count) >= Number(a.class_total || a.total || 0)
+            status: Number(a.graded_count || 0) > 0 && Number(a.class_total || a.total || 0) > 0 && Number(a.graded_count) >= Number(a.class_total || a.total || 0)
                 ? 'graded'
                 : a.status
         })));
@@ -126,13 +126,13 @@ router.post('/', validate(assignmentSchema), async (req, res) => {
 
         const totalInfo = await getOne('SELECT COUNT(*) as total FROM students WHERE class_id = ?', [class_id]);
 
-        await runQuery(
+        const inserted = await runQuery(
             `INSERT INTO assignments (title, type, class_id, instructions, answer_key, max_score, due_date, total, submitted, status, user_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'active', ?)`,
             [title, type, class_id, instructions || '', answer_key || '', max_score || 100, due_date || null, Number(totalInfo?.total || 0), req.user.userId]
         );
 
-        const id = await getLastInsertId();
+        const id = Number(inserted.lastInsertRowid);
         const assignment = await getOne('SELECT * FROM assignments WHERE id = ?', [id]);
 
         // ── Auto-send Telegram notification to class students ──
@@ -173,14 +173,19 @@ router.put('/:id', async (req, res) => {
         if (isNaN(id)) return res.status(400).json({ error: 'Неверный ID задания' });
 
         const existing = await getOne(
-            'SELECT id FROM assignments WHERE id = ? AND user_id = ?',
+            'SELECT * FROM assignments WHERE id = ? AND user_id = ?',
             [id, req.user.userId]
         );
         if (!existing) {
             return res.status(404).json({ error: 'Задание не найдено' });
         }
 
-        const { title, type, class_id, instructions = '', answer_key = '', max_score = 100, due_date, submitted, total, status } = req.body;
+        const parsed = assignmentSchema.safeParse({ ...existing, ...req.body });
+        if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+        const { title, type, class_id, instructions, answer_key, max_score, due_date } = parsed.data;
+        const target = await getOne('SELECT id FROM classes WHERE id = ? AND user_id = ?', [class_id, req.user.userId]);
+        if (!target) return res.status(404).json({ error: 'Класс не найден' });
+        const { submitted, total, status } = existing;
 
         await runQuery(
             `UPDATE assignments
@@ -194,6 +199,27 @@ router.put('/:id', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+router.patch('/:id/submissions/:submissionId', async (req, res, next) => {
+    try {
+        const submission = await getOne(`SELECT sub.* FROM assignment_submissions sub
+            JOIN assignments a ON a.id = sub.assignment_id
+            WHERE sub.id = ? AND a.id = ? AND a.user_id = ?`,
+            [Number(req.params.submissionId), Number(req.params.id), req.user.userId]);
+        if (!submission) return res.status(404).json({ error: 'Работа не найдена' });
+        const score = req.body.score;
+        const feedback = req.body.feedback;
+        if (!Number.isInteger(score) || score < 0 || score > submission.max_score || typeof feedback !== 'string' || feedback.length > 2000) {
+            return res.status(400).json({ error: 'Укажите допустимый балл и комментарий до 2000 символов' });
+        }
+        await runQuery(`UPDATE assignment_submissions SET score = ?, grade_label = ?, feedback = ?, status = 'graded', graded_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            [score, getGradeLabel(score, submission.max_score), feedback.trim(), submission.id]);
+        await runQuery(`UPDATE assignments SET status = CASE
+            WHEN EXISTS (SELECT 1 FROM assignment_submissions WHERE assignment_id = assignments.id AND status = 'pending') THEN 'completed'
+            WHEN total > 0 AND submitted >= total THEN 'graded' ELSE 'active' END WHERE id = ?`, [submission.assignment_id]);
+        res.json({ success: true });
+    } catch (error) { next(error); }
 });
 
 // DELETE assignment (must belong to current teacher)

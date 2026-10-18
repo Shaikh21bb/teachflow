@@ -3,6 +3,15 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
 const { checkLessonLimit } = require('../middleware/planMiddleware');
+const { canReadLesson } = require('../utils/lessonAccess');
+
+
+// Lazy-loaded to avoid circular deps — required once on first use, then cached
+let _addTokens = null;
+function getAddTokens() {
+    if (!_addTokens) _addTokens = require('./marketplace').addTokens;
+    return _addTokens;
+}
 const crypto = require('crypto');
 
 // ──────────────────────────────────────────
@@ -128,6 +137,9 @@ router.get('/', authenticateToken, async (req, res) => {
     try {
         const { subject, grade, search, status, limit = 100, offset = 0 } = req.query;
         const userId = req.user.userId;
+        // Enforce max limit to prevent massive queries
+        const safeLimit = Math.min(parseInt(limit) || 100, 200);
+        const safeOffset = Math.max(parseInt(offset) || 0, 0);
 
         let sql = `SELECT l.*, u.name as teacher_name 
                    FROM lessons l 
@@ -159,7 +171,7 @@ router.get('/', authenticateToken, async (req, res) => {
         }
 
         sql += ` ORDER BY l.created_at DESC LIMIT ? OFFSET ?`;
-        params.push(parseInt(limit), parseInt(offset));
+        params.push(safeLimit, safeOffset);
 
         const lessons = await getAll(sql, params);
         res.json(lessons);
@@ -195,7 +207,7 @@ router.get('/stats/summary', authenticateToken, async (req, res) => {
 // ──────────────────────────────────────────
 // GET single lesson (author only OR via share_token)
 // ──────────────────────────────────────────
-router.get('/:id', async (req, res) => {
+router.get('/:id', (req, res, next) => req.query.share_token ? next() : authenticateToken(req, res, next), async (req, res) => {
     try {
         const { share_token } = req.query;
         const lesson = await getOne('SELECT * FROM lessons WHERE id = ?', [parseInt(req.params.id)]);
@@ -209,28 +221,19 @@ router.get('/:id', async (req, res) => {
             return res.json({ ...lesson, files });
         }
 
-        // Otherwise require auth + ownership
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1];
-        if (!token) return res.status(401).json({ error: 'Токен не предоставлен' });
-
-        const jwt = require('jsonwebtoken');
-        const JWT_SECRET = process.env.JWT_SECRET || 'urpaq-ai-secret-key-change-in-production';
-        const user = jwt.verify(token, JWT_SECRET);
-        if (lesson.user_id !== user.userId && user.role !== 'admin') {
+        if (!await canReadLesson(lesson, req.user)) {
             return res.status(403).json({ error: 'Доступ запрещён' });
         }
 
         await runQuery('UPDATE lessons SET views_count = views_count + 1 WHERE id = ?', [lesson.id]);
 
-        // ── Token milestone rewards (10, 50, 100 views) ──────
+        // ── Token milestone rewards — fire-and-forget (non-blocking) ──
         const newViews = (lesson.views_count || 0) + 1;
         const milestones = { 10: 10, 50: 25, 100: 50, 500: 100 };
         if (milestones[newViews]) {
-            try {
-                const { addTokens } = require('./marketplace');
-                await addTokens(lesson.user_id, milestones[newViews], 'views_milestone', `${newViews} просмотров урока "${lesson.title}"`, lesson.id);
-            } catch { /* silent */ }
+            getAddTokens()(lesson.user_id, milestones[newViews], 'views_milestone',
+                `${newViews} просмотров урока "${lesson.title}"`, lesson.id
+            ).catch(() => {});
         }
 
         const files = await getAll('SELECT * FROM lesson_files WHERE lesson_id = ? ORDER BY order_index', [lesson.id]);
@@ -252,7 +255,7 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
         } = req.body;
         const userId = req.user.userId;
 
-        await runQuery(`
+        const inserted = await runQuery(`
             INSERT INTO lessons 
                 (title, subject, grade, duration, description, content, 
                  thumbnail_url, content_url, file_type, is_published, user_id,
@@ -274,7 +277,7 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
             theme || 'dark'
         ]);
 
-        const id = await getLastInsertId();
+        const id = Number(inserted.lastInsertRowid);
         const lesson = await getOne('SELECT * FROM lessons WHERE id = ?', [id]);
         res.status(201).json(lesson);
     } catch (err) {
@@ -330,7 +333,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         // ── Token reward: first publish ──────────────────────
         if (is_published && !existing.is_published) {
             try {
-                const { addTokens } = require('./marketplace');
+                const addTokens = getAddTokens();
                 await addTokens(userId, 30, 'publish_bonus', `Первая публикация урока "${updated.title}"`, lessonId);
             } catch { /* silent if marketplace not ready */ }
         }
@@ -374,7 +377,7 @@ router.post('/:id/duplicate', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Нет прав' });
         }
 
-        await runQuery(`
+        const duplicated = await runQuery(`
             INSERT INTO lessons 
                 (title, subject, grade, duration, description, content, 
                  thumbnail_url, content_url, file_type, is_published, user_id,
@@ -390,15 +393,16 @@ router.post('/:id/duplicate', authenticateToken, async (req, res) => {
             original.theme || 'dark'
         ]);
 
-        const newId = await getLastInsertId();
+        const newId = Number(duplicated.lastInsertRowid);
 
-        // Duplicate files too
+        // Duplicate files in parallel (non-blocking)
         const files = await getAll('SELECT * FROM lesson_files WHERE lesson_id = ?', [lessonId]);
-        for (const file of files) {
-            await runQuery(`
-                INSERT INTO lesson_files (lesson_id, file_url, file_name, file_size, file_type, public_id, order_index)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [newId, file.file_url, file.file_name, file.file_size, file.file_type, file.public_id, file.order_index]);
+        if (files.length > 0) {
+            Promise.all(files.map(f => runQuery(
+                `INSERT INTO lesson_files (lesson_id, file_url, file_name, file_size, file_type, public_id, order_index)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [newId, f.file_url, f.file_name, f.file_size, f.file_type, f.public_id, f.order_index]
+            ))).catch(e => console.warn('Duplicate files warning:', e.message));
         }
 
         const newLesson = await getOne('SELECT * FROM lessons WHERE id = ?', [newId]);
@@ -441,8 +445,8 @@ router.post('/:id/share', authenticateToken, async (req, res) => {
 router.get('/:id/slides', authenticateToken, async (req, res) => {
     try {
         const lessonId = parseInt(req.params.id);
-        const lesson = await getOne('SELECT slides_json, theme FROM lessons WHERE id = ? AND user_id = ?',
-            [lessonId, req.user.userId]);
+        const lesson = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
+        if (!await canReadLesson(lesson, req.user)) return res.status(404).json({ error: 'Урок не найден' });
         if (!lesson) return res.status(404).json({ error: 'Урок не найден' });
 
         let slides = null;

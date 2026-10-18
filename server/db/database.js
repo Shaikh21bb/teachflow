@@ -4,47 +4,56 @@ const path = require('path');
 const fs = require('fs');
 
 let db = null;
+let initialization = null;
+const SCHEMA_VERSION = 'platform-19';
 
 async function getDatabase() {
-    if (db) return db;
+    if (initialization) return initialization;
+    initialization = initializeDatabase();
+    try { return await initialization; }
+    catch (error) { db?.close(); db = null; initialization = null; throw error; }
+}
+
+async function initializeDatabase() {
 
     const url = process.env.TURSO_DATABASE_URL;
     const authToken = process.env.TURSO_AUTH_TOKEN;
 
     if (url && authToken) {
-        // Cloud Turso database
         db = createClient({ url, authToken });
         console.log('✅ Connected to Turso cloud database');
     } else {
-        // Local fallback for development
         const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'local.db');
         db = createClient({ url: `file:${dbPath}` });
         console.log('✅ Using local SQLite database at', dbPath);
     }
 
+    await db.execute('PRAGMA foreign_keys = ON');
+    await db.execute('CREATE TABLE IF NOT EXISTS app_schema_versions (version TEXT PRIMARY KEY, applied_at TEXT DEFAULT CURRENT_TIMESTAMP)');
     await initDatabase();
     return db;
 }
 
 async function initDatabase() {
+    const installed = await db.execute({ sql: 'SELECT version FROM app_schema_versions WHERE version = ?', args: [SCHEMA_VERSION] });
+    if (installed.rows.length) return;
     const schemaPath = path.join(__dirname, 'schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-
+    const schema = await fs.promises.readFile(schemaPath, 'utf8');
     const statements = schema.split(';').filter(s => s.trim());
-
     for (const statement of statements) {
         try {
             await db.execute(statement);
         } catch (err) {
             if (!err.message.includes('already exists') &&
                 !err.message.includes('UNIQUE constraint')) {
-                console.error('SQL Error:', err.message);
+                // Existing databases receive missing columns in runMigrations().
+                if (!err.message.includes('no such column')) throw err;
             }
         }
     }
 }
 
-// Run a write query (INSERT, UPDATE, DELETE)
+// Run a write query — returns full result (use result.lastInsertRowid directly!)
 async function runQuery(sql, params = []) {
     const result = await db.execute({ sql, args: params });
     return result;
@@ -62,13 +71,26 @@ async function getAll(sql, params = []) {
     return result.rows;
 }
 
-// Get last insert ID
+// Get last insert ID — use result.lastInsertRowid from runQuery() instead when possible
 async function getLastInsertId() {
     const result = await db.execute("SELECT last_insert_rowid() as id");
     return result.rows.length > 0 ? result.rows[0].id : null;
 }
 
-// No-op for compatibility (Turso auto-persists)
+async function withTransaction(work) {
+    const client = await getDatabase();
+    const transaction = await client.transaction('write');
+    try {
+        const result = await work(transaction);
+        await transaction.commit();
+        return result;
+    } catch (error) {
+        if (!transaction.closed) await transaction.rollback();
+        throw error;
+    } finally { transaction.close(); }
+}
+
+// No-op for compatibility
 function saveDatabase() {}
 
 module.exports = {
@@ -77,5 +99,7 @@ module.exports = {
     getOne,
     getAll,
     getLastInsertId,
+    withTransaction,
+    SCHEMA_VERSION,
     saveDatabase
 };

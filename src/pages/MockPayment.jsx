@@ -17,7 +17,7 @@ const MockPayment = () => {
             // Call our webhook internally to simulate Kaspi notification
             const response = await fetch(`${API_BASE}/kaspi/webhook`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token')}` },
                 body: JSON.stringify({ orderId, status: 'paid' })
             });
 
