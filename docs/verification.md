@@ -46,3 +46,6 @@ in `server/.env` or the hosting provider. `.env.example` lists supported setting
 
 GitHub Actions repeats lint, API tests, production build, and browser tests for
 pull requests and changes to `main`.
+
+The games section has additional reliability, renderer and payload checks;
+see [Bilim Arena](./arena.md) for rules, deployment settings and verification limits.

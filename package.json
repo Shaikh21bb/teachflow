@@ -9,6 +9,7 @@
         "test:e2e": "playwright test",
         "lint": "eslint src server api tests playwright.config.js vite.config.js",
         "build": "vite build",
+        "check:arena": "node scripts/check-arena-budget.mjs",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -28,6 +29,7 @@
         "jsonwebtoken": "^9.0.3",
         "lucide-react": "^0.577.0",
         "morgan": "^1.10.1",
+        "qrcode": "^1.5.4",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^7.18.4",

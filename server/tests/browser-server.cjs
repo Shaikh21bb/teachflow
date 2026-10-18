@@ -5,7 +5,14 @@ const db = require('../db/database');
 
 async function start() {
     const providers = require('../utils/aiProviders');
-    providers.chatWithAI = async () => 'Test lesson plan with a practical task and homework.';
+    providers.chatWithAI = async prompt => {
+        if (prompt.includes('JSON массив') || prompt.includes('JSON массиві')) {
+            const match = prompt.match(/из (\d+) вопросов|бойынша (\d+) сұрақ/);
+            const count = Number(match?.[1] || match?.[2] || 8);
+            return JSON.stringify(Array.from({ length: count }, (_, i) => ({ question: `AI question ${i + 1}`, options: ['A) 4', 'B) 5', 'C) 6', 'D) 7'], correct: 'A', explanation: 'Test explanation' })));
+        }
+        return 'Test lesson plan with a practical task and homework.';
+    };
     const app = require('../index');
     await app.ready();
     const hash = await bcrypt.hash('Testing12345', 4);

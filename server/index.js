@@ -43,9 +43,10 @@ app.use(cors({
 }));
 
 // 5. Rate limiting BEFORE body parsing (reject abusers early)
-app.use('/api/', generalLimiter);
+app.use('/api/', (req, res, next) => req.path === '/games' || req.path.startsWith('/games/') ? next() : generalLimiter(req, res, next));
 
 // 6. Body parsing
+app.use('/api/games', express.json({ limit: '16kb' }));
 app.use(express.json({ limit: '2mb' }));
 
 // ──────────────────────────────────────────
@@ -423,6 +424,35 @@ async function runMigrations() {
         `CREATE INDEX IF NOT EXISTS idx_token_tx_user_date ON token_transactions(user_id, created_at)`,
         `CREATE INDEX IF NOT EXISTS idx_ad_views_user_date ON ad_views(user_id, viewed_at)`,
         `CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)`,
+        `CREATE TABLE IF NOT EXISTS game_rooms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL UNIQUE,
+            teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL, language TEXT NOT NULL DEFAULT 'kk', questions TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'lobby', round_index INTEGER NOT NULL DEFAULT 0,
+            round_seconds INTEGER NOT NULL DEFAULT 30, deadline INTEGER, remaining_ms INTEGER,
+            cyan_health INTEGER NOT NULL DEFAULT 10000, coral_health INTEGER NOT NULL DEFAULT 10000,
+            revision INTEGER NOT NULL DEFAULT 0, last_event TEXT, events TEXT NOT NULL DEFAULT '[]', winner INTEGER,
+            request_key TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at INTEGER NOT NULL,
+            ended_at TEXT, UNIQUE(teacher_id, request_key)
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_game_rooms_teacher ON game_rooms(teacher_id, id)`,
+        `CREATE TABLE IF NOT EXISTS game_players (
+            id TEXT PRIMARY KEY, room_id INTEGER NOT NULL REFERENCES game_rooms(id) ON DELETE CASCADE,
+            client_key TEXT NOT NULL, name TEXT NOT NULL, team INTEGER NOT NULL, active INTEGER NOT NULL DEFAULT 1,
+            score INTEGER NOT NULL DEFAULT 0, correct_count INTEGER NOT NULL DEFAULT 0,
+            answer_count INTEGER NOT NULL DEFAULT 0, hits INTEGER NOT NULL DEFAULT 0,
+            last_round INTEGER NOT NULL DEFAULT -1, last_answer INTEGER, last_correct INTEGER,
+            attack_ready INTEGER NOT NULL DEFAULT 0, UNIQUE(room_id, client_key)
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_game_players_room ON game_players(room_id)`,
+        `CREATE TABLE IF NOT EXISTS game_answers (
+            room_id INTEGER NOT NULL REFERENCES game_rooms(id) ON DELETE CASCADE,
+            player_id TEXT NOT NULL REFERENCES game_players(id) ON DELETE CASCADE,
+            round_index INTEGER NOT NULL, answer_index INTEGER NOT NULL, is_correct INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(room_id, player_id, round_index)
+        )`,
     ];
 
     for (const sql of migrations) {
@@ -569,6 +599,7 @@ async function initializeApp() {
     app.use('/api/student-portal', studentPortalRouter);
     app.use('/api/kaspi', kaspiRouter);
     app.use('/api/live', liveRouter);
+    app.use('/api/games', require('./routes/games'));
     app.use('/api/chat', chatRouter);
     app.use('/api/parent', parentRouter);
     app.use('/api/marketplace', marketplaceRouter);

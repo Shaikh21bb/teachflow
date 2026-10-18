@@ -1,0 +1,256 @@
+const { getOne, getAll, withTransaction } = require("../db/database");
+
+const cache = new Map();
+const reads = new Map();
+const queues = new Map();
+const MAX_PLAYERS = 40;
+const fail = (message, status = 400) => {
+  throw Object.assign(new Error(message), { status });
+};
+const one = async (tx, sql, args = []) =>
+  (await tx.execute({ sql, args })).rows[0];
+
+function normalizeQuestions(input) {
+  if (!Array.isArray(input) || input.length < 2 || input.length > 20)
+    fail("Нужно от 2 до 20 вопросов / 2–20 сұрақ қажет");
+  return input.map((q, i) => {
+    if (!q || typeof q !== "object") fail(`Проверьте вопрос ${i + 1}`);
+    const text = String(q.question || "").trim();
+    const options = Array.isArray(q.options)
+      ? q.options.map((s) =>
+          String(s)
+            .replace(/^[A-D][).]\s*/, "")
+            .trim(),
+        )
+      : [];
+    const correct = Number.isInteger(q.correct)
+      ? q.correct
+      : /^[ABCD]$/i.test(String(q.correct).trim())
+        ? "ABCD".indexOf(String(q.correct).trim().toUpperCase())
+        : -1;
+    if (
+      !text ||
+      text.length > 700 ||
+      options.length !== 4 ||
+      options.some((s) => !s || s.length > 300) ||
+      new Set(options).size !== 4 ||
+      correct < 0 ||
+      correct > 3
+    ) {
+      fail(
+        `Проверьте вопрос ${i + 1}: нужны 4 разных ответа и правильный вариант`,
+      );
+    }
+    return {
+      question: text,
+      options,
+      correct,
+      explanation: String(q.explanation || "").slice(0, 1200),
+    };
+  });
+}
+
+function demoQuestions(language) {
+  const kk = language === "kk";
+  return normalizeQuestions([
+    { question: "6 × 7 = ?", options: ["42", "36", "48", "49"], correct: 0 },
+    { question: "144 ÷ 12 = ?", options: ["10", "11", "12", "14"], correct: 2 },
+    {
+      question: kk
+        ? "80 санының 25%-ы қанша?"
+        : "Сколько составляет 25% от 80?",
+      options: ["15", "20", "25", "40"],
+      correct: 1,
+    },
+    { question: "3² + 4² = ?", options: ["7", "14", "49", "25"], correct: 3 },
+    {
+      question: "2x + 6 = 18. x = ?",
+      options: ["6", "8", "9", "12"],
+      correct: 0,
+    },
+    {
+      question: kk
+        ? "Үшбұрыш бұрыштарының қосындысы?"
+        : "Сумма углов треугольника?",
+      options: ["90°", "180°", "270°", "360°"],
+      correct: 1,
+    },
+    {
+      question: "0,5 + 0,25 = ?",
+      options: ["0,30", "0,55", "0,75", "0,80"],
+      correct: 2,
+    },
+    {
+      question: kk ? "Қай сан жай сан?" : "Какое число простое?",
+      options: ["9", "15", "21", "17"],
+      correct: 3,
+    },
+    { question: "√81 = ?", options: ["9", "8", "18", "27"], correct: 0 },
+    {
+      question: kk
+        ? "Қабырғасы 5 см шаршының ауданы?"
+        : "Площадь квадрата со стороной 5 см?",
+      options: ["10 см²", "25 см²", "20 см²", "15 см²"],
+      correct: 1,
+    },
+  ]);
+}
+
+function invalidate(code) {
+  cache.delete(code);
+}
+
+// Transactions are authoritative; the local queue also avoids needless SQLite lock contention.
+async function mutate(code, work) {
+  const previous = queues.get(code) || Promise.resolve();
+  const pending = previous
+    .catch(() => {})
+    .then(() =>
+      withTransaction(async (tx) => {
+        const room = await one(tx, "SELECT * FROM game_rooms WHERE code = ?", [
+          code,
+        ]);
+        if (!room) fail("Игра не найдена / Ойын табылмады", 404);
+        return work(tx, room);
+      }),
+    );
+  queues.set(code, pending);
+  try {
+    return await pending;
+  } finally {
+    invalidate(code);
+    if (queues.get(code) === pending) queues.delete(code);
+  }
+}
+
+async function finish(tx, room) {
+  const winner =
+    Math.abs(room.cyan_health - room.coral_health) < 5
+      ? null
+      : room.cyan_health > room.coral_health
+        ? 0
+        : 1;
+  await tx.execute({
+    sql: "UPDATE game_rooms SET status='finished', winner=?, deadline=NULL, ended_at=CURRENT_TIMESTAMP, revision=revision+1 WHERE id=?",
+    args: [winner, room.id],
+  });
+}
+
+async function nextRound(tx, room) {
+  if (room.round_index + 1 >= JSON.parse(room.questions).length)
+    return finish(tx, room);
+  await tx.execute({
+    sql: "UPDATE game_rooms SET round_index=round_index+1, deadline=?, revision=revision+1 WHERE id=?",
+    args: [Date.now() + room.round_seconds * 1000, room.id],
+  });
+  await tx.execute({
+    sql: "UPDATE game_players SET attack_ready=0 WHERE room_id=?",
+    args: [room.id],
+  });
+}
+
+async function readRoom(code) {
+  const cached = cache.get(code);
+  if (cached && Date.now() - cached.at < 700) return cached;
+  if (reads.has(code)) return reads.get(code);
+  const pending = (async () => {
+    let room = await getOne("SELECT * FROM game_rooms WHERE code = ?", [code]);
+    if (!room) fail("Игра не найдена / Ойын табылмады", 404);
+    if (
+      (room.status === "running" && room.deadline <= Date.now()) ||
+      (room.status !== "finished" && room.expires_at <= Date.now())
+    ) {
+      await mutate(code, async (tx, fresh) => {
+        if (fresh.status === "finished") return;
+        if (fresh.expires_at <= Date.now()) return finish(tx, fresh);
+        if (fresh.status === "running" && fresh.deadline <= Date.now())
+          await nextRound(tx, fresh);
+      });
+      room = await getOne("SELECT * FROM game_rooms WHERE code = ?", [code]);
+    }
+    const players = await getAll(
+      "SELECT * FROM game_players WHERE room_id=? AND active=1 ORDER BY score DESC, name ASC",
+      [room.id],
+    );
+    const value = { room, players, at: Date.now() };
+    if (cache.size > 200) cache.delete(cache.keys().next().value);
+    cache.set(code, value);
+    return value;
+  })();
+  reads.set(code, pending);
+  try {
+    return await pending;
+  } finally {
+    if (reads.get(code) === pending) reads.delete(code);
+  }
+}
+
+function project({ room, players }, viewer) {
+  const questions = JSON.parse(room.questions);
+  const me = viewer.playerId
+    ? players.find((p) => p.id === viewer.playerId)
+    : null;
+  if (viewer.playerId && !me)
+    fail("Участник исключён из игры / Қатысушы шығарылды", 403);
+  if (!viewer.playerId && room.teacher_id !== viewer.userId)
+    fail("Игра не найдена", 404);
+  const question = questions[room.round_index];
+  return {
+    code: room.code,
+    title: room.title,
+    language: room.language,
+    status: room.status,
+    roundIndex: room.round_index,
+    questionCount: questions.length,
+    roundSeconds: room.round_seconds,
+    deadline: room.deadline,
+    remainingMs: room.remaining_ms,
+    serverTime: Date.now(),
+    health: [room.cyan_health, room.coral_health].map((h) =>
+      Number((h / 100).toFixed(1)),
+    ),
+    revision: room.revision,
+    winner: room.winner,
+    lastEvent: room.last_event ? JSON.parse(room.last_event) : null,
+    events: JSON.parse(room.events),
+    question:
+      room.status === "running" || room.status === "paused"
+        ? { text: question.question, options: question.options }
+        : null,
+    players: players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      team: p.team,
+      score: p.score,
+      correct: p.correct_count,
+      answered: p.answer_count,
+      hits: p.hits,
+      hasAnswered: p.last_round === room.round_index,
+    })),
+    me: me
+      ? {
+          id: me.id,
+          name: me.name,
+          team: me.team,
+          answer: me.last_round === room.round_index ? me.last_answer : null,
+          correct:
+            me.last_round === room.round_index ? !!me.last_correct : null,
+          attackReady: me.last_round === room.round_index && !!me.attack_ready,
+        }
+      : null,
+  };
+}
+
+module.exports = {
+  MAX_PLAYERS,
+  fail,
+  one,
+  normalizeQuestions,
+  demoQuestions,
+  invalidate,
+  mutate,
+  finish,
+  nextRound,
+  readRoom,
+  project,
+};

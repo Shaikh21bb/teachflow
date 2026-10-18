@@ -60,7 +60,8 @@ router.post('/', async (req, res) => {
 router.post('/ai-generate', requireCredits('quiz_generation'), async (req, res) => {
     try {
         const { topic, subject, grade, question_count = 5, language = 'ru' } = req.body;
-        if (!topic) return res.status(400).json({ error: 'Тема обязательна' });
+        if (typeof topic !== 'string' || topic.trim().length < 3 || topic.length > 250) return res.status(400).json({ error: 'Тема: от 3 до 250 символов' });
+        if (!Number.isInteger(Number(question_count)) || Number(question_count) < 1 || Number(question_count) > 30) return res.status(400).json({ error: 'Количество вопросов: от 1 до 30' });
 
         const prompt = language === 'kk'
             ? `${grade ? grade + '-сынып' : ''} оқушыларына арналған "${topic}" тақырыбы бойынша ${subject ? subject + ' пәнінен' : ''} ${question_count} сұрақтан тұратын тест жаса. Әр сұрақта 4 нұсқа болсын (A, B, C, D). Дұрыс жауапты және қысқаша түсіндірмені көрсет. Тек JSON массиві: [{"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A","explanation":"..."}]. Тек JSON, ешқандай түсіндірме жоқ!`
@@ -82,7 +83,12 @@ router.post('/ai-generate', requireCredits('quiz_generation'), async (req, res) 
             questions = [];
         }
 
-        if (questions.length === 0) {
+        const valid = Array.isArray(questions) && questions.length === Number(question_count) && questions.every(q =>
+            q && typeof q.question === 'string' && q.question.trim() && q.question.length <= 700 &&
+            Array.isArray(q.options) && q.options.length === 4 && q.options.every(s => typeof s === 'string' && s.trim() && s.length <= 300) &&
+            new Set(q.options.map(s => s.replace(/^[A-D][).]\s*/, '').trim())).size === 4 && /^[ABCD]$/.test(q.correct)
+        );
+        if (!valid) {
             return res.status(500).json({ error: 'ИИ не смог сгенерировать вопросы. Попробуйте ещё раз.' });
         }
 

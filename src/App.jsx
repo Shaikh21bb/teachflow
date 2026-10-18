@@ -6,7 +6,7 @@ import {
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck, Gamepad2
 } from 'lucide-react'
 import Landing from './pages/Landing'
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -56,6 +56,8 @@ const Marketplace = lazy(() => import('./pages/Marketplace'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const Games = lazy(() => import('./pages/Games'));
+const ArenaGame = lazy(() => import('./pages/ArenaGame'));
 
 function App() {
     return (
@@ -83,6 +85,10 @@ function App() {
                             <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><Integrations /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/telegram" element={<ProtectedRoute><DashboardLayout><TelegramHub /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/games" element={<ProtectedRoute><DashboardLayout><Games /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/games/host/:code" element={<ProtectedRoute><ArenaGame host /></ProtectedRoute>} />
+                            <Route path="/play" element={<ArenaGame />} />
+                            <Route path="/play/:code" element={<ArenaGame />} />
                             <Route path="/quizzes/:id/report" element={<ProtectedRoute><DashboardLayout><QuizReport /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/profile" element={<ProtectedRoute><DashboardLayout><ProfilePage /></DashboardLayout></ProtectedRoute>} />
@@ -186,6 +192,7 @@ function DashboardLayout({ children }) {
         { path: '/schedule', icon: <CalendarDays size={20} />, label: language === 'kk' ? 'Кесте' : 'Расписание' },
         { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
+        { path: '/games', icon: <Gamepad2 size={20} />, label: language === 'kk' ? 'Ойындар' : 'Игры' },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
         { path: '/leaderboard', icon: <Trophy size={20} />, label: language === 'kk' ? 'Рейтинг' : 'Рейтинг' },
         {
@@ -314,7 +321,7 @@ function MobileBottomNav({ items, unreadCount = 0 }) {
     const { t, language } = useLanguage()
     // Show 5 items: home, lessons, classes, AI bot, profile
     const primaryItems = items.filter(i =>
-        ['/dashboard', '/my-lessons', '/classes', '/alfarabi-bot'].includes(i.path)
+        ['/dashboard', '/my-lessons', '/classes', '/games', '/alfarabi-bot'].includes(i.path)
     )
     return (
         <nav className="mobile-bottom-nav hide-on-desktop">

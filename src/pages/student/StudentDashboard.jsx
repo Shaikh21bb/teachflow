@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Trophy, Star, Target, CheckCircle, Clock, ClipboardCheck } from 'lucide-react';
+import { LogOut, Trophy, Star, Target, CheckCircle, Clock, ClipboardCheck, Gamepad2 } from 'lucide-react';
 import { API_BASE } from '../../api';
 
 export default function StudentDashboard() {
@@ -108,6 +108,7 @@ export default function StudentDashboard() {
             </header>
 
             <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+                <Link className="btn btn-primary" to="/play" style={{ marginBottom: 20 }}><Gamepad2 size={18}/> Ойынға кіру</Link>
                 {/* Stats Grid */}
                 <div style={{
                     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px'
