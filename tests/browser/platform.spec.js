@@ -32,7 +32,13 @@ test('teacher pages render without runtime errors or horizontal overflow', async
         expect(await page.locator('.page-content').innerText(), route).not.toContain('Не удалось открыть страницу');
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow, route).toBeLessThanOrEqual(2);
-        if (route === '/dashboard' || route === '/builder?edit=1') await page.screenshot({ path: `test-results/${testInfo.project.name}-${route.includes('builder') ? 'builder' : 'dashboard'}.png`, fullPage: true });
+        if (route === '/builder?edit=1' && testInfo.project.name === 'mobile') {
+            const heading = await page.locator('.builder-header h1').boundingBox();
+            const back = await page.locator('.builder-header > button').first().boundingBox();
+            expect(heading.y).toBeGreaterThan(back.y + back.height);
+            expect(heading.width).toBeGreaterThan(300);
+        }
+        if (route === '/dashboard' || route === '/builder?edit=1') await page.screenshot({ path: `test-results/${testInfo.project.name}-${route.includes('builder') ? 'builder' : 'dashboard'}.png`, fullPage: true, animations: 'disabled' });
     }
     expect(errors).toEqual([]);
 });
@@ -65,7 +71,7 @@ test('student submits homework and sees honest pending review', async ({ page, r
     await page.locator('textarea').fill('My solution is four, with a complete explanation.');
     await page.getByRole('button', { name: 'Үй жұмысын тексеру' }).click();
     await expect(page.getByText('Тексеруді күтуде', { exact: true })).toBeVisible();
-    await page.screenshot({ path: `test-results/${testInfo.project.name}-student-homework.png`, fullPage: true });
+    await page.screenshot({ path: `test-results/${testInfo.project.name}-student-homework.png`, fullPage: true, animations: 'disabled' });
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(2);
 });
 
@@ -117,9 +123,11 @@ test('public pages and dark mode render on the target viewport', async ({ page, 
         expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), route).toBeLessThanOrEqual(2);
     }
     await signIn(page, request);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/dashboard');
     await page.getByRole('button', { name: 'Toggle Theme' }).click();
     await expect(page.locator('html')).toHaveClass(/theme-dark/);
-    await page.screenshot({ path: `test-results/${testInfo.project.name}-dashboard-dark.png`, fullPage: true });
+    if (testInfo.project.name === 'desktop') await expect(page.locator('.profile-summary')).toHaveCSS('flex-direction', 'column');
+    await page.screenshot({ path: `test-results/${testInfo.project.name}-dashboard-dark.png`, fullPage: true, animations: 'disabled' });
     expect(errors).toEqual([]);
 });

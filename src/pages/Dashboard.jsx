@@ -395,7 +395,7 @@ function Dashboard() {
                         <Coins size={18} color="#f59e0b" />
                     </div>
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#111827', lineHeight: 1 }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.15rem', color: 'var(--color-gray-900)', lineHeight: 1 }}>
                             {tokenBalance.toLocaleString('ru-RU')}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>

@@ -422,6 +422,8 @@ function UserProfile() {
                 {/* Avatar button */}
                 <button
                     onClick={() => setShowDropdown(!showDropdown)}
+                    aria-label={language === 'kk' ? 'Аккаунт мәзірі' : 'Меню аккаунта'}
+                    aria-expanded={showDropdown}
                     style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         background: showDropdown ? 'var(--color-gray-100)' : 'transparent',
@@ -434,7 +436,7 @@ function UserProfile() {
                     onMouseLeave={e => { if (!showDropdown) e.currentTarget.style.background = 'transparent' }}
                 >
                     <AvatarEl />
-                    <div style={{ textAlign: 'left', display: 'none' }} className="hide-on-mobile">
+                    <div style={{ textAlign: 'left', display: 'none' }} className="profile-summary hide-on-mobile">
                         <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--color-gray-900)', lineHeight: 1.2, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {user.name?.split(' ')[0]}
                         </div>
@@ -450,14 +452,14 @@ function UserProfile() {
                         <div style={{ position: 'fixed', inset: 0, zIndex: 999 }} onClick={() => setShowDropdown(false)} />
                         <div style={{
                             position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                            background: 'white', borderRadius: '16px',
+                            background: 'var(--color-white)', borderRadius: '8px',
                             boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
                             border: '1px solid var(--color-gray-100)',
                             minWidth: '240px', zIndex: 1000, overflow: 'hidden',
                             animation: 'dropdownSlide 0.18s ease'
                         }}>
                             {/* Header with avatar + info */}
-                            <div style={{ padding: '16px', background: 'linear-gradient(135deg,#f8f7ff,#fff)', borderBottom: '1px solid var(--color-gray-100)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ padding: '16px', background: 'var(--color-gray-50)', borderBottom: '1px solid var(--color-gray-100)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ position: 'relative', flexShrink: 0 }}>
                                     {avatarUrl && !imgErr ? (
                                         <img src={avatarUrl} alt={user.name} onError={() => setImgErr(true)} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f130' }} />

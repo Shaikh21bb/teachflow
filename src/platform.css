@@ -15,6 +15,11 @@ body { background-image: none; }
 .dashboard .page-title { font-size: 28px; line-height: 1.25; letter-spacing: 0; }
 .dashboard .page-subtitle { color: var(--color-gray-600); font-size: 14px; }
 .dashboard .widget-title { font-size: 16px; }
+.dashboard .stat-icon.blue { color: #1d4ed8; }
+.dashboard .stat-icon.green { color: #15803d; }
+.dashboard .stat-icon.purple { color: #7e22ce; }
+.dashboard .stat-icon.orange { color: #b45309; }
+.dashboard .profile-summary { flex-direction: column; gap: 3px; align-items: flex-start; }
 .dashboard .widget, .dashboard .stat-card, .dashboard .card,
 .dashboard .lesson-card, .dashboard .assignment-card {
   border-radius: 8px;
@@ -91,10 +96,11 @@ button:disabled { cursor: not-allowed; opacity: .6; }
   .dashboard .mobile-header-logo img { width: 26px !important; height: 26px !important; }
   .dashboard .widget-header, .dashboard .widget-body { padding: 16px; }
   .lesson-builder { padding: 12px 0 !important; }
-  .lesson-builder .builder-header { flex-wrap: wrap !important; }
-  .lesson-builder .builder-header > div { order: 3; flex-basis: 100%; min-width: 0; }
+  .lesson-builder .builder-header { display: grid !important; grid-template-columns: 1fr auto; }
+  .lesson-builder .builder-header > div { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
   .lesson-builder .builder-header > div h1 { font-size: 22px !important; }
-  .lesson-builder .builder-header > button:last-child { margin-left: auto; }
+  .lesson-builder .builder-header > button { justify-self: start; }
+  .lesson-builder .builder-header > button:last-child { justify-self: end; }
   .lesson-builder .step-tabs { gap: 4px !important; padding: 4px !important; }
   .lesson-builder .step-tab { padding: 10px 6px !important; gap: 4px !important; font-size: 12px !important; }
   .lesson-builder .step-tab > span { flex-shrink: 0; }
