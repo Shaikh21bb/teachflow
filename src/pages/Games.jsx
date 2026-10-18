@@ -141,6 +141,9 @@ export default function Games() {
             {t("Игровые занятия", "Ойын сабақтары")}
           </p>
         </div>
+        <Link className="btn btn-secondary" to="/quests">
+          <Gamepad2 size={17} />{t("Квесты класса", "Сынып квесттері")}
+        </Link>
         <Link className="btn btn-secondary" to="/play">
           <Gamepad2 size={17} />
           {t("Войти по коду", "Кодпен кіру")}

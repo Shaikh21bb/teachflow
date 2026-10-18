@@ -5,7 +5,7 @@ const fs = require('fs');
 
 let db = null;
 let initialization = null;
-const SCHEMA_VERSION = 'platform-20-arena';
+const SCHEMA_VERSION = 'platform-21-quests';
 
 async function getDatabase() {
     if (initialization) return initialization;

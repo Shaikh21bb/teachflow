@@ -108,6 +108,7 @@ export default function Landing() {
                             <Globe2 size={16} />
                             {language === 'kk' ? 'ҚАЗ/РУС' : 'РУС/ҚАЗ'}
                         </button>
+                        <Link to="/student/login" style={{ color: '#14785e', fontWeight: 600, textDecoration: 'none' }}>{language === 'kk' ? 'Оқушыларға' : 'Школьникам'}</Link>
                         <Link to="/login" style={{ color: '#475569', fontWeight: 600, transition: 'color 0.2s', textDecoration: 'none' }} onMouseEnter={e => e.target.style.color = '#0f172a'} onMouseLeave={e => e.target.style.color = '#475569'}>
                             {language === 'kk' ? 'Кіру' : 'Вход'}
                         </Link>
@@ -136,6 +137,7 @@ export default function Landing() {
                         <button onClick={toggleLanguage} className="v2-mobile-menu-item" style={{ color: '#0f172a' }}>
                             <Globe2 size={18} /> {language === 'kk' ? 'Орыс тіліне ауысу' : 'Ауысу Қазақ тіліне'}
                         </button>
+                        <Link to="/student/login" className="v2-mobile-menu-item" style={{ color: '#14785e' }} onClick={() => setMobileMenuOpen(false)}>{language === 'kk' ? 'Оқушыларға' : 'Школьникам'}</Link>
                         <Link to="/login" className="v2-mobile-menu-item" style={{ color: '#0f172a' }} onClick={() => setMobileMenuOpen(false)}>
                             {language === 'kk' ? 'Кіру' : 'Вход'}
                         </Link>

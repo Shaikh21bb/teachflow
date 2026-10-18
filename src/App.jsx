@@ -33,7 +33,11 @@ const MockPayment = lazy(() => import('./pages/MockPayment'));
 
 const StudentLogin = lazy(() => import('./pages/student/StudentLogin'));
 const StudentRegister = lazy(() => import('./pages/student/StudentRegister'));
-const StudentDashboard = lazy(() => import('./pages/student/StudentDashboard'));
+const StudentDashboard = lazy(() => import('./student/StudentHome'));
+const StudentShell = lazy(() => import('./student/StudentShell'));
+const StudentQuest = lazy(() => import('./student/StudentQuest'));
+const StudentHistory = lazy(() => import('./student/StudentHistory'));
+const QuestStudio = lazy(() => import('./pages/QuestStudio'));
 const StudentQuiz = lazy(() => import('./pages/student/StudentQuiz'));
 const StudentResults = lazy(() => import('./pages/student/StudentResults'));
 const StudentAssignment = lazy(() => import('./pages/student/StudentAssignment'));
@@ -86,6 +90,7 @@ function App() {
                             <Route path="/telegram" element={<ProtectedRoute><DashboardLayout><TelegramHub /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/quizzes" element={<ProtectedRoute><DashboardLayout><Quizzes /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/games" element={<ProtectedRoute><DashboardLayout><Games /></DashboardLayout></ProtectedRoute>} />
+                            <Route path="/quests" element={<ProtectedRoute><DashboardLayout><QuestStudio /></DashboardLayout></ProtectedRoute>} />
                             <Route path="/games/host/:code" element={<ProtectedRoute><ArenaGame host /></ProtectedRoute>} />
                             <Route path="/play" element={<ArenaGame />} />
                             <Route path="/play/:code" element={<ArenaGame />} />
@@ -98,7 +103,13 @@ function App() {
                             {/* Student Portal Routes */}
                             <Route path="/student/login" element={<StudentLogin />} />
                             <Route path="/student/register" element={<StudentRegister />} />
-                            <Route path="/student/dashboard" element={<StudentDashboard />} />
+                            <Route path="/student" element={<StudentShell />}>
+                                <Route index element={<Navigate to="/student/dashboard" replace />} />
+                                <Route path="dashboard" element={<StudentDashboard />} />
+                                <Route path="class" element={<StudentDashboard classroomOnly />} />
+                                <Route path="quests/:id" element={<StudentQuest />} />
+                                <Route path="history" element={<StudentHistory />} />
+                            </Route>
                             <Route path="/student/quiz/:id" element={<StudentQuiz />} />
                             <Route path="/student/assignment/:id" element={<StudentAssignment />} />
                             <Route path="/student/results" element={<StudentResults />} />
@@ -192,7 +203,7 @@ function DashboardLayout({ children }) {
         { path: '/schedule', icon: <CalendarDays size={20} />, label: language === 'kk' ? 'Кесте' : 'Расписание' },
         { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
-        { path: '/games', icon: <Gamepad2 size={20} />, label: language === 'kk' ? 'Ойындар' : 'Игры' },
+        { path: '/games', icon: <Gamepad2 size={20} />, label: language === 'kk' ? 'Ойындар' : 'Игры', matchPaths: ['/games', '/quests'] },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
         { path: '/leaderboard', icon: <Trophy size={20} />, label: language === 'kk' ? 'Рейтинг' : 'Рейтинг' },
         {

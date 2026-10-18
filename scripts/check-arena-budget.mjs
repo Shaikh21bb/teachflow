@@ -25,3 +25,28 @@ console.log(
     excludesSharedApplication: true,
   }),
 );
+
+const questAssets = (await readdir(assets)).filter((name) =>
+  /^(Student(Home|History|Quest|Shell|Auth|Login|Register)-|Quest(Map|Studio)-|student-|api-).+\.(js|css)$/.test(
+    name,
+  ),
+);
+assert.ok(
+  questAssets.some((name) => name.startsWith("StudentQuest-")),
+  "Quest entry is missing",
+);
+let questBytes = 0;
+for (const name of questAssets)
+  questBytes += gzipSync(await readFile(new URL(name, assets))).length;
+assert.ok(
+  questBytes < 64 * 1024,
+  `Quest chunks exceed 64 KiB gzip: ${questBytes}`,
+);
+console.log(
+  JSON.stringify({
+    questLazyAssets: questAssets.length,
+    gzipBytes: questBytes,
+    budgetBytes: 64 * 1024,
+    excludesSharedApplication: true,
+  }),
+);

@@ -12,7 +12,7 @@ const rateLimitHandler = (message) => (req, res) => {
 };
 
 // ──────────────────────────────────────────
-// Auth limiter — 10 attempts per 15 minutes per IP
+// Auth limiter — 10 attempts per 15 minutes per IP and account
 // Protects /api/auth/login and /api/auth/register
 // ──────────────────────────────────────────
 const authLimiter = rateLimit({
@@ -24,8 +24,8 @@ const authLimiter = rateLimit({
         'Слишком много попыток входа. Подождите 15 минут и попробуйте снова.'
     ),
     keyGenerator: (req) => {
-        // Fallback or request IP + optionally email
-        return ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown');
+        const account = String(req.body?.email || req.body?.username || '').trim().toLowerCase().slice(0, 254);
+        return `${ipKeyGenerator(req.ip || req.socket.remoteAddress || 'unknown')}:${account}`;
     },
 });
 

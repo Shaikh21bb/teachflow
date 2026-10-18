@@ -122,6 +122,10 @@ export default function Login() {
                         {L('Рады видеть вас снова', 'Сізді қайта көргенімізге қуаныштымыз')}
                     </p>
 
+                    <Link to="/student/login" style={{ display: 'block', padding: '12px 16px', marginBottom: 22, border: '1px solid #64748b', borderRadius: 6, color: '#d1fae5', textAlign: 'center', textDecoration: 'none', fontWeight: 600 }}>
+                        {L('Я школьник: игры и задания', 'Мен оқушымын: ойындар мен тапсырмалар')}
+                    </Link>
+
                     {/* Error */}
                     {error && (
                         <div style={{ padding: '11px 14px', marginBottom: 20, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, color: '#fca5a5', fontSize: '0.875rem' }}>

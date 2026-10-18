@@ -1,5 +1,5 @@
 const express = require('express');
-const { getOne, getAll, runQuery } = require('../db/database');
+const { getOne, getAll, runQuery, withTransaction } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
 const { checkClassLimit } = require('../middleware/planMiddleware');
 const { validate, classSchema } = require('../middleware/validate');
@@ -69,8 +69,14 @@ router.delete('/:id', async (req, res, next) => {
 });
 router.delete('/:id/students/:studentId', async (req, res, next) => {
     try {
-        const result = await runQuery('DELETE FROM students WHERE id = ? AND class_id = ?', [Number(req.params.studentId), req.classInfo.id]);
-        if (!result.rowsAffected) return res.status(404).json({ error: 'Ученик не найден' });
+        const found = await withTransaction(async transaction => {
+            const args = [Number(req.params.studentId), req.classInfo.id];
+            const student = (await transaction.execute({ sql: 'SELECT password_hash FROM students WHERE id = ? AND class_id = ?', args })).rows[0];
+            if (!student) return false;
+            await transaction.execute({ sql: student.password_hash ? 'UPDATE students SET class_id = NULL WHERE id = ? AND class_id = ?' : 'DELETE FROM students WHERE id = ? AND class_id = ?', args });
+            return true;
+        });
+        if (!found) return res.status(404).json({ error: 'Ученик не найден' });
         res.json({ success: true });
     } catch (error) { next(error); }
 });

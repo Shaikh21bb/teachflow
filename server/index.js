@@ -43,10 +43,11 @@ app.use(cors({
 }));
 
 // 5. Rate limiting BEFORE body parsing (reject abusers early)
-app.use('/api/', (req, res, next) => req.path === '/games' || req.path.startsWith('/games/') ? next() : generalLimiter(req, res, next));
+app.use('/api/', (req, res, next) => /^\/(games|student-quests)(\/|$)/.test(req.path) ? next() : generalLimiter(req, res, next));
 
 // 6. Body parsing
 app.use('/api/games', express.json({ limit: '16kb' }));
+app.use('/api/student-quests', express.json({ limit: '4kb' }));
 app.use(express.json({ limit: '2mb' }));
 
 // ──────────────────────────────────────────
@@ -453,6 +454,27 @@ async function runMigrations() {
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY(room_id, player_id, round_index)
         )`,
+        `CREATE TABLE IF NOT EXISTS quest_progress (
+            student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+            quest_id TEXT NOT NULL, current_index INTEGER NOT NULL DEFAULT 0,
+            completed_at TEXT, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(student_id, quest_id)
+        )`,
+        `CREATE TABLE IF NOT EXISTS quest_step_results (
+            student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+            quest_id TEXT NOT NULL, step_index INTEGER NOT NULL,
+            attempts INTEGER NOT NULL DEFAULT 0, completed_at TEXT,
+            PRIMARY KEY(student_id, quest_id, step_index)
+        )`,
+        `CREATE TABLE IF NOT EXISTS quest_assignments (
+            class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+            quest_id TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(class_id, quest_id)
+        )`,
+        `CREATE TRIGGER IF NOT EXISTS keep_student_accounts_on_class_delete
+         BEFORE DELETE ON classes BEGIN
+             UPDATE students SET class_id = NULL WHERE class_id = OLD.id AND password_hash IS NOT NULL;
+         END`,
     ];
 
     for (const sql of migrations) {
@@ -600,6 +622,8 @@ async function initializeApp() {
     app.use('/api/kaspi', kaspiRouter);
     app.use('/api/live', liveRouter);
     app.use('/api/games', require('./routes/games'));
+    app.use('/api/student-quests', require('./routes/student-quests'));
+    app.use('/api/quest-classes', require('./routes/quest-classes'));
     app.use('/api/chat', chatRouter);
     app.use('/api/parent', parentRouter);
     app.use('/api/marketplace', marketplaceRouter);

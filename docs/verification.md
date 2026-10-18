@@ -49,3 +49,7 @@ pull requests and changes to `main`.
 
 The games section has additional reliability, renderer and payload checks;
 see [Bilim Arena](./arena.md) for rules, deployment settings and verification limits.
+
+Independent pupil accounts, quest progression and classroom assignment are
+documented in [Student Quests](./student-quests.md), including the local-only
+classroom batch test and production verification limits.

@@ -1,124 +1,159 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { runQuery, getOne } = require('../db/database');
-const { authenticateStudent } = require('../middleware/studentAuth');
-const { authLimiter } = require('../middleware/rateLimiter');
+const router = require("express").Router();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { runQuery, getOne } = require("../db/database");
+const { authenticateStudent } = require("../middleware/studentAuth");
+const { authLimiter } = require("../middleware/rateLimiter");
 
-const JWT_SECRET = process.env.JWT_SECRET || '';
+function session(student) {
+  const token = jwt.sign(
+    {
+      studentId: student.id,
+      classId: student.class_id,
+      role: "student",
+      username: student.username,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" },
+  );
+  return {
+    token,
+    student: {
+      id: student.id,
+      name: student.name,
+      username: student.username,
+      avatar_color: student.avatar_color,
+      xp: student.xp,
+      level: student.level,
+    },
+  };
+}
+const findClass = (code) =>
+  getOne(
+    "SELECT id, name FROM classes WHERE telegram_invite_code = ? COLLATE NOCASE",
+    [code.trim()],
+  );
 
-// POST /api/student/register
-router.post('/register', authLimiter, async (req, res) => {
-    try {
-        const { invite_code, username, password, name } = req.body;
-        
-        if (![invite_code, username, password, name].every(value => typeof value === 'string' && value.trim()) || password.length < 8 || password.length > 128 || username.length > 64 || name.length > 100 || invite_code.length > 100) {
-            return res.status(400).json({ error: 'Все поля обязательны' });
-        }
-
-        // Find class by invite code
-        const classRow = await getOne(
-            'SELECT * FROM classes WHERE telegram_invite_code = ? OR telegram_invite_code = ?', 
-            [invite_code, invite_code.trim()]
-        );
-
-        if (!classRow) {
-            return res.status(404).json({ error: 'Неверный код приглашения' });
-        }
-
-        // Check if username exists
-        const existingStudent = await getOne('SELECT * FROM students WHERE username = ?', [username]);
-        if (existingStudent) {
-            return res.status(400).json({ error: 'Имя пользователя уже занято' });
-        }
-
-        const password_hash = await bcrypt.hash(password, 10);
-        
-        const avatar_color = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6'][Math.floor(Math.random() * 5)];
-
-        const result = await runQuery(
-            `INSERT INTO students (name, class_id, username, password_hash, avatar_color)
-             VALUES (?, ?, ?, ?, ?)`,
-            [name, classRow.id, username, password_hash, avatar_color]
-        );
-
-        res.status(201).json({ success: true });
-    } catch (err) {
-        console.error('Student register error:', err);
-        res.status(500).json({ error: 'Внутренняя ошибка сервера', details: err.message });
+router.post("/register", authLimiter, async (req, res, next) => {
+  try {
+    const { password, name, invite_code = "" } = req.body;
+    const username =
+      typeof req.body.username === "string"
+        ? req.body.username.trim().toLowerCase()
+        : "";
+    if (
+      !/^[a-z0-9_.-]{3,32}$/.test(username) ||
+      typeof name !== "string" ||
+      name.trim().length < 2 ||
+      name.length > 100 ||
+      typeof password !== "string" ||
+      password.length < 8 ||
+      password.length > 128 ||
+      typeof invite_code !== "string" ||
+      invite_code.length > 100
+    ) {
+      return res.status(400).json({
+        error:
+          "Проверьте имя, логин (3–32 латинских символа) и пароль (8–128 символов).",
+      });
     }
+    const classRow = invite_code.trim() ? await findClass(invite_code) : null;
+    if (invite_code.trim() && !classRow)
+      return res.status(404).json({ error: "Неверный код класса" });
+    if (
+      await getOne(
+        "SELECT id FROM students WHERE username = ? COLLATE NOCASE",
+        [username],
+      )
+    )
+      return res.status(409).json({ error: "Логин уже занят" });
+    const result = await runQuery(
+      "INSERT INTO students (name, username, password_hash, class_id, avatar_color) VALUES (?, ?, ?, ?, ?)",
+      [
+        name.trim(),
+        username,
+        await bcrypt.hash(password, 10),
+        classRow?.id ?? null,
+        "#14836b",
+      ],
+    );
+    const student = await getOne("SELECT * FROM students WHERE id = ?", [
+      Number(result.lastInsertRowid),
+    ]);
+    res.status(201).json({ success: true, ...session(student) });
+  } catch (error) {
+    if (/UNIQUE constraint/i.test(error.message))
+      return res.status(409).json({ error: "Логин уже занят" });
+    next(error);
+  }
 });
 
-// POST /api/student/login
-router.post('/login', authLimiter, async (req, res) => {
-    try {
-        const { username, password } = req.body;
-
-        if (typeof username !== 'string' || typeof password !== 'string' || !username || !password || password.length > 128) {
-            return res.status(400).json({ error: 'Введите имя пользователя и пароль' });
-        }
-
-        const student = await getOne('SELECT * FROM students WHERE username = ?', [username]);
-        
-        if (!student || !student.password_hash) {
-            return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
-        }
-
-        const isValid = await bcrypt.compare(password, student.password_hash);
-        
-        if (!isValid) {
-            return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
-        }
-
-        const token = jwt.sign(
-            { 
-                studentId: student.id, 
-                classId: student.class_id, 
-                role: 'student',
-                username: student.username
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
-
-        res.json({
-            token,
-            student: {
-                id: student.id,
-                name: student.name,
-                username: student.username,
-                avatar_color: student.avatar_color,
-                xp: student.xp,
-                level: student.level
-            }
-        });
-
-    } catch (err) {
-        console.error('Student login error:', err);
-        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-    }
+router.post("/login", authLimiter, async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    if (
+      typeof username !== "string" ||
+      username.length > 64 ||
+      typeof password !== "string" ||
+      password.length > 128
+    )
+      return res.status(400).json({ error: "Введите логин и пароль" });
+    // Legacy exact-case logins remain valid.
+    const student =
+      (await getOne("SELECT * FROM students WHERE username = ?", [
+        username.trim(),
+      ])) ||
+      (await getOne(
+        "SELECT * FROM students WHERE username = ? COLLATE NOCASE",
+        [username.trim()],
+      ));
+    if (
+      !student?.password_hash ||
+      !(await bcrypt.compare(password, student.password_hash))
+    )
+      return res.status(401).json({ error: "Неверный логин или пароль" });
+    res.json(session(student));
+  } catch (error) {
+    next(error);
+  }
 });
 
-// GET /api/student/me
-router.get('/me', authenticateStudent, async (req, res) => {
-    try {
-        const student = await getOne(`
-            SELECT s.id, s.name, s.username, s.avatar_color, s.xp, s.level, c.name as class_name 
-            FROM students s 
-            LEFT JOIN classes c ON s.class_id = c.id 
-            WHERE s.id = ?
-        `, [req.student.studentId]);
-
-        if (!student) {
-            return res.status(404).json({ error: 'Ученик не найден' });
-        }
-
-        res.json({ student });
-    } catch (err) {
-        console.error('Student /me error:', err);
-        res.status(500).json({ error: 'Внутренняя ошибка сервера' });
-    }
+router.get("/me", authenticateStudent, async (req, res, next) => {
+  try {
+    const student = await getOne(
+      "SELECT s.id, s.name, s.username, s.avatar_color, s.xp, s.level, s.class_id, c.name AS class_name FROM students s LEFT JOIN classes c ON c.id = s.class_id WHERE s.id = ?",
+      [req.student.studentId],
+    );
+    res.json({ student });
+  } catch (error) {
+    next(error);
+  }
 });
 
+router.post("/class", authenticateStudent, async (req, res, next) => {
+  try {
+    if (
+      typeof req.body.invite_code !== "string" ||
+      !req.body.invite_code.trim() ||
+      req.body.invite_code.length > 100
+    )
+      return res.status(400).json({ error: "Введите код класса" });
+    const target = await findClass(req.body.invite_code);
+    if (!target) return res.status(404).json({ error: "Неверный код класса" });
+    await runQuery(
+      "UPDATE students SET class_id = ? WHERE id = ? AND class_id IS NULL",
+      [target.id, req.student.studentId],
+    );
+    const current = await getOne("SELECT class_id FROM students WHERE id = ?", [
+      req.student.studentId,
+    ]);
+    if (current.class_id !== target.id)
+      return res.status(409).json({
+        error: "Вы уже состоите в другом классе. Обратитесь к учителю.",
+      });
+    res.json({ class: target });
+  } catch (error) {
+    next(error);
+  }
+});
 module.exports = router;
