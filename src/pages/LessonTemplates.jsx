@@ -21,8 +21,8 @@ export const LESSON_TEMPLATES = [
         title: 'Квадратные уравнения',
         description: 'Решение квадратных уравнений различными методами: дискриминант, разложение на множители',
         objectives: 'Научить решать квадратные уравнения тремя методами',
-        color: '#6366f1',
-        bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+        color: '#245fb5',
+        bg: '#245fb5',
         icon: '∑',
         tags: ['формулы', 'алгебра', 'задачи'],
         popular: true,
@@ -281,7 +281,7 @@ export default function LessonTemplates() {
 
             {/* ── How it works banner ── */}
             <div style={{ background: 'linear-gradient(135deg,#eff6ff,#f5f3ff)', border: '1px solid #c7d2fe', borderRadius: '16px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                <Sparkles size={20} color="#6366f1" style={{ flexShrink: 0 }} />
+                <Sparkles size={20} color="#245fb5" style={{ flexShrink: 0 }} />
                 <p style={{ margin: 0, fontSize: '0.875rem', color: '#4338ca', fontWeight: 600, flex: 1 }}>
                     {L('Выберите шаблон → AI автоматически создаст структурированные слайды, квиз и домашнее задание', 'Үлгіні таңдаңыз → AI автоматты түрде слайдтар, квиз және үй тапсырмасын жасайды')}
                 </p>
@@ -307,16 +307,16 @@ export default function LessonTemplates() {
                         onChange={e => setSearch(e.target.value)}
                         placeholder={L('Поиск шаблонов...', 'Үлгілерді іздеу...')}
                         style={{ width: '100%', padding: '9px 12px 9px 32px', border: '1px solid var(--color-gray-200)', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', background: 'white', boxSizing: 'border-box', color: 'var(--color-gray-900)' }}
-                        onFocus={e => e.target.style.borderColor = '#6366f1'}
+                        onFocus={e => e.target.style.borderColor = '#245fb5'}
                         onBlur={e => e.target.style.borderColor = 'var(--color-gray-200)'}
                     />
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {SUBJECT_FILTER.map(s => (
                         <button key={s} onClick={() => setSubjectFilter(s)} style={{
-                            padding: '6px 14px', border: `1px solid ${subjectFilter === s ? '#6366f1' : 'var(--color-gray-200)'}`,
+                            padding: '6px 14px', border: `1px solid ${subjectFilter === s ? '#245fb5' : 'var(--color-gray-200)'}`,
                             borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                            background: subjectFilter === s ? '#6366f1' : 'white',
+                            background: subjectFilter === s ? '#245fb5' : 'white',
                             color: subjectFilter === s ? 'white' : 'var(--color-gray-600)',
                             transition: 'all 0.15s', whiteSpace: 'nowrap'
                         }}>

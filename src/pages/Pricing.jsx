@@ -96,7 +96,7 @@ export default function Pricing() {
                                 </div>
                             )}
                             {plan.highlight && (
-                                <div style={{ position: 'absolute', top: -12, left: 22, background: '#6366f1', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: 20 }}>
+                                <div style={{ position: 'absolute', top: -12, left: 22, background: '#245fb5', color: 'white', fontSize: '0.7rem', fontWeight: 800, padding: '3px 12px', borderRadius: 20 }}>
                                     {L('Популярный', 'Танымал')}
                                 </div>
                             )}
@@ -111,7 +111,7 @@ export default function Pricing() {
                                 <div style={{
                                     width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     background: plan.gold ? '#fef3c7' : plan.highlight ? 'rgba(255,255,255,0.1)' : '#f4f4f5',
-                                    color: plan.gold ? '#f59e0b' : plan.highlight ? 'white' : '#6366f1'
+                                    color: plan.gold ? '#f59e0b' : plan.highlight ? 'white' : '#245fb5'
                                 }}>
                                     {plan.icon}
                                 </div>
@@ -153,7 +153,7 @@ export default function Pricing() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                                 {plan.features.map((f, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
-                                        <Check size={14} color={plan.highlight ? '#a5b4fc' : '#6366f1'} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
+                                        <Check size={14} color={plan.highlight ? '#a5b4fc' : '#245fb5'} strokeWidth={2.5} style={{ flexShrink: 0, marginTop: 2 }} />
                                         <span style={{ fontSize: '0.83rem', color: plan.highlight ? 'rgba(255,255,255,0.8)' : '#374151', lineHeight: 1.45 }}>{f}</span>
                                     </div>
                                 ))}
@@ -175,7 +175,7 @@ export default function Pricing() {
                                         : plan.gold ? '#f59e0b'
                                         : plan.highlight ? 'white'
                                         : plan.id === 'school' ? '#18181b'
-                                        : '#6366f1',
+                                        : '#245fb5',
                                     color: isCurrent ? (plan.highlight ? 'rgba(255,255,255,0.4)' : '#9ca3af')
                                         : plan.gold ? 'white'
                                         : plan.highlight ? '#4f46e5'
@@ -223,7 +223,7 @@ export default function Pricing() {
                         {
                             title: L('Бесплатное пополнение', 'Тегін толтыру'),
                             desc: L('Смотрите 10 видео в день и получайте 50 токенов. Каждый день.', 'Күніне 10 бейне қараңыз — 50 токен алыңыз.'),
-                            color: '#6366f1', bg: '#f5f3ff'
+                            color: '#245fb5', bg: '#f5f3ff'
                         },
                         {
                             title: L('Покупайте уроки', 'Сабақ сатып алыңыз'),

@@ -64,6 +64,7 @@ export function AuthProvider({ children }) {
     async function register(name, email, password, subjects = []) {
         try {
             const res = await fetch(`${API_BASE}/auth/register`, {
+                signal: AbortSignal.timeout(20000),
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, password, subjects }),
@@ -88,6 +89,7 @@ export function AuthProvider({ children }) {
     async function login(email, password) {
         try {
             const res = await fetch(`${API_BASE}/auth/login`, {
+                signal: AbortSignal.timeout(20000),
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),

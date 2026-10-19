@@ -1926,14 +1926,14 @@ a:hover {
 
 :root {
   /* New Colors */
-  --color-ai-primary: #6366f1;
+  --color-ai-primary: #245fb5;
   --color-ai-secondary: #a855f7;
   --color-ai-accent: #ec4899;
   --color-dark-bg: #0f172a;
   --color-dark-card: #1e293b;
 
   /* Gradients */
-  --gradient-ai-main: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  --gradient-ai-main: linear-gradient(135deg, #245fb5 0%, #a855f7 50%, #ec4899 100%);
   --gradient-ai-text: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
   --gradient-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   --gradient-dark-hero: radial-gradient(circle at 50% 0%, #2e1065 0%, #0f172a 100%);
@@ -1965,7 +1965,7 @@ a:hover {
   font-weight: 800;
   color: white;
   font-size: 1.2rem;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 20px rgba(36,95,181, 0.5);
 }
 
 .logo-text {
@@ -2104,8 +2104,8 @@ a:hover {
   align-items: center;
   gap: 10px;
   padding: 8px 16px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(36,95,181, 0.1);
+  border: 1px solid rgba(36,95,181, 0.3);
   border-radius: 50px;
   color: #818cf8;
   font-weight: 600;
@@ -2345,7 +2345,7 @@ a:hover {
   content: '';
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(36,95,181, 0.1), transparent 70%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
@@ -2353,8 +2353,8 @@ a:hover {
 .feature-card-ai:hover {
   transform: translateY(-8px) scale(1.02);
   background: rgba(30, 41, 59, 1);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+  border-color: rgba(36,95,181, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(36,95,181, 0.1);
 }
 
 .feature-card-ai:hover::before {
@@ -2376,8 +2376,8 @@ a:hover {
 
 .feature-card-ai:hover .feature-icon-wrapper {
   transform: scale(1.1) rotate(5deg);
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(36,95,181, 0.2);
+  border-color: rgba(36,95,181, 0.5);
 }
 
 .feature-icon-ai {
@@ -2468,7 +2468,7 @@ a:hover {
   content: '';
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(36,95,181, 0.1), transparent 70%);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
@@ -2476,8 +2476,8 @@ a:hover {
 .pricing-card-ai:hover {
   transform: translateY(-8px) scale(1.02);
   background: rgba(30, 41, 59, 1);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+  border-color: rgba(36,95,181, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(36,95,181, 0.1);
 }
 
 .pricing-card-ai:hover::before {
@@ -2486,15 +2486,15 @@ a:hover {
 
 .pricing-card-ai.featured {
   background: linear-gradient(180deg, rgba(30, 41, 59, 1) 0%, rgba(15, 23, 42, 1) 100%);
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: rgba(36,95,181, 0.5);
   transform: scale(1.05);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(36,95,181, 0.15);
   z-index: 1;
 }
 
 .pricing-card-ai.featured:hover {
   transform: scale(1.08) translateY(-5px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(36,95,181, 0.3);
 }
 
 .best-value {
@@ -3631,8 +3631,8 @@ a:hover {
 }
 
 .lesson-icon {
-    background: rgba(99, 102, 241, 0.1);
-    color: #6366f1;
+    background: rgba(36,95,181, 0.1);
+    color: #245fb5;
 }
 
 .assignment-icon {

@@ -17,6 +17,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import { studentAPI } from "./api";
 import "./student.css";
+import BrandMark from '../components/BrandMark';
 
 export default function StudentShell() {
   const generation = useRef(0);
@@ -61,10 +62,7 @@ export default function StudentShell() {
   return (
     <div className="student-app">
       <header className="student-top">
-        <Link className="student-brand" to="/student/dashboard">
-          <img src="/logo.jpg" alt="" />
-          URPAQ <span>PLAY</span>
-        </Link>
+        <BrandMark className="student-brand" to="/student/dashboard" label="PLAY" />
         <div className="student-top-actions">
           <button className="s-button" onClick={toggleLanguage}>
             {kk ? "RU" : "ҚАЗ"}

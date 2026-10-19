@@ -2,7 +2,7 @@
   --s-ink: #233e39;
   --s-muted: #64766f;
   --s-line: #dbe5df;
-  --s-green: #14785e;
+  --s-green: #245fb5;
   --s-coral: #ce614c;
   color-scheme: light;
   min-height: 100dvh;
@@ -76,7 +76,7 @@
   box-shadow: none;
 }
 .student-app input:focus {
-  border-color: #14785e;
+  border-color: #245fb5;
 }
 .student-top {
   max-width: 1184px;
@@ -149,7 +149,7 @@
   color: white;
 }
 .student-app .s-primary:hover:not(:disabled) {
-  background: #0f644d;
+  background: #194c98;
 }
 .student-nav {
   max-width: 1128px;

@@ -191,7 +191,7 @@ export default function AdminPanel() {
 
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <ShieldCheck size={24} color="white" />
                 </div>
                 <div>
@@ -211,11 +211,11 @@ export default function AdminPanel() {
 
             {/* ══ STATS TAB ══ */}
             {tab === 'stats' && (
-                loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} /></div> :
+                loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} /></div> :
                 stats && (
                     <div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
-                            <StatCard icon={<Users size={20} />} value={stats.users.total} label={L('Всего учителей', 'Барлық мұғалімдер')} color="#6366f1" bg="#eff6ff" />
+                            <StatCard icon={<Users size={20} />} value={stats.users.total} label={L('Всего учителей', 'Барлық мұғалімдер')} color="#245fb5" bg="#eff6ff" />
                             <StatCard icon={<Users size={20} />} value={stats.users.new_this_week} label={L('Новых за неделю', 'Апталық жаңа')} color="#10b981" bg="#f0fdf4" />
                             <StatCard icon={<Coins size={20} />} value={stats.tokens.total_in_circulation} label={L('Токенов в обороте', 'Айналымдағы токен')} color="#f59e0b" bg="#fffbeb" />
                             <StatCard icon={<Eye size={20} />} value={stats.ads.total_views} label={L('Просмотров рекламы', 'Жарнама қаралымы')} color="#8b5cf6" bg="#f5f3ff" />
@@ -229,7 +229,7 @@ export default function AdminPanel() {
                                 {Object.entries(stats.users.by_plan || {}).map(([plan, count]) => (
                                     <div key={plan} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
                                         <span style={{ fontWeight: 600, textTransform: 'capitalize', color: '#374151' }}>{plan}</span>
-                                        <span style={{ fontWeight: 800, color: '#6366f1' }}>{count}</span>
+                                        <span style={{ fontWeight: 800, color: '#245fb5' }}>{count}</span>
                                     </div>
                                 ))}
                             </div>
@@ -289,7 +289,7 @@ export default function AdminPanel() {
                             <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                             <input value={search} onChange={e => setSearch(e.target.value)} placeholder={L('Поиск по имени, email...', 'Іздеу...')}
                                 style={{ width: '100%', padding: '9px 12px 9px 30px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', background: 'white', boxSizing: 'border-box' }}
-                                onFocus={e => e.target.style.borderColor = '#6366f1'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                                onFocus={e => e.target.style.borderColor = '#245fb5'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                         </div>
                         <select value={planFilter} onChange={e => setPlanFilter(e.target.value)} style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', background: 'white' }}>
                             <option value="">{L('Все тарифы', 'Барлық тариф')}</option>
@@ -298,7 +298,7 @@ export default function AdminPanel() {
                         <span style={{ fontSize: '0.82rem', color: '#9ca3af' }}>{L(`Найдено: ${userTotal}`, `Табылды: ${userTotal}`)}</span>
                     </div>
 
-                    {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} /></div> : (
+                    {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} /></div> : (
                         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
@@ -356,7 +356,7 @@ export default function AdminPanel() {
                     {userTotal > 25 && (
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 16 }}>
                             {Array.from({ length: Math.min(5, Math.ceil(userTotal / 25)) }, (_, i) => i + 1).map(p => (
-                                <button key={p} onClick={() => loadUsers(p)} style={{ width: 34, height: 34, border: `1px solid ${p === page ? '#6366f1' : '#e5e7eb'}`, borderRadius: 8, fontWeight: p === page ? 700 : 400, cursor: 'pointer', background: p === page ? '#eff6ff' : 'white', color: p === page ? '#4f46e5' : '#374151', fontSize: '0.875rem' }}>{p}</button>
+                                <button key={p} onClick={() => loadUsers(p)} style={{ width: 34, height: 34, border: `1px solid ${p === page ? '#245fb5' : '#e5e7eb'}`, borderRadius: 8, fontWeight: p === page ? 700 : 400, cursor: 'pointer', background: p === page ? '#eff6ff' : 'white', color: p === page ? '#4f46e5' : '#374151', fontSize: '0.875rem' }}>{p}</button>
                             ))}
                         </div>
                     )}
@@ -373,25 +373,25 @@ export default function AdminPanel() {
                                 {L('Учителя видят рекламу и получают токены за просмотр', 'Мұғалімдер жарнама қарап токен алады')}
                             </p>
                         </div>
-                        <button onClick={() => openAdModal()} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', border: 'none', borderRadius: 11, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+                        <button onClick={() => openAdModal()} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: '#245fb5', color: 'white', border: 'none', borderRadius: 11, fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(36,95,181,0.3)' }}>
                             <Plus size={16} /> {L('Добавить рекламу', 'Жарнама қосу')}
                         </button>
                     </div>
 
-                    {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} /></div> :
+                    {loading ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} /></div> :
                     ads.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: 16, border: '1px solid #e5e7eb' }}>
                             <Play size={44} color="#d1d5db" style={{ marginBottom: 12 }} />
                             <h3 style={{ margin: '0 0 6px', color: '#374151' }}>{L('Рекламы нет', 'Жарнама жоқ')}</h3>
                             <p style={{ margin: '0 0 18px', fontSize: '0.875rem', color: '#9ca3af' }}>{L('Добавьте первую рекламу', 'Бірінші жарнаманы қосыңыз')}</p>
-                            <button onClick={() => openAdModal()} style={{ padding: '10px 22px', background: '#6366f1', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>+ {L('Добавить', 'Қосу')}</button>
+                            <button onClick={() => openAdModal()} style={{ padding: '10px 22px', background: '#245fb5', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>+ {L('Добавить', 'Қосу')}</button>
                         </div>
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
                             {ads.map(ad => (
                                 <div key={ad.id} style={{ background: 'white', borderRadius: 16, border: `1px solid ${ad.is_active ? '#e5e7eb' : '#fee2e2'}`, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                                     {/* Preview */}
-                                    <div style={{ height: 120, background: ad.thumbnail_url ? `url(${ad.thumbnail_url}) center/cover` : 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                    <div style={{ height: 120, background: ad.thumbnail_url ? `url(${ad.thumbnail_url}) center/cover` : '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                         {!ad.thumbnail_url && <Play size={32} color="rgba(255,255,255,0.8)" />}
                                         <div style={{ position: 'absolute', top: 8, right: 8, background: ad.is_active ? '#10b981' : '#ef4444', color: 'white', borderRadius: 20, padding: '2px 8px', fontSize: '0.68rem', fontWeight: 800 }}>
                                             {ad.is_active ? L('Активна', 'Белсенді') : L('Отключена', 'Өшірілген')}
@@ -445,7 +445,7 @@ export default function AdminPanel() {
                                     <label style={{ display: 'block', fontWeight: 600, fontSize: '0.82rem', marginBottom: 5, color: '#374151' }}>{f.label}</label>
                                     <input required={f.required} type={f.type} value={adForm[f.key]} onChange={e => setAdForm(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder}
                                         style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
-                                        onFocus={e => e.target.style.borderColor = '#6366f1'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                                        onFocus={e => e.target.style.borderColor = '#245fb5'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                                 </div>
                             ))}
                             {/* Type selector */}
@@ -453,7 +453,7 @@ export default function AdminPanel() {
                                 <label style={{ display: 'block', fontWeight: 600, fontSize: '0.82rem', marginBottom: 8, color: '#374151' }}>{L('Тип рекламы', 'Жарнама түрі')}</label>
                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                     {AD_TYPES.map(t => (
-                                        <button key={t.v} type="button" onClick={() => setAdForm(p => ({ ...p, type: t.v }))} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', border: `1.5px solid ${adForm.type === t.v ? '#6366f1' : '#e5e7eb'}`, borderRadius: 9, background: adForm.type === t.v ? '#eff6ff' : 'white', color: adForm.type === t.v ? '#4f46e5' : '#6b7280', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
+                                        <button key={t.v} type="button" onClick={() => setAdForm(p => ({ ...p, type: t.v }))} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', border: `1.5px solid ${adForm.type === t.v ? '#245fb5' : '#e5e7eb'}`, borderRadius: 9, background: adForm.type === t.v ? '#eff6ff' : 'white', color: adForm.type === t.v ? '#4f46e5' : '#6b7280', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
                                             {t.icon} {t.l}
                                         </button>
                                     ))}
@@ -467,7 +467,7 @@ export default function AdminPanel() {
                                 <input required value={adForm.url} onChange={e => setAdForm(p => ({ ...p, url: e.target.value }))}
                                     placeholder={adForm.type === 'youtube' ? 'https://youtube.com/watch?v=...' : adForm.type === 'video' ? 'https://example.com/ad.mp4' : 'https://example.com/banner.jpg'}
                                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
-                                    onFocus={e => e.target.style.borderColor = '#6366f1'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                                    onFocus={e => e.target.style.borderColor = '#245fb5'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                             </div>
                             {/* Thumbnail (for youtube/video) */}
                             {(adForm.type === 'youtube' || adForm.type === 'video') && (
@@ -478,7 +478,7 @@ export default function AdminPanel() {
                                     <input value={adForm.thumbnail_url} onChange={e => setAdForm(p => ({ ...p, thumbnail_url: e.target.value }))}
                                         placeholder="https://example.com/thumbnail.jpg"
                                         style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
-                                        onFocus={e => e.target.style.borderColor = '#6366f1'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                                        onFocus={e => e.target.style.borderColor = '#245fb5'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                                 </div>
                             )}
                             {/* Click-through URL */}
@@ -489,7 +489,7 @@ export default function AdminPanel() {
                                 <input value={adForm.link_url} onChange={e => setAdForm(p => ({ ...p, link_url: e.target.value }))}
                                     placeholder="https://advertiser.com"
                                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', boxSizing: 'border-box' }}
-                                    onFocus={e => e.target.style.borderColor = '#6366f1'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
+                                    onFocus={e => e.target.style.borderColor = '#245fb5'} onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                             </div>
                             {/* Duration + Tokens */}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -510,7 +510,7 @@ export default function AdminPanel() {
                             </div>
                             <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                                 <button type="button" onClick={() => setAdModal(false)} style={{ flex: 1, padding: '11px', border: '1px solid #e5e7eb', borderRadius: 10, background: 'white', cursor: 'pointer', fontWeight: 600 }}>{L('Отмена', 'Болдырмау')}</button>
-                                <button type="submit" disabled={adSaving} style={{ flex: 2, padding: '11px', border: 'none', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: adSaving ? 0.7 : 1 }}>
+                                <button type="submit" disabled={adSaving} style={{ flex: 2, padding: '11px', border: 'none', borderRadius: 10, background: '#245fb5', color: 'white', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, opacity: adSaving ? 0.7 : 1 }}>
                                     {adSaving ? <Loader2 size={15} style={{ animation: 'spin 0.7s linear infinite' }} /> : null}
                                     {editingAd ? L('Сохранить', 'Сақтау') : L('Создать', 'Жасау')}
                                 </button>

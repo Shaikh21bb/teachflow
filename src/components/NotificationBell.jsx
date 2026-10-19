@@ -25,7 +25,7 @@ function timeAgo(dateStr, lang = 'ru') {
 function NotifIcon({ type, size = 16 }) {
     const s = { flexShrink: 0 }
     if (type === 'success')  return <UserPlus size={size} color="#10b981" style={s} />
-    if (type === 'message')  return <MessageSquare size={size} color="#6366f1" style={s} />
+    if (type === 'message')  return <MessageSquare size={size} color="#245fb5" style={s} />
     if (type === 'warning')  return <AlertCircle size={size} color="#f59e0b" style={s} />
     if (type === 'error')    return <AlertCircle size={size} color="#ef4444" style={s} />
     return <Info size={size} color="#3b82f6" style={s} />
@@ -227,7 +227,7 @@ export default function NotificationBell() {
                                 </div>
                                 {/* Unread dot */}
                                 {!notif.is_read && (
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', flexShrink: 0, marginTop: '4px' }} />
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#245fb5', flexShrink: 0, marginTop: '4px' }} />
                                 )}
                             </div>
                         ))}

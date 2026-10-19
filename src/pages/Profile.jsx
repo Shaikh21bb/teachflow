@@ -613,7 +613,7 @@ export default function Profile() {
             {/* ════ TAB 3: REPORTS ════ */}
             {activeTab === 'reports' && (
                 <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--color-gray-500)' }}>
-                    <BarChart2 size={44} color="#6366f1" style={{ marginBottom: 16 }} />
+                    <BarChart2 size={44} color="#245fb5" style={{ marginBottom: 16 }} />
                     <h3 style={{ margin: '0 0 8px', color: 'var(--color-gray-900)', fontWeight: 700 }}>
                         {language === 'kk' ? 'Толық есептер' : 'Полная аналитика'}
                     </h3>
@@ -633,14 +633,14 @@ export default function Profile() {
                 <div style={{ maxWidth: 520 }}>
                     <div className="widget" style={{ padding: '24px', marginBottom: 16 }}>
                         <h3 style={{ margin: '0 0 18px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Key size={18} color="#6366f1" />
+                            <Key size={18} color="#245fb5" />
                             {language === 'kk' ? 'Құпия сөзді өзгерту' : 'Изменить пароль'}
                         </h3>
                         <PasswordChangeForm language={language} showMsg={showMsg} />
                     </div>
                     <div className="widget" style={{ padding: '24px' }}>
                         <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <Settings size={18} color="#6366f1" />
+                            <Settings size={18} color="#245fb5" />
                             {language === 'kk' ? 'Telegram & Интеграциялар' : 'Telegram & Интеграции'}
                         </h3>
                         <Link to="/telegram" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)', marginBottom: 10 }}>
@@ -657,8 +657,8 @@ export default function Profile() {
                         </Link>
                         <Link to="/integrations" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Plug size={18} color="#6366f1" />
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#245fb520', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Plug size={18} color="#245fb5" />
                                 </div>
                                 <div>
                                     <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{language === 'kk' ? 'Барлық интеграциялар' : 'Все интеграции'}</div>
@@ -674,7 +674,7 @@ export default function Profile() {
             {/* ════ TAB 5: INTEGRATIONS ════ */}
             {activeTab === 'integrations' && (
                 <div style={{ textAlign: 'center', padding: '32px 20px', color: 'var(--color-gray-500)' }}>
-                    <Plug size={44} color="#6366f1" style={{ marginBottom: 16 }} />
+                    <Plug size={44} color="#245fb5" style={{ marginBottom: 16 }} />
                     <h3 style={{ margin: '0 0 8px', color: 'var(--color-gray-900)', fontWeight: 700 }}>
                         {language === 'kk' ? 'Интеграциялар' : 'Интеграции'}
                     </h3>
@@ -697,7 +697,7 @@ export default function Profile() {
                         {[
                             { icon: <Phone size={18} />, title: 'WhatsApp', desc: language === 'kk' ? 'Тікелей байланыс' : 'Прямой чат', href: 'https://wa.me/77771225784', color: '#22c55e' },
                             { icon: <Send size={18} />, title: 'Telegram', desc: language === 'kk' ? 'Жедел жауап' : 'Быстрый ответ', href: 'https://t.me/urpaqai', color: '#0088cc' },
-                            { icon: <ExternalLink size={18} />, title: language === 'kk' ? 'Сайт' : 'Сайт', desc: 'urpaq.ai', href: 'https://urpaq.ai', color: '#6366f1' },
+                            { icon: <ExternalLink size={18} />, title: language === 'kk' ? 'Сайт' : 'Сайт', desc: 'urpaq.ai', href: 'https://urpaq.ai', color: '#245fb5' },
                         ].map((item, i) => (
                             <a key={i} href={item.href} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 10, border: '1px solid var(--color-gray-100)', background: 'var(--color-gray-50)', textDecoration: 'none', color: 'var(--color-gray-800)', marginBottom: i < 2 ? 10 : 0, transition: 'box-shadow 0.15s' }}
                                 onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'}
@@ -783,7 +783,7 @@ function ColleagueCard({ colleague, onToggle, toggling, t, language, navigate })
     const [msgLoading, setMsgLoading] = useState(false)
 
     const initials = (colleague.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
+    const colors = ['#245fb5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
     const avatarColor = colors[(colleague.name?.charCodeAt(0) || 0) % colors.length]
     const [imgError, setImgError] = useState(false)
 
@@ -831,7 +831,7 @@ function ColleagueCard({ colleague, onToggle, toggling, t, language, navigate })
                     </div>
                 )}
                 {colleague.is_following && (
-                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: '16px', height: '16px', borderRadius: '50%', background: '#6366f1', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'absolute', bottom: -2, right: -2, width: '16px', height: '16px', borderRadius: '50%', background: '#245fb5', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <UserCheck size={9} color="white" />
                     </div>
                 )}

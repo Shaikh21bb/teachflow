@@ -19,7 +19,7 @@ const GRADES = Array.from({ length: 11 }, (_, i) => String(i + 1))
 // ── Avatar helper ─────────────────────────────────────────────
 function Avatar({ src, name, size = 28 }) {
     const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = ['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
+    const colors = ['#245fb5','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
     const color = colors[(name?.charCodeAt(0) || 0) % colors.length]
     const [err, setErr] = useState(false)
     if (src && !err) return <img src={src} alt={name} onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -74,7 +74,7 @@ function LessonCard({ lesson, onLike, onSave, language }) {
                 height: '140px', flexShrink: 0,
                 background: lesson.thumbnail_url
                     ? `url(${lesson.thumbnail_url}) center/cover`
-                    : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    : '#245fb5',
                 position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
                 {!lesson.thumbnail_url && <BookOpen size={36} color="white" />}
@@ -95,13 +95,13 @@ function LessonCard({ lesson, onLike, onSave, language }) {
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
                     <button onClick={handleSave} disabled={saveLoading} style={{
                         width: '30px', height: '30px', borderRadius: '8px',
-                        background: saved ? '#6366f1' : 'rgba(255,255,255,0.85)',
+                        background: saved ? '#245fb5' : 'rgba(255,255,255,0.85)',
                         border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'all 0.2s', backdropFilter: 'blur(4px)'
                     }}>
-                        {saveLoading ? <Loader2 size={13} color={saved ? 'white' : '#6366f1'} style={{ animation: 'spin 1s linear infinite' }} />
-                            : saved ? <BookmarkCheck size={14} color="white" /> : <Bookmark size={14} color="#6366f1" />}
+                        {saveLoading ? <Loader2 size={13} color={saved ? 'white' : '#245fb5'} style={{ animation: 'spin 1s linear infinite' }} />
+                            : saved ? <BookmarkCheck size={14} color="white" /> : <Bookmark size={14} color="#245fb5" />}
                     </button>
                 </div>
             </div>
@@ -219,13 +219,13 @@ export default function LibraryPage() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                     <h1 style={{ margin: '0 0 4px', fontSize: '1.7rem', fontWeight: 900, color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <LibraryIcon size={28} color="#6366f1" /> {L('Библиотека уроков', 'Сабақтар кітапханасы')}
+                        <LibraryIcon size={28} color="#245fb5" /> {L('Библиотека уроков', 'Сабақтар кітапханасы')}
                     </h1>
                     <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: '0.875rem' }}>
                         {L('Уроки от учителей со всего Казахстана', 'Қазақстан мұғалімдерінің сабақтары')}
                     </p>
                 </div>
-                <Link to="/builder" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', borderRadius: '12px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+                <Link to="/builder" style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', background: '#245fb5', color: 'white', borderRadius: '12px', textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem', boxShadow: '0 4px 12px rgba(36,95,181,0.3)' }}>
                     <Plus size={16} /> {L('Добавить урок', 'Сабақ қосу')}
                 </Link>
             </div>
@@ -257,7 +257,7 @@ export default function LibraryPage() {
                         <input value={search} onChange={e => handleSearch(e.target.value)}
                             placeholder={L('Поиск уроков, тем, учителей...', 'Сабақтарды іздеу...')}
                             style={{ width: '100%', padding: '9px 12px 9px 34px', border: '1px solid var(--color-gray-200)', borderRadius: '10px', fontSize: '0.875rem', outline: 'none', background: 'white', boxSizing: 'border-box', color: 'var(--color-gray-900)' }}
-                            onFocus={e => e.target.style.borderColor = '#6366f1'}
+                            onFocus={e => e.target.style.borderColor = '#245fb5'}
                             onBlur={e => e.target.style.borderColor = 'var(--color-gray-200)'}
                         />
                     </div>
@@ -276,7 +276,7 @@ export default function LibraryPage() {
                         {sortOptions.map(opt => (
                             <button key={opt.value} onClick={() => setSort(opt.value)} style={{
                                 display: 'flex', alignItems: 'center', gap: '5px',
-                                padding: '8px 12px', border: `1px solid ${sort === opt.value ? '#6366f1' : 'var(--color-gray-200)'}`,
+                                padding: '8px 12px', border: `1px solid ${sort === opt.value ? '#245fb5' : 'var(--color-gray-200)'}`,
                                 borderRadius: '10px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
                                 background: sort === opt.value ? '#eff6ff' : 'white',
                                 color: sort === opt.value ? '#4f46e5' : 'var(--color-gray-600)',
@@ -292,7 +292,7 @@ export default function LibraryPage() {
             {/* ── Grid ── */}
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
-                    <Loader2 size={40} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                    <Loader2 size={40} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                 </div>
             ) : (tab === 'community' ? lessons : savedLessons).length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray-400)' }}>
@@ -330,7 +330,7 @@ export default function LibraryPage() {
                                 const p = totalPages <= 7 ? i + 1 : page <= 4 ? i + 1 : page >= totalPages - 3 ? totalPages - 6 + i : page - 3 + i
                                 return (
                                     <button key={p} onClick={() => fetchLessons(p)} style={{
-                                        width: '36px', height: '36px', border: `1px solid ${p === page ? '#6366f1' : 'var(--color-gray-200)'}`,
+                                        width: '36px', height: '36px', border: `1px solid ${p === page ? '#245fb5' : 'var(--color-gray-200)'}`,
                                         borderRadius: '9px', fontWeight: p === page ? 700 : 400, cursor: 'pointer',
                                         background: p === page ? '#eff6ff' : 'white', color: p === page ? '#4f46e5' : 'var(--color-gray-700)', fontSize: '0.875rem'
                                     }}>{p}</button>

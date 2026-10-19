@@ -1,14 +1,15 @@
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation, Navigate } from 'react-router-dom'
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import RouteBoundary from './components/RouteBoundary'
 import { 
     Home, BookOpen, LayoutTemplate, Library, 
     ClipboardList, Users, BarChart, Bot, 
     Plug, Settings, HelpCircle, Search, 
     Bell, LogOut, Moon, Sun, FileQuestion, Zap,
-    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck, Gamepad2
+    PanelLeftClose, PanelLeftOpen, UserCircle2, MessageSquare, ShoppingBag, CalendarDays, Trophy, ShieldCheck, Gamepad2, MoreHorizontal, X
 } from 'lucide-react'
 import Landing from './pages/Landing'
+import BrandMark from './components/BrandMark'
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const LibraryPage = lazy(() => import('./pages/Library'));
 const LessonBuilder = lazy(() => import('./pages/LessonBuilder'));
@@ -141,27 +142,10 @@ function App() {
 }
 
 function ProtectedRoute({ children }) {
+    const location = useLocation()
     const { isAuthenticated, loading } = useAuth()
-    if (loading) return (
-        <div style={{
-            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: '#0f172a', flexDirection: 'column', gap: '20px'
-        }}>
-            <div style={{
-                width: '56px', height: '56px', borderRadius: '14px',
-                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                animation: 'pulse 1.5s ease-in-out infinite'
-            }}>
-                <img src="/logo.jpg" alt="Urpaq" style={{ width: '40px', height: '40px', borderRadius: '10px', objectFit: 'cover' }} />
-            </div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontFamily: 'Inter,sans-serif' }}>
-                Загрузка...
-            </div>
-            <style>{`@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4);} 50%{box-shadow:0 0 0 12px rgba(99,102,241,0);} }`}</style>
-        </div>
-    )
-    if (!isAuthenticated) return <Navigate to="/login" replace />
+    if (loading) return <div className="workspace-loading" role="status"><BrandMark /><p>Жүктелуде / Загрузка...</p></div>
+    if (!isAuthenticated) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />
     return children
 }
 
@@ -203,6 +187,7 @@ function DashboardLayout({ children }) {
         { path: '/schedule', icon: <CalendarDays size={20} />, label: language === 'kk' ? 'Кесте' : 'Расписание' },
         { path: '/marketplace', icon: <ShoppingBag size={20} />, label: language === 'kk' ? 'Маркет' : 'Маркет' },
         { path: '/classes', icon: <Users size={20} />, label: language === 'kk' ? 'Сыныптар' : 'Классы' },
+        { path: '/assignments', icon: <ClipboardList size={20} />, label: language === 'kk' ? 'Тапсырмалар' : 'Задания' },
         { path: '/games', icon: <Gamepad2 size={20} />, label: language === 'kk' ? 'Ойындар' : 'Игры', matchPaths: ['/games', '/quests'] },
         { path: '/alfarabi-bot', icon: <Bot size={20} />, label: language === 'kk' ? 'AI Бот' : 'AI Бот' },
         { path: '/leaderboard', icon: <Trophy size={20} />, label: language === 'kk' ? 'Рейтинг' : 'Рейтинг' },
@@ -241,10 +226,7 @@ function DashboardLayout({ children }) {
         <div className="dashboard">
             <aside className={"sidebar " + (collapsed ? 'collapsed' : '') + " hide-on-mobile"}>
                 <div className="sidebar-header">
-                    <Link to="/" className="sidebar-logo-area">
-                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
-                        <span className="sidebar-logo-text">Urpaq.ai</span>
-                    </Link>
+                    <BrandMark className="sidebar-logo-area" />
                     <button
                         className="sidebar-toggle-btn hide-on-mobile"
                         onClick={toggleCollapsed}
@@ -276,7 +258,7 @@ function DashboardLayout({ children }) {
                 {/* ── Account block at bottom ── */}
                 <div className="sidebar-account-block">
                     {isAdmin && (
-                        <NavLink to="/admin" className={({ isActive }) => 'sidebar-account-link' + (isActive ? ' active' : '')} style={{ marginBottom: 4, background: 'rgba(99,102,241,0.08)', color: '#6366f1' }}>
+                        <NavLink to="/admin" className={({ isActive }) => 'sidebar-account-link' + (isActive ? ' active' : '')} style={{ marginBottom: 4, background: 'rgba(36,95,181,0.08)', color: '#245fb5' }}>
                             <span className="sidebar-link-icon"><ShieldCheck size={20} /></span>
                             <span className="sidebar-link-label" style={{ fontWeight: 700 }}>{language === 'kk' ? 'Əкімші' : 'Админ'}</span>
                         </NavLink>
@@ -290,10 +272,7 @@ function DashboardLayout({ children }) {
 
             <main className={"main-content " + (collapsed ? 'sidebar-collapsed' : '')}>
                 <header className="topbar">
-                    <Link to="/" className="mobile-header-logo hide-on-desktop">
-                        <img src="/logo.jpg" alt="Urpaq Logo" className="logo-icon-ai" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
-                        <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-gray-900)' }}>Urpaq.ai</span>
-                    </Link>
+                    <BrandMark className="mobile-header-logo hide-on-desktop" />
 
                     <GlobalSearch />
 
@@ -329,45 +308,40 @@ function DashboardLayout({ children }) {
 }
 
 function MobileBottomNav({ items, unreadCount = 0 }) {
-    const { t, language } = useLanguage()
-    // Show 5 items: home, lessons, classes, AI bot, profile
+    const { language } = useLanguage()
+    const location = useLocation()
+    const [open, setOpen] = useState(false)
+    const dialog = useRef(null)
+    useEffect(() => {
+        if (open) dialog.current?.showModal()
+        else dialog.current?.close()
+    }, [open])
+    useEffect(() => { setOpen(false) }, [location.pathname])
     const primaryItems = items.filter(i =>
-        ['/dashboard', '/my-lessons', '/classes', '/games', '/alfarabi-bot'].includes(i.path)
+        ['/dashboard', '/my-lessons', '/classes', '/games'].includes(i.path)
     )
+    const matches = item => (item.matchPaths || [item.path]).some(path => location.pathname === path || location.pathname.startsWith(path + '/'))
+    const extraItems = [...items.filter(item => !primaryItems.includes(item)), { path: '/quizzes', icon: <FileQuestion size={20} />, label: language === 'kk' ? 'Викториналар' : 'Викторины' }, { path: '/reports', icon: <BarChart size={20} />, label: language === 'kk' ? 'Есептер' : 'Отчёты' }, { path: '/profile', icon: <UserCircle2 size={20} />, label: language === 'kk' ? 'Аккаунт' : 'Аккаунт' }]
     return (
+        <>
         <nav className="mobile-bottom-nav hide-on-desktop">
             {primaryItems.map(item => (
                 <NavLink
                     key={item.path}
                     to={item.path}
-                    className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}
+                    className={'bottom-nav-item' + (matches(item) ? ' active' : '')}
+                    aria-current={matches(item) ? 'page' : undefined}
                 >
                     <div className="bottom-nav-icon">{item.icon}</div>
                     <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>{item.label}</span>
                 </NavLink>
             ))}
-            {/* Chat with badge */}
-            <NavLink to="/chat" className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}>
-                <div className="bottom-nav-icon" style={{ position: 'relative' }}>
-                    <MessageSquare size={20} />
-                    {unreadCount > 0 && (
-                        <span style={{ position: 'absolute', top: '-4px', right: '-6px', background: '#ef4444', color: 'white', borderRadius: '20px', padding: '0 3px', fontSize: '0.58rem', fontWeight: 800, minWidth: '13px', height: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid white' }}>
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </div>
-                <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
-                    {language === 'kk' ? 'Чат' : 'Чат'}
-                </span>
-            </NavLink>
-            {/* Profile */}
-            <NavLink to="/profile" className={({ isActive }) => 'bottom-nav-item' + (isActive ? ' active' : '')}>
-                <div className="bottom-nav-icon"><UserCircle2 size={20} /></div>
-                <span className="bottom-nav-label" style={{ fontSize: '10px', marginTop: '4px' }}>
-                    {language === 'kk' ? 'Аккаунт' : 'Аккаунт'}
-                </span>
-            </NavLink>
+            <button className={'bottom-nav-item workspace-more' + (extraItems.some(matches) ? ' active' : '')} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(true)}>
+                <div className="bottom-nav-icon"><MoreHorizontal size={20} /></div><span className="bottom-nav-label">{language === 'kk' ? 'Тағы' : 'Ещё'}{unreadCount > 0 && ` · ${Math.min(unreadCount, 99)}`}</span>
+            </button>
         </nav>
+        <dialog ref={dialog} className="workspace-menu" aria-labelledby="workspace-menu-title" onCancel={() => setOpen(false)} onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}><header><h2 id="workspace-menu-title">{language === 'kk' ? 'Жұмыс құралдары' : 'Рабочие инструменты'}</h2><button className="brand-icon" onClick={() => setOpen(false)} aria-label={language === 'kk' ? 'Жабу' : 'Закрыть'} title={language === 'kk' ? 'Жабу' : 'Закрыть'}><X size={20} /></button></header><div className="workspace-menu-links">{extraItems.map(item => <NavLink key={item.path} to={item.path} onClick={() => setOpen(false)}>{item.icon}{item.label}</NavLink>)}</div></dialog>
+        </>
     )
 }
 
@@ -407,7 +381,7 @@ function UserProfile() {
         : '?'
 
     const planLabel = user.plan === 'pro' ? 'Pro' : user.plan === 'school' ? 'School' : 'Free'
-    const planColor = user.plan === 'pro' ? '#10b981' : user.plan === 'school' ? '#f59e0b' : '#6366f1'
+    const planColor = user.plan === 'pro' ? '#10b981' : user.plan === 'school' ? '#f59e0b' : '#245fb5'
 
     const AvatarEl = () => avatarUrl && !imgErr ? (
         <img
@@ -416,17 +390,17 @@ function UserProfile() {
             onError={() => setImgErr(true)}
             style={{
                 width: '36px', height: '36px', borderRadius: '50%',
-                objectFit: 'cover', border: '2px solid rgba(99,102,241,0.3)',
+                objectFit: 'cover', border: '2px solid rgba(36,95,181,0.3)',
                 display: 'block'
             }}
         />
     ) : (
         <div style={{
             width: '36px', height: '36px', borderRadius: '50%',
-            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            background: '#245fb5',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'white', fontWeight: 700, fontSize: '0.875rem',
-            border: '2px solid rgba(99,102,241,0.3)',
+            border: '2px solid rgba(36,95,181,0.3)',
             flexShrink: 0, userSelect: 'none'
         }}>
             {initials}
@@ -480,9 +454,9 @@ function UserProfile() {
                             <div style={{ padding: '16px', background: 'var(--color-gray-50)', borderBottom: '1px solid var(--color-gray-100)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{ position: 'relative', flexShrink: 0 }}>
                                     {avatarUrl && !imgErr ? (
-                                        <img src={avatarUrl} alt={user.name} onError={() => setImgErr(true)} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #6366f130' }} />
+                                        <img src={avatarUrl} alt={user.name} onError={() => setImgErr(true)} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #245fb530' }} />
                                     ) : (
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>
+                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>
                                             {initials}
                                         </div>
                                     )}

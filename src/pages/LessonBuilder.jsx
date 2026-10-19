@@ -255,7 +255,7 @@ export default function LessonBuilderNew() {
                 { icon: '📊', label: 'Показатель 1', value: '' },
                 { icon: '📈', label: 'Показатель 2', value: '' },
             ]},
-            theme_card:  { title: 'Главная мысль урока', subtitle: '', bg_color: '#6366f1' },
+            theme_card:  { title: 'Главная мысль урока', subtitle: '', bg_color: '#245fb5' },
             statistics:  { title: 'Статистика', stats: [
                 { value: '', label: 'Показатель 1' },
                 { value: '', label: 'Показатель 2' },
@@ -565,11 +565,11 @@ export default function LessonBuilderNew() {
                                 Простой план
                             </button>
                             <button onClick={generateFullLesson} disabled={aiLoading || fullGenerating} style={{
-                                background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white',
+                                background: '#245fb5', color: 'white',
                                 border: 'none', borderRadius: '8px', padding: '8px 16px', cursor: 'pointer',
                                 fontSize: '0.8rem', fontWeight: 700, display: 'flex', gap: '6px', alignItems: 'center',
                                 opacity: fullGenerating ? 0.7 : 1,
-                                boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                                boxShadow: '0 4px 12px rgba(36,95,181,0.3)'
                             }}>
                                 {fullGenerating
                                     ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Генерирую...</>
@@ -687,7 +687,7 @@ export default function LessonBuilderNew() {
                             onClick={() => fileInputRef.current?.click()}
                             className={`drag-area ${dragging ? 'drag-area-active' : ''}`}
                             style={{
-                                border: `2px dashed ${dragging ? '#6366f1' : 'var(--color-gray-200,#e5e7eb)'}`,
+                                border: `2px dashed ${dragging ? '#245fb5' : 'var(--color-gray-200,#e5e7eb)'}`,
                                 borderRadius: '16px', padding: '40px 20px', textAlign: 'center',
                                 cursor: 'pointer', background: dragging ? 'var(--color-primary-50,#ede9fe)' : 'var(--color-bg-card, var(--color-gray-50,#f9fafb))',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', marginBottom: '16px',
@@ -712,7 +712,7 @@ export default function LessonBuilderNew() {
                                         boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
                                     }}>
                                         <span style={{ display: 'flex', alignItems: 'center' }}>
-                                            {file.type === 'pdf' ? <FileText size={24} color="#ef4444" /> : file.type === 'video' ? <Film size={24} color="#6366f1" /> : file.type === 'youtube' ? <Video size={24} color="#ef4444" /> : file.type === 'image' ? <ImageIcon size={24} color="#10b981" /> : <Paperclip size={24} color="#6b7280" />}
+                                            {file.type === 'pdf' ? <FileText size={24} color="#ef4444" /> : file.type === 'video' ? <Film size={24} color="#245fb5" /> : file.type === 'youtube' ? <Video size={24} color="#ef4444" /> : file.type === 'image' ? <ImageIcon size={24} color="#10b981" /> : <Paperclip size={24} color="#6b7280" />}
                                         </span>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontWeight: 600, fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -726,12 +726,12 @@ export default function LessonBuilderNew() {
                                                     }}>
                                                         <div style={{
                                                             height: '100%', borderRadius: '2px',
-                                                            background: 'linear-gradient(90deg,#6366f1,#8b5cf6)',
+                                                            background: 'linear-gradient(90deg,#245fb5,#8b5cf6)',
                                                             width: `${uploadProgress[file.tempId]}%`,
                                                             transition: 'width 0.2s'
                                                         }} />
                                                     </div>
-                                                    <span style={{ fontSize: '0.7rem', color: '#6366f1' }}>{uploadProgress[file.tempId]}%</span>
+                                                    <span style={{ fontSize: '0.7rem', color: '#245fb5' }}>{uploadProgress[file.tempId]}%</span>
                                                 </div>
                                             )}
                                             {file.status === 'done' && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Загружен</span>}
@@ -777,7 +777,7 @@ export default function LessonBuilderNew() {
                         <h1 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 800 }}>{form.title || 'Название урока'}</h1>
 
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                            <span style={{ background: '#ede9fe', color: '#6366f1', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
+                            <span style={{ background: '#ede9fe', color: '#245fb5', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
                                 {form.subject}
                             </span>
                             <span style={{ background: '#e0f2fe', color: '#0891b2', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700 }}>
@@ -829,9 +829,9 @@ export default function LessonBuilderNew() {
                                             border: '1px solid var(--color-gray-100,#f3f4f6)',
                                             transition: 'background 0.15s'
                                         }}>
-                                            <span style={{ display: 'flex', alignItems: 'center' }}>{f.type === 'pdf' ? <FileText size={18} color="#ef4444" /> : f.type === 'video' ? <Film size={18} color="#6366f1" /> : <ImageIcon size={18} color="#10b981" />}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center' }}>{f.type === 'pdf' ? <FileText size={18} color="#ef4444" /> : f.type === 'video' ? <Film size={18} color="#245fb5" /> : <ImageIcon size={18} color="#10b981" />}</span>
                                             {f.name}
-                                            <ExternalLink size={14} style={{ marginLeft: 'auto', color: '#6366f1' }} />
+                                            <ExternalLink size={14} style={{ marginLeft: 'auto', color: '#245fb5' }} />
                                         </a>
                                     ))}
                                 </div>
@@ -964,7 +964,7 @@ export default function LessonBuilderNew() {
 
 // ─── SlideCard ────────────────────────────────────────
 const SLIDE_TYPE_META = {
-    cover:       { label: 'Обложка',         color: '#6366f1', Icon: BookOpen },
+    cover:       { label: 'Обложка',         color: '#245fb5', Icon: BookOpen },
     objectives:  { label: 'Цели',            color: '#06b6d4', Icon: Target },
     content:     { label: 'Контент',         color: '#8b5cf6', Icon: Layers },
     example:     { label: 'Пример',          color: '#f97316', Icon: ExampleIcon },
@@ -1266,14 +1266,14 @@ function SlideCard({ slide, index, onDragStart, onDragOver, onDragEnd, onUpdate,
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6b7280', whiteSpace: 'nowrap' }}>Цвет фона:</label>
                                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    {['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#0f172a','#1e40af'].map(c => (
+                                    {['#245fb5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#0f172a','#1e40af'].map(c => (
                                         <button key={c} type="button" onClick={() => onUpdate('bg_color', c)} style={{ width: '22px', height: '22px', borderRadius: '50%', background: c, border: slide.bg_color === c ? '3px solid #111' : '2px solid transparent', cursor: 'pointer', flexShrink: 0 }} />
                                     ))}
                                 </div>
-                                <input type="color" value={slide.bg_color || '#6366f1'} onChange={e => onUpdate('bg_color', e.target.value)} style={{ width: '28px', height: '28px', border: 'none', cursor: 'pointer', borderRadius: '6px', padding: 0 }} />
+                                <input type="color" value={slide.bg_color || '#245fb5'} onChange={e => onUpdate('bg_color', e.target.value)} style={{ width: '28px', height: '28px', border: 'none', cursor: 'pointer', borderRadius: '6px', padding: 0 }} />
                             </div>
                             {/* Preview */}
-                            <div style={{ borderRadius: '10px', padding: '16px 20px', background: slide.bg_color || '#6366f1', marginTop: '4px' }}>
+                            <div style={{ borderRadius: '10px', padding: '16px 20px', background: slide.bg_color || '#245fb5', marginTop: '4px' }}>
                                 <div style={{ fontWeight: 900, fontSize: '1.1rem', color: 'white', marginBottom: '4px' }}>{slide.title || 'Главная мысль'}</div>
                                 {slide.subtitle && <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)' }}>{slide.subtitle}</div>}
                             </div>
@@ -1379,7 +1379,7 @@ function AddSlideButton({ onAdd }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                     transition: 'all 0.2s'
                 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = '#6366f1'}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#245fb5'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-gray-200,#e5e7eb)'}
             >
                 <Plus size={16} /> Добавить слайд

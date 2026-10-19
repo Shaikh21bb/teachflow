@@ -1,13 +1,13 @@
 /**
- * Urpaq.ai Service Worker v3
+ * URPAQ Service Worker
  * Strategy:
- *   - App shell (HTML, JS, CSS): Cache-first, background update
+ *   - HTML: Network-first; versioned JS/CSS: cache with background update
  *   - API calls: Network-first, no cache (always fresh data)
  *   - Static assets (images, fonts): Cache-first, long TTL
  *   - Offline fallback: /offline.html
  */
 
-const CACHE_NAME = 'urpaq-v4';
+const CACHE_NAME = 'urpaq-v5-brand';
 const STATIC_ASSETS = [
     '/',
     '/offline.html',

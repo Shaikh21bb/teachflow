@@ -28,7 +28,7 @@ const SUBJECTS_MAP = {
     social: { ru: 'Познание мира', kk: 'Дүниетану', icon: 'С' },
 }
 
-const TEAM_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16']
+const TEAM_COLORS = ['#245fb5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16']
 
 function OpenLesson() {
     const { user } = useAuth()

@@ -5,6 +5,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { studentAPI } from "./api";
 import QuestMap from "./QuestMap";
 import "./student.css";
+import BrandMark from '../components/BrandMark';
 
 export default function StudentAuth({ register = false }) {
   const { language, toggleLanguage } = useLanguage();
@@ -50,10 +51,7 @@ export default function StudentAuth({ register = false }) {
   return (
     <main className="student-app student-auth">
       <header className="student-top">
-        <Link to="/" className="student-brand">
-          <img src="/logo.jpg" alt="" />
-          URPAQ <span>PLAY</span>
-        </Link>
+        <BrandMark className="student-brand" label="PLAY" />
         <button className="s-button" onClick={toggleLanguage}>
           {kk ? "RU" : "ҚАЗ"}
         </button>

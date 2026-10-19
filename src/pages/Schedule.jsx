@@ -3,7 +3,7 @@ import { scheduleAPI, lessonsAPI } from '../api'
 import { useLanguage } from '../contexts/LanguageContext'
 import { Plus, Trash2, Edit3, Clock, X, CheckCircle, AlertCircle, Loader2, Calendar } from 'lucide-react'
 
-const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899']
+const COLORS = ['#245fb5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899']
 
 export default function Schedule() {
     const { language } = useLanguage()
@@ -32,7 +32,7 @@ export default function Schedule() {
     const [form, setForm] = useState({
         lesson_id: '', title: '', subject: '', class_name: '',
         day_of_week: todayDow, start_time: '08:00',
-        duration: 45, color: '#6366f1'
+        duration: 45, color: '#245fb5'
     })
 
     useEffect(() => {
@@ -47,13 +47,13 @@ export default function Schedule() {
 
     const openAdd = (dow) => {
         setEditing(null)
-        setForm({ lesson_id:'', title:'', subject:'', class_name:'', day_of_week: dow !== undefined ? dow : activeDay, start_time:'08:00', duration:45, color:'#6366f1' })
+        setForm({ lesson_id:'', title:'', subject:'', class_name:'', day_of_week: dow !== undefined ? dow : activeDay, start_time:'08:00', duration:45, color:'#245fb5' })
         setModal(true)
     }
 
     const openEdit = (item) => {
         setEditing(item)
-        setForm({ lesson_id: item.lesson_id||'', title: item.title, subject: item.subject||'', class_name: item.class_name||'', day_of_week: item.day_of_week, start_time: item.start_time, duration: item.duration||45, color: item.color||'#6366f1' })
+        setForm({ lesson_id: item.lesson_id||'', title: item.title, subject: item.subject||'', class_name: item.class_name||'', day_of_week: item.day_of_week, start_time: item.start_time, duration: item.duration||45, color: item.color||'#245fb5' })
         setModal(true)
     }
 
@@ -110,13 +110,13 @@ export default function Schedule() {
             <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
                 <div>
                     <h1 style={{ margin:'0 0 4px', fontSize:'1.7rem', fontWeight:900, color:'#111827', display:'flex', alignItems:'center', gap:10 }}>
-                        <Calendar size={28} color="#6366f1" /> {L('Расписание','Кесте')}
+                        <Calendar size={28} color="#245fb5" /> {L('Расписание','Кесте')}
                     </h1>
                     <p style={{ margin:0, color:'#6b7280', fontSize:'0.875rem' }}>
                         {L('Ваши уроки по дням недели','Апта күндеріндегі сабақтарыңыз')}
                     </p>
                 </div>
-                <button onClick={() => openAdd()} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', background:'linear-gradient(135deg,#6366f1,#8b5cf6)', color:'white', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.875rem', cursor:'pointer', boxShadow:'0 4px 12px rgba(99,102,241,0.3)' }}>
+                <button onClick={() => openAdd()} style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 18px', background:'#245fb5', color:'white', border:'none', borderRadius:12, fontWeight:700, fontSize:'0.875rem', cursor:'pointer', boxShadow:'0 4px 12px rgba(36,95,181,0.3)' }}>
                     <Plus size={16} /> {L('Добавить урок','Сабақ қосу')}
                 </button>
             </div>
@@ -125,7 +125,7 @@ export default function Schedule() {
             {todayItems.length > 0 && (
                 <div style={{ background:'linear-gradient(135deg,#eff6ff,#f5f3ff)', border:'1px solid #c7d2fe', borderRadius:16, padding:'16px 20px', marginBottom:20 }}>
                     <div style={{ fontWeight:800, fontSize:'0.9rem', color:'#4338ca', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
-                        <div style={{ width:8, height:8, borderRadius:'50%', background:'#6366f1', animation:'pulse 1.5s ease infinite' }} />
+                        <div style={{ width:8, height:8, borderRadius:'50%', background:'#245fb5', animation:'pulse 1.5s ease infinite' }} />
                         {L('Сегодня','Бүгін')} — {todayItems.length} {L('урок(ов)','сабақ')}
                     </div>
                     <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
@@ -155,14 +155,14 @@ export default function Schedule() {
                         <button key={d.dow} onClick={() => setActiveDay(d.dow)} style={{
                             flex:1, minWidth:60, padding:'8px 6px', border:'none', borderRadius:9, cursor:'pointer',
                             background: isActive ? 'white' : 'transparent',
-                            color: isActive ? '#111827' : isToday ? '#6366f1' : '#9ca3af',
+                            color: isActive ? '#111827' : isToday ? '#245fb5' : '#9ca3af',
                             fontWeight: isActive ? 700 : isToday ? 700 : 500, fontSize:'0.82rem',
                             boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                             transition:'all 0.12s', position:'relative', textAlign:'center'
                         }}>
                             {d.short}
-                            {count > 0 && <span style={{ display:'block', fontSize:'0.65rem', color: isActive ? '#6366f1' : '#9ca3af', fontWeight:700 }}>{count}</span>}
-                            {isToday && <div style={{ position:'absolute', bottom:2, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#6366f1' }} />}
+                            {count > 0 && <span style={{ display:'block', fontSize:'0.65rem', color: isActive ? '#245fb5' : '#9ca3af', fontWeight:700 }}>{count}</span>}
+                            {isToday && <div style={{ position:'absolute', bottom:2, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#245fb5' }} />}
                         </button>
                     )
                 })}
@@ -171,7 +171,7 @@ export default function Schedule() {
             {/* Day content */}
             {loading ? (
                 <div style={{ display:'flex', justifyContent:'center', padding:60 }}>
-                    <Loader2 size={36} color="#6366f1" style={{ animation:'spin 1s linear infinite' }}/>
+                    <Loader2 size={36} color="#245fb5" style={{ animation:'spin 1s linear infinite' }}/>
                 </div>
             ) : (
                 <div>
@@ -183,7 +183,7 @@ export default function Schedule() {
                                 <Calendar size={44} color="#d1d5db" style={{ marginBottom:12 }}/>
                                 <h3 style={{ margin:'0 0 6px', color:'#374151', fontWeight:700 }}>{L('Нет уроков','Сабақтар жоқ')} — {dayInfo?.full}</h3>
                                 <p style={{ margin:'0 0 18px', fontSize:'0.875rem', color:'#9ca3af' }}>{L('Добавьте урок в расписание','Кестеге сабақ қосыңыз')}</p>
-                                <button onClick={() => openAdd(activeDay)} style={{ padding:'9px 20px', background:'#6366f1', color:'white', border:'none', borderRadius:10, fontWeight:700, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.875rem' }}>
+                                <button onClick={() => openAdd(activeDay)} style={{ padding:'9px 20px', background:'#245fb5', color:'white', border:'none', borderRadius:10, fontWeight:700, cursor:'pointer', display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.875rem' }}>
                                     <Plus size={15} /> {L('Добавить','Қосу')}
                                 </button>
                             </div>
@@ -213,7 +213,7 @@ export default function Schedule() {
                                     </div>
                                 ))}
                                 <button onClick={() => openAdd(activeDay)} style={{ padding:'11px', border:'1.5px dashed #d1d5db', borderRadius:12, background:'transparent', color:'#9ca3af', cursor:'pointer', fontWeight:600, fontSize:'0.875rem', display:'flex', alignItems:'center', justifyContent:'center', gap:7, transition:'all 0.12s' }}
-                                    onMouseEnter={e=>{e.currentTarget.style.borderColor='#6366f1';e.currentTarget.style.color='#6366f1'}}
+                                    onMouseEnter={e=>{e.currentTarget.style.borderColor='#245fb5';e.currentTarget.style.color='#245fb5'}}
                                     onMouseLeave={e=>{e.currentTarget.style.borderColor='#d1d5db';e.currentTarget.style.color='#9ca3af'}}>
                                     <Plus size={15}/> {L('Добавить урок на этот день','Бұл күнге сабақ қосу')}
                                 </button>
@@ -251,7 +251,7 @@ export default function Schedule() {
                                 <input required value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}
                                     placeholder={L('Математика 5А','Математика 5А')}
                                     style={{ width:'100%', padding:'9px 12px', border:'1px solid #e5e7eb', borderRadius:9, fontSize:'0.875rem', outline:'none', boxSizing:'border-box' }}
-                                    onFocus={e=>e.target.style.borderColor='#6366f1'} onBlur={e=>e.target.style.borderColor='#e5e7eb'}/>
+                                    onFocus={e=>e.target.style.borderColor='#245fb5'} onBlur={e=>e.target.style.borderColor='#e5e7eb'}/>
                             </div>
                             {/* Day + Time */}
                             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
@@ -298,7 +298,7 @@ export default function Schedule() {
                             </div>
                             <div style={{ display:'flex', gap:10, marginTop:6 }}>
                                 <button type="button" onClick={()=>setModal(false)} style={{ flex:1, padding:'11px', border:'1px solid #e5e7eb', borderRadius:10, background:'white', cursor:'pointer', fontWeight:600, fontSize:'0.875rem' }}>{L('Отмена','Болдырмау')}</button>
-                                <button type="submit" disabled={saving} style={{ flex:2, padding:'11px', border:'none', borderRadius:10, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', color:'white', cursor:'pointer', fontWeight:700, fontSize:'0.875rem', display:'flex', alignItems:'center', justifyContent:'center', gap:7, opacity:saving?0.7:1 }}>
+                                <button type="submit" disabled={saving} style={{ flex:2, padding:'11px', border:'none', borderRadius:10, background:'#245fb5', color:'white', cursor:'pointer', fontWeight:700, fontSize:'0.875rem', display:'flex', alignItems:'center', justifyContent:'center', gap:7, opacity:saving?0.7:1 }}>
                                     {saving ? <Loader2 size={15} style={{animation:'spin 0.7s linear infinite'}}/> : null}
                                     {editing ? L('Сохранить','Сақтау') : L('Добавить','Қосу')}
                                 </button>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { marketplaceAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
+import AdViewer from '../components/AdViewer'
 import {
     Search, Coins, ShoppingBag, BookOpen, Clock,
     Eye, CheckCircle, Loader2, Star, ChevronRight,
@@ -15,7 +16,7 @@ const GRADES = Array.from({length:11}, (_,i)=>String(i+1))
 // ── Avatar helper ────────────────────────────────────────────
 function Avatar({ src, name, size = 28 }) {
     const initials = (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
-    const colors = ['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
+    const colors = ['#245fb5','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
     const color = colors[(name?.charCodeAt(0)||0)%colors.length]
     const [err, setErr] = useState(false)
     if (src && !err) return <img src={src} alt={name} onError={()=>setErr(true)} style={{width:size,height:size,borderRadius:'50%',objectFit:'cover',flexShrink:0}} />
@@ -42,7 +43,7 @@ function LessonCard({ lesson, balance, onBuy, buying, language }) {
             {/* Thumbnail */}
             <div style={{
                 height: 130, flexShrink: 0, position: 'relative',
-                background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : '#245fb5',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
                 {!lesson.thumbnail_url && <BookOpen size={32} color="white" />}
@@ -120,7 +121,7 @@ function LessonCard({ lesson, balance, onBuy, buying, language }) {
                         style={{
                             padding: '9px', borderRadius: 10, border: 'none', cursor: (!isFree && !canAfford) ? 'not-allowed' : 'pointer',
                             fontWeight: 700, fontSize: '0.82rem',
-                            background: (!isFree && !canAfford) ? '#f3f4f6' : isFree ? '#10b981' : '#6366f1',
+                            background: (!isFree && !canAfford) ? '#f3f4f6' : isFree ? '#10b981' : '#245fb5',
                             color: (!isFree && !canAfford) ? '#9ca3af' : 'white',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                             transition: 'opacity 0.15s',
@@ -151,6 +152,7 @@ export default function Marketplace() {
 
     const [lessons, setLessons] = useState([])
     const [balance, setBalance] = useState(0)
+    const [showAdViewer, setShowAdViewer] = useState(false)
     const [loading, setLoading] = useState(true)
     const [buying, setBuying] = useState(null)
     const [search, setSearch] = useState('')
@@ -236,6 +238,7 @@ export default function Marketplace() {
 
     return (
         <div style={{ maxWidth: 1100, margin: '0 auto', paddingBottom: 60 }}>
+            {showAdViewer && <AdViewer onClose={() => setShowAdViewer(false)} onComplete={(_earned, nextBalance) => { if (Number.isFinite(nextBalance)) setBalance(nextBalance); else loadBalance(); }} />}
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
             {/* Success toast */}
@@ -249,7 +252,7 @@ export default function Marketplace() {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
                 <div>
                     <h1 style={{ margin: '0 0 4px', fontSize: '1.7rem', fontWeight: 900, color: '#111827', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <ShoppingBag size={28} color="#6366f1" /> {L('Маркетплейс', 'Маркетплейс')}
+                        <ShoppingBag size={28} color="#245fb5" /> {L('Маркетплейс', 'Маркетплейс')}
                     </h1>
                     <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
                         {L('Покупайте и продавайте уроки за токены', 'Токенге сабақ сатып алыңыз және сатыңыз')}
@@ -263,7 +266,7 @@ export default function Marketplace() {
                         <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#111827', lineHeight: 1 }}>{balance.toLocaleString('ru-RU')}</div>
                         <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>{L('токенов', 'токен')}</div>
                     </div>
-                    <button onClick={() => navigate('/dashboard')} style={{ marginLeft: 4, background: '#f59e0b', border: 'none', borderRadius: 8, padding: '5px 10px', color: 'white', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                    <button onClick={() => setShowAdViewer(true)} style={{ marginLeft: 4, background: '#245fb5', border: 'none', borderRadius: 6, padding: '8px 10px', color: 'white', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
                         + {L('Пополнить', 'Толтыру')}
                     </button>
                 </div>
@@ -297,7 +300,7 @@ export default function Marketplace() {
                             <input value={search} onChange={e => handleSearch(e.target.value)}
                                 placeholder={L('Поиск уроков...', 'Сабақтарды іздеу...')}
                                 style={{ width: '100%', padding: '9px 12px 9px 30px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', background: 'white', boxSizing: 'border-box', color: '#111827' }}
-                                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                onFocus={e => e.target.style.borderColor = '#245fb5'}
                                 onBlur={e => e.target.style.borderColor = '#e5e7eb'}
                             />
                         </div>
@@ -313,7 +316,7 @@ export default function Marketplace() {
                         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', flexWrap: 'wrap' }}>
                             {sortOptions.map(o => (
                                 <button key={o.v} onClick={() => setSort(o.v)} style={{
-                                    padding: '7px 12px', border: `1px solid ${sort === o.v ? '#6366f1' : '#e5e7eb'}`,
+                                    padding: '7px 12px', border: `1px solid ${sort === o.v ? '#245fb5' : '#e5e7eb'}`,
                                     borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
                                     background: sort === o.v ? '#eff6ff' : 'white',
                                     color: sort === o.v ? '#4f46e5' : '#6b7280',
@@ -325,7 +328,7 @@ export default function Marketplace() {
 
                     {/* ── Sell your lesson CTA ── */}
                     <div style={{ background: 'linear-gradient(135deg,#f5f3ff,#eff6ff)', border: '1px solid #ddd6fe', borderRadius: 14, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                        <Gift size={20} color="#6366f1" style={{ flexShrink: 0 }} />
+                        <Gift size={20} color="#245fb5" style={{ flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.9rem' }}>
                                 {L('Продавайте свои уроки', 'Сабақтарыңызды сатыңыз')}
@@ -334,7 +337,7 @@ export default function Marketplace() {
                                 {L('Публикация бесплатна. Цену ставите вы. Комиссии нет.', 'Жариялау тегін. Бағаны өзіңіз белгілейсіз. Комиссия жоқ.')}
                             </div>
                         </div>
-                        <Link to="/my-lessons" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#6366f1', color: 'white', borderRadius: 9, textDecoration: 'none', fontWeight: 700, fontSize: '0.82rem' }}>
+                        <Link to="/my-lessons" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#245fb5', color: 'white', borderRadius: 9, textDecoration: 'none', fontWeight: 700, fontSize: '0.82rem' }}>
                             {L('Мои уроки', 'Сабақтарым')} <ChevronRight size={14} />
                         </Link>
                     </div>
@@ -342,7 +345,7 @@ export default function Marketplace() {
                     {/* ── Grid ── */}
                     {loading ? (
                         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
-                            <Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                            <Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                         </div>
                     ) : lessons.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
@@ -365,7 +368,7 @@ export default function Marketplace() {
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
                                     {Array.from({ length: Math.min(7, totalPages) }, (_, i) => i + 1).map(p => (
                                         <button key={p} onClick={() => loadLessons(p)} style={{
-                                            width: 34, height: 34, border: `1px solid ${p === page ? '#6366f1' : '#e5e7eb'}`,
+                                            width: 34, height: 34, border: `1px solid ${p === page ? '#245fb5' : '#e5e7eb'}`,
                                             borderRadius: 8, fontWeight: p === page ? 700 : 400, cursor: 'pointer',
                                             background: p === page ? '#eff6ff' : 'white', color: p === page ? '#4f46e5' : '#374151', fontSize: '0.875rem'
                                         }}>{p}</button>
@@ -382,14 +385,14 @@ export default function Marketplace() {
                 <div>
                     {loading ? (
                         <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                            <Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                            <Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                         </div>
                     ) : purchased.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
                             <BookOpen size={48} color="#d1d5db" style={{ marginBottom: 12 }} />
                             <h3 style={{ margin: '0 0 8px', color: '#374151', fontWeight: 700 }}>{L('Нет купленных уроков', 'Сатып алынған сабақтар жоқ')}</h3>
                             <p style={{ margin: '0 0 20px', fontSize: '0.875rem' }}>{L('Найдите интересный урок в витрине', 'Витринадан қызықты сабақ табыңыз')}</p>
-                            <button onClick={() => setTab('browse')} style={{ padding: '10px 22px', background: '#6366f1', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
+                            <button onClick={() => setTab('browse')} style={{ padding: '10px 22px', background: '#245fb5', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
                                 {L('Перейти в витрину', 'Витринаға өту')}
                             </button>
                         </div>
@@ -397,7 +400,7 @@ export default function Marketplace() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
                             {purchased.map(lesson => (
                                 <div key={lesson.id} style={{ background: 'white', borderRadius: 14, border: '1px solid #e5e7eb', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
-                                    <div style={{ width: 52, height: 52, borderRadius: 10, background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <div style={{ width: 52, height: 52, borderRadius: 10, background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                         {!lesson.thumbnail_url && <BookOpen size={22} color="white" />}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>

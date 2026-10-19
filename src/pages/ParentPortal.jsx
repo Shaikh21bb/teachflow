@@ -48,10 +48,10 @@ function WeekChart({ data = [] }) {
                 const h = Math.max(4, (val / max) * 72)
                 return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                        {val > 0 && <span style={{ fontSize: '9px', fontWeight: 700, color: '#6366f1' }}>{val}%</span>}
+                        {val > 0 && <span style={{ fontSize: '9px', fontWeight: 700, color: '#245fb5' }}>{val}%</span>}
                         <div style={{
                             width: '100%', height: `${h}px`,
-                            background: val >= 80 ? '#10b981' : val >= 60 ? '#6366f1' : val > 0 ? '#f59e0b' : '#e2e8f0',
+                            background: val >= 80 ? '#10b981' : val >= 60 ? '#245fb5' : val > 0 ? '#f59e0b' : '#e2e8f0',
                             borderRadius: '4px 4px 0 0', transition: 'height 0.4s ease'
                         }} />
                         <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 500 }}>{days[i]}</span>
@@ -82,7 +82,7 @@ export default function ParentPortal() {
     if (loading) return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
             <div style={{ textAlign: 'center' }}>
-                <Loader2 size={40} color="#6366f1" style={{ animation: 'spin 1s linear infinite', marginBottom: 16 }} />
+                <Loader2 size={40} color="#245fb5" style={{ animation: 'spin 1s linear infinite', marginBottom: 16 }} />
                 <p style={{ color: '#64748b' }}>Загрузка данных...</p>
             </div>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -110,7 +110,7 @@ export default function ParentPortal() {
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
             {/* ── Header ── */}
-            <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', padding: '28px 20px 32px' }}>
+            <div style={{ background: 'linear-gradient(135deg, #245fb5 0%, #8b5cf6 100%)', padding: '28px 20px 32px' }}>
                 <div style={{ maxWidth: 720, margin: '0 auto' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', opacity: 0.85 }}>
                         <img src="/logo.jpg" alt="Urpaq.ai" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover' }} />
@@ -159,7 +159,7 @@ export default function ParentPortal() {
                         icon={<TrendingUp size={22} />}
                         value={`${stats.avgScore}%`}
                         label="Средний % за тесты"
-                        color="#6366f1" bg="#ede9fe"
+                        color="#245fb5" bg="#ede9fe"
                     />
                     <StatCard
                         icon={<BookOpen size={22} />}
@@ -178,16 +178,16 @@ export default function ParentPortal() {
                 {/* ── XP / Level ── */}
                 {student.xp > 0 && (
                     <div style={{ background: 'white', borderRadius: '16px', padding: '16px 20px', marginBottom: '20px', border: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '12px', background: '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Award size={22} color="white" />
                         </div>
                         <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                                 <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Уровень {student.level}</span>
-                                <span style={{ fontSize: '0.8rem', color: '#6366f1', fontWeight: 700 }}>{student.xp} XP</span>
+                                <span style={{ fontSize: '0.8rem', color: '#245fb5', fontWeight: 700 }}>{student.xp} XP</span>
                             </div>
                             <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: `${Math.min(100, (student.xp % 500) / 5)}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius: 4 }} />
+                                <div style={{ height: '100%', width: `${Math.min(100, (student.xp % 500) / 5)}%`, background: 'linear-gradient(90deg,#245fb5,#8b5cf6)', borderRadius: 4 }} />
                             </div>
                             <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 4 }}>
                                 {500 - (student.xp % 500)} XP до следующего уровня
@@ -199,12 +199,12 @@ export default function ParentPortal() {
                 {/* ── Weekly chart ── */}
                 <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ margin: '0 0 16px', fontWeight: 800, fontSize: '1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <BarChart2 size={18} color="#6366f1" /> Результаты за неделю
+                        <BarChart2 size={18} color="#245fb5" /> Результаты за неделю
                     </h3>
                     <WeekChart data={weeklyPerformance} />
                     <div style={{ display: 'flex', gap: '16px', marginTop: '12px', fontSize: '0.72rem', color: '#94a3b8' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#10b981', display: 'inline-block' }} /> ≥80%</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#6366f1', display: 'inline-block' }} /> 60–79%</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#245fb5', display: 'inline-block' }} /> 60–79%</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b', display: 'inline-block' }} /> &lt;60%</span>
                     </div>
                 </div>
@@ -247,12 +247,12 @@ export default function ParentPortal() {
                 {submissions.length > 0 && (
                     <div style={{ background: 'white', borderRadius: '16px', padding: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         <h3 style={{ margin: '0 0 14px', fontWeight: 800, fontSize: '1rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <BookOpen size={18} color="#6366f1" /> Домашние задания
+                            <BookOpen size={18} color="#245fb5" /> Домашние задания
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {submissions.map((s, i) => {
                                 const pct = s.max_score > 0 ? Math.round((s.score / s.max_score) * 100) : null
-                                const color = !pct ? '#6366f1' : pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : '#f59e0b'
+                                const color = !pct ? '#245fb5' : pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : '#f59e0b'
                                 return (
                                     <div key={i} style={{ padding: '10px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -289,7 +289,7 @@ export default function ParentPortal() {
                 {/* Footer */}
                 <div style={{ textAlign: 'center', marginTop: 32, fontSize: '0.78rem', color: '#94a3b8' }}>
                     <img src="/logo.jpg" alt="Urpaq.ai" style={{ width: 20, height: 20, borderRadius: 5, verticalAlign: 'middle', marginRight: 6 }} />
-                    Данные предоставлены платформой <strong style={{ color: '#6366f1' }}>Urpaq.ai</strong>
+                    Данные предоставлены платформой <strong style={{ color: '#245fb5' }}>Urpaq.ai</strong>
                 </div>
             </div>
         </div>

@@ -176,7 +176,7 @@ function Reports() {
                 .hover-card:hover {
                     transform: translateY(-4px);
                     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
-                    border-color: rgba(99, 102, 241, 0.2) !important;
+                    border-color: rgba(36,95,181, 0.2) !important;
                 }
                 .dot-group:hover circle {
                     r: 7 !important;
@@ -227,8 +227,8 @@ function Reports() {
             {/* Demo Banner */}
             {isDemo && (
                 <div style={{
-                    background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
-                    border: '1px solid rgba(99, 102, 241, 0.15)',
+                    background: 'linear-gradient(90deg, rgba(36,95,181, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+                    border: '1px solid rgba(36,95,181, 0.15)',
                     borderRadius: '16px',
                     padding: '16px 24px',
                     marginBottom: '28px',
@@ -579,7 +579,7 @@ function Reports() {
                     </h3>
                     <div style={{ display: 'flex', gap: '6px' }}>
                         {[{ v: 'week', l: language === 'kk' ? 'Апта' : 'Неделя' }, { v: 'month', l: language === 'kk' ? 'Ай' : 'Месяц' }].map(o => (
-                            <button key={o.v} onClick={() => setPeriod(o.v)} style={{ padding: '6px 14px', border: `1px solid ${period === o.v ? '#6366f1' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: period === o.v ? '#eff6ff' : 'white', color: period === o.v ? '#4f46e5' : 'var(--color-gray-600)' }}>
+                            <button key={o.v} onClick={() => setPeriod(o.v)} style={{ padding: '6px 14px', border: `1px solid ${period === o.v ? '#245fb5' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: period === o.v ? '#eff6ff' : 'white', color: period === o.v ? '#4f46e5' : 'var(--color-gray-600)' }}>
                                 {o.l}
                             </button>
                         ))}
@@ -599,10 +599,10 @@ function Reports() {
                                     : date.getDate() % 5 === 1 ? date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : ''
                                 return (
                                     <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', flex: 1, minWidth: `${barWidth + 4}px` }}>
-                                        {d.count > 0 && <span style={{ fontSize: '10px', fontWeight: 700, color: '#6366f1', marginBottom: '2px' }}>{d.count}</span>}
+                                        {d.count > 0 && <span style={{ fontSize: '10px', fontWeight: 700, color: '#245fb5', marginBottom: '2px' }}>{d.count}</span>}
                                         <div
                                             title={`${d.date}: ${d.count} ${language === 'kk' ? 'сабақ' : 'урок(ов)'}`}
-                                            style={{ width: `${barWidth}px`, height: `${h}%`, background: d.count > 0 ? 'linear-gradient(180deg,#6366f1,#8b5cf6)' : 'var(--color-gray-100)', borderRadius: '4px 4px 0 0', transition: 'height 0.4s ease', cursor: d.count > 0 ? 'pointer' : 'default' }}
+                                            style={{ width: `${barWidth}px`, height: `${h}%`, background: d.count > 0 ? 'linear-gradient(180deg,#245fb5,#8b5cf6)' : 'var(--color-gray-100)', borderRadius: '4px 4px 0 0', transition: 'height 0.4s ease', cursor: d.count > 0 ? 'pointer' : 'default' }}
                                         />
                                         {label && <span style={{ fontSize: '10px', color: 'var(--color-gray-400)', whiteSpace: 'nowrap', position: 'absolute', bottom: 0 }}>{label}</span>}
                                     </div>
@@ -624,7 +624,7 @@ function Reports() {
                         </h3>
                         <div style={{ display: 'flex', gap: '4px' }}>
                             {[{ v: 'views', icon: <Eye size={12} />, l: language === 'kk' ? 'Қаралым' : 'Просмотры' }, { v: 'likes', icon: <Heart size={12} />, l: language === 'kk' ? 'Ұнату' : 'Лайки' }].map(o => (
-                                <button key={o.v} onClick={() => setTopTab(o.v)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', border: `1px solid ${topTab === o.v ? '#6366f1' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: topTab === o.v ? '#eff6ff' : 'white', color: topTab === o.v ? '#4f46e5' : 'var(--color-gray-500)' }}>
+                                <button key={o.v} onClick={() => setTopTab(o.v)} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', border: `1px solid ${topTab === o.v ? '#245fb5' : 'var(--color-gray-200)'}`, borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', background: topTab === o.v ? '#eff6ff' : 'white', color: topTab === o.v ? '#4f46e5' : 'var(--color-gray-500)' }}>
                                     {o.icon} {o.l}
                                 </button>
                             ))}
@@ -648,9 +648,9 @@ function Reports() {
                                         <p style={{ margin: '0 0 4px', fontSize: '13px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--color-gray-900)' }}>{lesson.title}</p>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ flex: 1, height: '5px', background: 'var(--color-gray-100)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                <div style={{ height: '100%', width: `${pct}%`, background: topTab === 'views' ? '#6366f1' : '#ef4444', borderRadius: '3px' }} />
+                                                <div style={{ height: '100%', width: `${pct}%`, background: topTab === 'views' ? '#245fb5' : '#ef4444', borderRadius: '3px' }} />
                                             </div>
-                                            <span style={{ fontSize: '12px', fontWeight: 700, color: topTab === 'views' ? '#6366f1' : '#ef4444', flexShrink: 0, minWidth: '28px', textAlign: 'right' }}>{val}</span>
+                                            <span style={{ fontSize: '12px', fontWeight: 700, color: topTab === 'views' ? '#245fb5' : '#ef4444', flexShrink: 0, minWidth: '28px', textAlign: 'right' }}>{val}</span>
                                         </div>
                                     </div>
                                 </div>

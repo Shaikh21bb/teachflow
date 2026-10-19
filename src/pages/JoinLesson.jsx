@@ -165,7 +165,7 @@ export default function JoinLesson() {
                     <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px' }}>{errorMsg}</p>
                     <button
                         onClick={() => setState(STATES.ENTER_NAME)}
-                        style={{ padding: '14px 32px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: 'white', border: 'none', borderRadius: '14px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+                        style={{ padding: '14px 32px', background: '#245fb5', color: 'white', border: 'none', borderRadius: '14px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
                     >
                         Попробовать снова
                     </button>
@@ -181,13 +181,13 @@ export default function JoinLesson() {
                 <div style={{ width: '100%', maxWidth: '400px' }}>
                     {/* Logo area */}
                     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                             <BookOpen size={32} color="white" />
                         </div>
                         <h1 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px', letterSpacing: '-0.5px' }}>
                             Присоединиться к уроку
                         </h1>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '30px', padding: '6px 16px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(36,95,181,0.15)', border: '1px solid rgba(36,95,181,0.3)', borderRadius: '30px', padding: '6px 16px' }}>
                             <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Код урока</span>
                             <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '3px', color: '#a5b4fc' }}>{upperCode}</span>
                         </div>
@@ -213,7 +213,7 @@ export default function JoinLesson() {
                                     outline: 'none', boxSizing: 'border-box',
                                     transition: 'border-color 0.2s'
                                 }}
-                                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                onFocus={e => e.target.style.borderColor = '#245fb5'}
                                 onBlur={e => e.target.style.borderColor = nameError ? '#ef4444' : 'rgba(255,255,255,0.15)'}
                             />
                             {nameError && <p style={{ color: '#f87171', fontSize: '0.8rem', marginTop: '6px' }}>{nameError}</p>}
@@ -223,10 +223,10 @@ export default function JoinLesson() {
                             type="submit"
                             disabled={state === STATES.JOINING}
                             style={{
-                                padding: '16px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                padding: '16px', background: '#245fb5',
                                 color: 'white', border: 'none', borderRadius: '14px',
                                 fontSize: '1rem', fontWeight: 700, cursor: 'pointer',
-                                boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
+                                boxShadow: '0 8px 24px rgba(36,95,181,0.4)',
                                 opacity: state === STATES.JOINING ? 0.7 : 1,
                                 transition: 'all 0.2s'
                             }}
@@ -253,7 +253,7 @@ export default function JoinLesson() {
                         {[0, 0.2, 0.4].map(d => (
                             <div key={d} style={{
                                 width: '14px', height: '14px', borderRadius: '50%',
-                                background: '#6366f1',
+                                background: '#245fb5',
                                 animation: `waitingBounce 1.2s ease-in-out ${d}s infinite`
                             }} />
                         ))}
@@ -284,7 +284,7 @@ export default function JoinLesson() {
     // ── POLL ACTIVE ───────────────────────────────────────────
     if (state === STATES.POLL_ACTIVE && activePoll) {
         const labels = ['A', 'B', 'C', 'D']
-        const optionColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899']
+        const optionColors = ['#245fb5', '#10b981', '#f59e0b', '#ec4899']
         return (
             <div style={{ ...baseStyle, justifyContent: 'flex-start', paddingTop: '40px' }}>
                 <div style={{ width: '100%', maxWidth: '480px' }}>

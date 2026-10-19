@@ -29,7 +29,7 @@ function fullTime(dateStr, lang = 'ru') {
 
 function Avatar({ src, name, size = 40, style = {} }) {
     const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
+    const colors = ['#245fb5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
     const color = colors[(name?.charCodeAt(0) || 0) % colors.length]
     return src ? (
         <img src={src} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, ...style }} />
@@ -227,7 +227,7 @@ export default function TeacherChat() {
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {loading ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-                                <Loader2 size={28} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                                <Loader2 size={28} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                             </div>
                         ) : filteredConvs.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--color-gray-400)' }}>
@@ -247,7 +247,7 @@ export default function TeacherChat() {
                                     width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
                                     padding: '12px 16px', border: 'none', textAlign: 'left',
                                     background: activeConvId === conv.id ? 'var(--color-primary-50, #eef2ff)' : 'transparent',
-                                    borderLeft: activeConvId === conv.id ? '3px solid #6366f1' : '3px solid transparent',
+                                    borderLeft: activeConvId === conv.id ? '3px solid #245fb5' : '3px solid transparent',
                                     cursor: 'pointer', transition: 'all 0.15s'
                                 }}
                                 onMouseEnter={e => { if (activeConvId !== conv.id) e.currentTarget.style.background = 'var(--color-gray-50, #f9fafb)' }}
@@ -272,7 +272,7 @@ export default function TeacherChat() {
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                         {conv.last_message?.sender_id === user?.id && (
-                                            <CheckCheck size={13} color={conv.last_message?.is_read ? '#6366f1' : '#9ca3af'} style={{ flexShrink: 0 }} />
+                                            <CheckCheck size={13} color={conv.last_message?.is_read ? '#245fb5' : '#9ca3af'} style={{ flexShrink: 0 }} />
                                         )}
                                         <span style={{ fontSize: '0.8rem', color: conv.unread_count > 0 ? 'var(--color-gray-700)' : 'var(--color-gray-400)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: conv.unread_count > 0 ? 600 : 400 }}>
                                             {conv.last_message?.text || L('Начните переписку', 'Хат жазуды бастаңыз')}
@@ -325,7 +325,7 @@ export default function TeacherChat() {
                         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {msgLoading ? (
                                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Loader2 size={32} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                                    <Loader2 size={32} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                                 </div>
                             ) : messages.length === 0 ? (
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-gray-400)', gap: '12px' }}>
@@ -353,7 +353,7 @@ export default function TeacherChat() {
                                             <div style={{
                                                 maxWidth: '72%', padding: '10px 14px',
                                                 borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                background: isMe ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--color-white, white)',
+                                                background: isMe ? '#245fb5' : 'var(--color-white, white)',
                                                 color: isMe ? 'white' : 'var(--color-gray-900)',
                                                 boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                                                 border: isMe ? 'none' : '1px solid var(--color-gray-100)',
@@ -406,15 +406,15 @@ export default function TeacherChat() {
                                     maxHeight: '120px', overflowY: 'auto',
                                     transition: 'border-color 0.2s'
                                 }}
-                                onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                onFocus={e => e.target.style.borderColor = '#245fb5'}
                                 onBlur={e => e.target.style.borderColor = 'var(--color-gray-200)'}
                             />
                             <button type="submit" disabled={!text.trim() || sending} style={{
                                 width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
-                                background: text.trim() ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'var(--color-gray-200)',
+                                background: text.trim() ? '#245fb5' : 'var(--color-gray-200)',
                                 border: 'none', cursor: text.trim() ? 'pointer' : 'default',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.2s', boxShadow: text.trim() ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
+                                transition: 'all 0.2s', boxShadow: text.trim() ? '0 4px 12px rgba(36,95,181,0.3)' : 'none'
                             }}>
                                 {sending ? <Loader2 size={18} color="white" style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={18} color={text.trim() ? 'white' : '#9ca3af'} />}
                             </button>
@@ -423,7 +423,7 @@ export default function TeacherChat() {
                 ) : (
                     /* Empty state — no conversation selected */
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', color: 'var(--color-gray-400)', padding: '40px' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 32px rgba(99,102,241,0.25)' }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#245fb5', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 12px 32px rgba(36,95,181,0.25)' }}>
                             <MessageSquare size={36} color="white" />
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -435,9 +435,9 @@ export default function TeacherChat() {
                             </p>
                             <Link to="/profile?tab=colleagues" style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                padding: '10px 20px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                padding: '10px 20px', background: '#245fb5',
                                 color: 'white', borderRadius: '12px', textDecoration: 'none',
-                                fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                                fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(36,95,181,0.3)'
                             }}>
                                 <Users size={16} /> {L('Найти коллег', 'Əріптестерді табу')}
                             </Link>

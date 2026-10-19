@@ -158,7 +158,7 @@ export default function StudentQuiz() {
                 <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
                     {/* Per-question timer */}
                     {quiz.question_time && qTimeLeft !== null && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, background: qUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(99,102,241,0.2)', border: `1px solid ${qUrgent ? '#ef4444' : '#6366f1'}`, animation: qUrgent ? 'bellPulse 0.5s ease infinite' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, background: qUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(36,95,181,0.2)', border: `1px solid ${qUrgent ? '#ef4444' : '#245fb5'}`, animation: qUrgent ? 'bellPulse 0.5s ease infinite' : 'none' }}>
                             <Zap size={14} color={qUrgent ? '#ef4444' : '#818cf8'} />
                             <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: qUrgent ? '#ef4444' : '#a5b4fc', minWidth: 28 }}>
                                 {qTimeLeft}s
@@ -183,14 +183,14 @@ export default function StudentQuiz() {
                         <span>{Math.round(progress)}%</span>
                     </div>
                     <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius: 3, transition: 'width 0.3s ease' }} />
+                        <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg,#245fb5,#8b5cf6)', borderRadius: 3, transition: 'width 0.3s ease' }} />
                     </div>
                     {/* Question dots */}
                     <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
                         {quiz.questions.map((_, i) => (
                             <button key={i} onClick={() => setCurrentQuestionIndex(i)} style={{
                                 width: 24, height: 24, borderRadius: '50%', border: 'none', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700,
-                                background: i === currentQuestionIndex ? '#6366f1' : answers[i] !== null ? '#10b981' : 'rgba(255,255,255,0.15)',
+                                background: i === currentQuestionIndex ? '#245fb5' : answers[i] !== null ? '#10b981' : 'rgba(255,255,255,0.15)',
                                 color: 'white', transition: 'all 0.15s'
                             }}>{i + 1}</button>
                         ))}
@@ -217,13 +217,13 @@ export default function StudentQuiz() {
                                 <button key={label} onClick={() => handleSelectOption(label)} style={{
                                     display: 'flex', alignItems: 'center', gap: 14,
                                     width: '100%', padding: '14px 18px', borderRadius: 14,
-                                    background: isSelected ? 'rgba(99,102,241,0.25)' : 'rgba(0,0,0,0.25)',
-                                    border: `2px solid ${isSelected ? '#6366f1' : 'transparent'}`,
+                                    background: isSelected ? 'rgba(36,95,181,0.25)' : 'rgba(0,0,0,0.25)',
+                                    border: `2px solid ${isSelected ? '#245fb5' : 'transparent'}`,
                                     color: 'white', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', fontSize: '15px'
                                 }}>
                                     <div style={{
                                         width: 32, height: 32, borderRadius: 8,
-                                        background: isSelected ? '#6366f1' : 'rgba(255,255,255,0.1)',
+                                        background: isSelected ? '#245fb5' : 'rgba(255,255,255,0.1)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontWeight: 700, flexShrink: 0
                                     }}>{label}</div>

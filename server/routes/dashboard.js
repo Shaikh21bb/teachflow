@@ -2,20 +2,21 @@ const express = require('express');
 const router = express.Router();
 const { getOne, getAll } = require('../db/database');
 const { authenticateToken } = require('../middleware/auth');
+const { getTodayDow } = require('../utils/calendar');
 
 // Get dashboard statistics
 router.get('/stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id || req.user.userId;
-        const today = new Date().toISOString().split('T')[0];
+        const day = getTodayDow();
 
         // Run all 4 queries IN PARALLEL — was 4 sequential round-trips, now 1 batch
         const [lessonsToday, activeAssignments, totalStudents, pendingReviews,
                totalLessons, totalClasses, totalAssignments] = await Promise.all([
-            getOne(`SELECT COUNT(*) as count FROM lessons WHERE DATE(created_at) = ? AND user_id = ?`, [today, userId]),
+            getOne(`SELECT COUNT(*) as count FROM lesson_schedule WHERE day_of_week = ? AND user_id = ?`, [day, userId]),
             getOne(`SELECT COUNT(*) as count FROM assignments WHERE status = 'active' AND user_id = ?`, [userId]),
             getOne(`SELECT COUNT(*) as count FROM students s JOIN classes c ON s.class_id = c.id WHERE c.user_id = ?`, [userId]),
-            getOne(`SELECT COUNT(*) as count FROM assignments WHERE status = 'completed' AND user_id = ?`, [userId]),
+            getOne(`SELECT COUNT(*) as count FROM assignment_submissions s JOIN assignments a ON a.id = s.assignment_id WHERE s.status = 'pending' AND a.user_id = ?`, [userId]),
             getOne(`SELECT COUNT(*) as count FROM lessons WHERE user_id = ? AND is_archived = 0`, [userId]),
             getOne(`SELECT COUNT(*) as count FROM classes WHERE user_id = ?`, [userId]),
             getOne(`SELECT COUNT(*) as count FROM assignments WHERE user_id = ?`, [userId]),

@@ -15,7 +15,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api'
 // ── Avatar helper ─────────────────────────────────────────────
 function Avatar({ src, name, size = 96 }) {
     const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
+    const colors = ['#245fb5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#8b5cf6']
     const color = colors[(name?.charCodeAt(0) || 0) % colors.length]
     const [imgError, setImgError] = useState(false)
 
@@ -131,7 +131,7 @@ export default function TeacherPublicProfile() {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
                 <div style={{ textAlign: 'center' }}>
-                    <Loader2 size={40} style={{ color: '#6366f1', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+                    <Loader2 size={40} style={{ color: '#245fb5', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
                     <p style={{ color: 'var(--color-gray-500)' }}>{L('Загрузка...', 'Жүктелуде...')}</p>
                 </div>
             </div>
@@ -264,7 +264,7 @@ export default function TeacherPublicProfile() {
 
             {/* ── Stats row ──────────────────────────────────── */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                <StatCard value={stats.lessons_published} label={L('Уроков', 'Сабақ')} icon={<BookOpen size={18} color="#6366f1" />} />
+                <StatCard value={stats.lessons_published} label={L('Уроков', 'Сабақ')} icon={<BookOpen size={18} color="#245fb5" />} />
                 <StatCard value={stats.followers} label={L('Подписчиков', 'Жазылушылар')} icon={<Users size={18} color="#10b981" />} />
                 <StatCard value={stats.following} label={L('Подписок', 'Жазылымдар')} icon={<UserCheck size={18} color="#f59e0b" />} />
             </div>
@@ -275,7 +275,7 @@ export default function TeacherPublicProfile() {
                 {teacher.bio && (
                     <div style={{ background: 'var(--color-white, white)', borderRadius: '16px', padding: '20px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid var(--color-gray-100)' }}>
                         <h3 style={{ margin: '0 0 12px', fontSize: '1rem', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{ width: '4px', height: '20px', background: '#6366f1', borderRadius: '2px' }} />
+                            <div style={{ width: '4px', height: '20px', background: '#245fb5', borderRadius: '2px' }} />
                             {L('О себе', 'Өзім туралы')}
                         </h3>
                         <p style={{ margin: 0, color: 'var(--color-gray-700)', lineHeight: 1.7, fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
@@ -341,7 +341,7 @@ export default function TeacherPublicProfile() {
                                     {/* Thumbnail or gradient */}
                                     <div style={{
                                         height: '80px',
-                                        background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                                        background: lesson.thumbnail_url ? `url(${lesson.thumbnail_url}) center/cover` : '#245fb5',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}>
                                         {!lesson.thumbnail_url && <BookOpen size={28} color="white" />}

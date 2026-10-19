@@ -6,12 +6,14 @@ const LanguageContext = createContext();
 export function LanguageProvider({ children }) {
     const [language, setLanguage] = useState(() => {
         // Get from localStorage or default to Kazakh
-        return localStorage.getItem('urpaq_language') || 'kk';
+        const stored = localStorage.getItem('urpaq_language');
+        return ['kk', 'ru'].includes(stored) ? stored : 'kk';
     });
 
     useEffect(() => {
         // Save to localStorage whenever language changes
         localStorage.setItem('urpaq_language', language);
+        document.documentElement.lang = language;
     }, [language]);
 
     const toggleLanguage = () => {

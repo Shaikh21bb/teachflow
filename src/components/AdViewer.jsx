@@ -95,7 +95,7 @@ export default function AdViewer({ onComplete, onClose }) {
             <div style={overlay}>
                 <div style={card}>
                     <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
-                        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#6366f1', animation: 'adSpin 0.7s linear infinite', margin: '0 auto 16px' }} />
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#245fb5', animation: 'adSpin 0.7s linear infinite', margin: '0 auto 16px' }} />
                         <p style={{ margin: 0 }}>{L('Загрузка рекламы...', 'Жарнама жүктелуде...')}</p>
                     </div>
                 </div>
@@ -259,7 +259,7 @@ export default function AdViewer({ onComplete, onClose }) {
                     <div style={{ height: 6, background: '#f3f4f6', borderRadius: 3, overflow: 'hidden' }}>
                         <div style={{
                             height: '100%', borderRadius: 3,
-                            background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                            background: 'linear-gradient(90deg, #245fb5, #8b5cf6)',
                             width: `${pct}%`,
                             transition: 'width 0.95s linear'
                         }} />
@@ -288,10 +288,10 @@ const card = {
     animation: 'adFadeIn 0.3s ease'
 }
 const btnPrimary = {
-    padding: '11px 24px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+    padding: '11px 24px', background: '#245fb5',
     color: 'white', border: 'none', borderRadius: 10,
     fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+    boxShadow: '0 4px 12px rgba(36,95,181,0.3)'
 }
 const btnSecondary = {
     padding: '11px 24px', background: '#f4f4f5', color: '#374151',

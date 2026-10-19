@@ -19,7 +19,8 @@ router.get('/', async (req, res) => {
             SELECT a.*, c.name as class_name, c.subject as subject,
                    (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id) as class_total,
                    (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id) as submission_count,
-                   (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id AND sub.status = 'graded') as graded_count
+                   (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id AND sub.status = 'graded') as graded_count,
+                   (SELECT COUNT(*) FROM assignment_submissions sub WHERE sub.assignment_id = a.id AND sub.status = 'pending') as pending_count
             FROM assignments a
             LEFT JOIN classes c ON a.class_id = c.id
             WHERE a.user_id = ?

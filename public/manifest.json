@@ -1,13 +1,13 @@
 {
-  "name": "Urpaq.ai — Суперсила для учителей",
-  "short_name": "Urpaq.ai",
-  "description": "AI-платформа для учителей: создавайте уроки, квизы, управляйте классами и общайтесь с коллегами",
-  "start_url": "/dashboard",
+  "name": "URPAQ — образовательная платформа",
+  "short_name": "URPAQ",
+  "description": "Уроки, задания и учебные игры для учителей и школьников",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#6366f1",
-  "orientation": "portrait-primary",
+  "background_color": "#f6f8fa",
+  "theme_color": "#245fb5",
+  "orientation": "any",
   "lang": "ru",
   "categories": ["education", "productivity"],
   "icons": [
@@ -40,19 +40,11 @@
       "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
     },
     {
-      "name": "Al Farabi Bot",
-      "short_name": "AI Бот",
-      "description": "Чат с AI-ассистентом",
-      "url": "/alfarabi-bot",
+      "name": "Кабинет ученика",
+      "short_name": "Ученику",
+      "description": "Мои задания и квесты",
+      "url": "/student/dashboard",
       "icons": [{ "src": "/logo.jpg", "sizes": "96x96" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/dashboard-mockup-ru.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "label": "Дашборд учителя"
     }
   ]
 }

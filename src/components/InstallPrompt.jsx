@@ -86,11 +86,11 @@ export default function InstallPrompt() {
                 onClick={handleInstall}
                 style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 14px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    padding: '8px 14px', background: '#245fb5',
                     color: 'white', border: 'none', borderRadius: '10px',
                     fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
                     whiteSpace: 'nowrap', flexShrink: 0,
-                    boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                    boxShadow: '0 4px 12px rgba(36,95,181,0.3)'
                 }}
             >
                 <Download size={14} />

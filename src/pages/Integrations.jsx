@@ -257,7 +257,7 @@ export default function Integrations() {
             {/* Header */}
             <div style={{ marginBottom: '28px' }}>
                 <h1 style={{ margin: '0 0 6px', fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Plug size={28} color="#6366f1" /> {L('Интеграции', 'Интеграциялар')}
+                    <Plug size={28} color="#245fb5" /> {L('Интеграции', 'Интеграциялар')}
                 </h1>
                 <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: '0.9rem' }}>
                     {L('Подключите внешние сервисы для расширения возможностей платформы', 'Платформаның мүмкіндіктерін кеңейту үшін сыртқы сервистерді қосыңыз')}
@@ -451,7 +451,7 @@ export default function Integrations() {
             )}
 
             {/* ── AI demo ── */}
-            <div style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', borderRadius: 24, padding: 36, color: 'white', marginBottom: 24 }}>
+            <div style={{ background: '#245fb5', borderRadius: 24, padding: 36, color: 'white', marginBottom: 24 }}>
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 20 }}>
                     <div style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.18)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <Sparkles size={26} color="white" />

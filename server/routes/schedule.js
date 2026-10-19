@@ -14,10 +14,7 @@ const { getOne, getAll, runQuery } = require('../db/database');
 // Day names helper (0=Sun, 1=Mon...6=Sat — JS standard)
 // We use 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 0=Sun
 
-function getTodayDow() {
-    const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: process.env.APP_TIMEZONE || 'Asia/Almaty' }).format(new Date());
-    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(weekday);
-}
+const { getTodayDow } = require('../utils/calendar');
 
 router.use((req, res, next) => {
     if (!['POST', 'PUT'].includes(req.method)) return next();

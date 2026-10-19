@@ -111,7 +111,7 @@ export default function QuizReport() {
     const maxBucket = Math.max(...buckets, 1)
 
     const statCards = [
-        { label: language === 'kk' ? 'Барлығы тапсырды' : 'Всего попыток', value: stats.total, icon: <Users size={24} />, color: '#6366f1', bg: '#eff6ff' },
+        { label: language === 'kk' ? 'Барлығы тапсырды' : 'Всего попыток', value: stats.total, icon: <Users size={24} />, color: '#245fb5', bg: '#eff6ff' },
         { label: language === 'kk' ? 'Орташа пайыз' : 'Средний балл', value: stats.avgScore + '%', icon: <Target size={24} />, color: '#3b82f6', bg: '#e0f2fe' },
         { label: language === 'kk' ? 'Ең жоғары' : 'Лучший результат', value: stats.maxScore + '%', icon: <Trophy size={24} />, color: '#10b981', bg: '#dcfce7' },
         { label: language === 'kk' ? 'Ең төменгі' : 'Худший результат', value: stats.minScore + '%', icon: <TrendingDown size={24} />, color: '#f43f5e', bg: '#ffe4e6' },
@@ -171,7 +171,7 @@ export default function QuizReport() {
                     <button 
                         className="btn btn-primary" 
                         onClick={exportCSV} 
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)' }} 
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 15px rgba(36,95,181, 0.2)' }}
                         disabled={attempts.length === 0}
                     >
                         <FileSpreadsheet size={18} /> {language === 'kk' ? 'Жүктеу (Excel)' : 'Excel'}

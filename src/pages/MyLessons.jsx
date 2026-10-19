@@ -26,7 +26,7 @@ const STATUSES = [
 
 function FileTypeIcon({ type, size = 24 }) {
     if (type === 'pdf') return <FileText size={size} color="#ef4444" />
-    if (type === 'video') return <Film size={size} color="#6366f1" />
+    if (type === 'video') return <Film size={size} color="#245fb5" />
     if (type === 'youtube') return <Youtube size={size} color="#ef4444" />
     if (type === 'image') return <Image size={size} color="#10b981" />
     if (type === 'docx') return <FileText size={size} color="#3b82f6" />
@@ -229,7 +229,7 @@ export default function MyLessons() {
                         </div>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button onClick={copyShareLink} style={{
-                                flex: 1, padding: '10px', background: 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))',
+                                flex: 1, padding: '10px', background: 'var(--gradient-primary, #245fb5)',
                                 color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                             }}>
@@ -251,7 +251,7 @@ export default function MyLessons() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: 'var(--color-gray-900)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <BookOpen size={32} color="#6366f1" /> Мои уроки
+                        <BookOpen size={32} color="#245fb5" /> Мои уроки
                     </h1>
                     <p style={{ margin: '4px 0 0', color: 'var(--color-gray-500)', fontSize: '1rem' }}>
                         Привет, <span style={{ fontWeight: 700, color: 'var(--color-primary-600)' }}>{user?.name}</span>! Управляйте своими материалами
@@ -277,7 +277,7 @@ export default function MyLessons() {
                     gap: '20px', marginBottom: '40px'
                 }}>
                     {[
-                        { label: 'Всего уроков', value: stats.total_lessons, icon: <BookOpen size={24} />, color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
+                        { label: 'Всего уроков', value: stats.total_lessons, icon: <BookOpen size={24} />, color: '#245fb5', bg: 'rgba(36,95,181,0.08)' },
                         { label: 'Опубликовано', value: stats.published, icon: <CheckCircle size={24} />, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
                         { label: 'Черновики', value: stats.drafts, icon: <FileText size={24} />, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
                         { label: 'Просмотры', value: stats.total_views, icon: <Eye size={24} />, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
@@ -364,7 +364,7 @@ export default function MyLessons() {
             {/* Lessons Grid/List */}
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '60px', color: 'var(--color-gray-400, #9ca3af)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-                    <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#6366f1' }} />
+                    <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#245fb5' }} />
                     <p>Загрузка уроков...</p>
                 </div>
             ) : lessons.length === 0 ? (
@@ -382,7 +382,7 @@ export default function MyLessons() {
                     </p>
                     {!search && !subject && !grade && !status && (
                         <Link to="/builder" style={{
-                            background: 'var(--gradient-primary, linear-gradient(135deg,#6366f1,#8b5cf6))',
+                            background: 'var(--gradient-primary, #245fb5)',
                             color: 'white', textDecoration: 'none', padding: '12px 28px',
                             borderRadius: '12px', fontWeight: 700, display: 'inline-flex', gap: '8px', alignItems: 'center'
                         }}>
@@ -490,7 +490,7 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                     height: '160px',
                     background: lesson.thumbnail_url
                         ? `url(${lesson.thumbnail_url}) center/cover`
-                        : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        : 'linear-gradient(135deg, #245fb5 0%, #8b5cf6 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     position: 'relative', flexShrink: 0
                 }}>
@@ -533,7 +533,7 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                         </h3>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                             {lesson.subject && (
-                                <span style={{ fontSize: '0.75rem', color: '#6366f1', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>
+                                <span style={{ fontSize: '0.75rem', color: '#245fb5', background: '#ede9fe', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>
                                     {lesson.subject}
                                 </span>
                             )}
@@ -595,15 +595,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                                         disabled={deletingId === lesson.id}
                                         style={{
                                             width: '100%', padding: '9px 12px', border: 'none',
-                                            background: item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))' : 'none',
+                                            background: item.highlight ? 'linear-gradient(135deg, rgba(36,95,181,0.08), rgba(139,92,246,0.08))' : 'none',
                                             cursor: 'pointer', borderRadius: '8px',
                                             display: 'flex', gap: '10px', alignItems: 'center',
                                             fontSize: '0.875rem', fontWeight: item.highlight ? 700 : 500, textAlign: 'left',
-                                            color: item.danger ? '#ef4444' : item.highlight ? '#6366f1' : 'var(--color-gray-700, #374151)',
+                                            color: item.danger ? '#ef4444' : item.highlight ? '#245fb5' : 'var(--color-gray-700, #374151)',
                                             transition: 'background 0.15s'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.background = item.danger ? '#fef2f2' : item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15))' : 'var(--color-gray-50, #f9fafb)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = item.highlight ? 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08))' : 'none'}
+                                        onMouseEnter={e => e.currentTarget.style.background = item.danger ? '#fef2f2' : item.highlight ? 'linear-gradient(135deg, rgba(36,95,181,0.15), rgba(139,92,246,0.15))' : 'var(--color-gray-50, #f9fafb)'}
+                                        onMouseLeave={e => e.currentTarget.style.background = item.highlight ? 'linear-gradient(135deg, rgba(36,95,181,0.08), rgba(139,92,246,0.08))' : 'none'}
                                     >
                                         {item.icon} {item.label}
                                     </button>
@@ -619,15 +619,15 @@ function LessonCard({ lesson, view, actionMenuId, setActionMenuId, deletingId, o
                         onClick={onConduct}
                         style={{
                             width: '100%', padding: '10px 16px',
-                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            background: 'linear-gradient(135deg, #245fb5 0%, #8b5cf6 100%)',
                             color: 'white', border: 'none', borderRadius: '10px',
                             cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                             transition: 'all 0.2s',
-                            boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
+                            boxShadow: '0 4px 12px rgba(36,95,181,0.25)'
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(99,102,241,0.35)' }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(99,102,241,0.25)' }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(36,95,181,0.35)' }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(36,95,181,0.25)' }}
                     >
                         <PlayCircle size={18} />
                         Вести урок

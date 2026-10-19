@@ -320,7 +320,7 @@ export default function Quizzes() {
             {quizzes.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
                     {[
-                        { label: language === 'kk' ? 'Барлық тесттер' : 'Всего тестов', value: quizzes.length, icon: <FileQuestion size={22} />, color: '#6366f1' },
+                        { label: language === 'kk' ? 'Барлық тесттер' : 'Всего тестов', value: quizzes.length, icon: <FileQuestion size={22} />, color: '#245fb5' },
                         { label: language === 'kk' ? 'Барлық әрекеттер' : 'Всего попыток', value: quizzes.reduce((a, q) => a + (q.attempts_count || 0), 0), icon: <Users size={22} />, color: '#22c55e' },
                         { label: language === 'kk' ? 'Барлық сұрақтар' : 'Всего вопросов', value: quizzes.reduce((a, q) => a + (q.questions?.length || 0), 0), icon: <BookOpen size={22} />, color: '#f59e0b' },
                     ].map(s => (
@@ -408,8 +408,8 @@ export default function Quizzes() {
                     </div>
 
                     {/* AI Generator */}
-                    <div style={{ background: 'linear-gradient(135deg, #6366f120, #8b5cf620)', border: '1px solid #6366f130', borderRadius: 16, padding: 20, marginBottom: 24 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, color: '#6366f1', fontWeight: 700, fontSize: '1rem' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #245fb520, #8b5cf620)', border: '1px solid #245fb530', borderRadius: 16, padding: 20, marginBottom: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, color: '#245fb5', fontWeight: 700, fontSize: '1rem' }}>
                             <Sparkles size={20} /> Генерация вопросов с помощью ИИ
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 80px', gap: 10, alignItems: 'end' }}>
@@ -664,7 +664,7 @@ function QuestionEditor({ q, qi, onChange, onOptionChange, onRemove, canRemove }
                                 }}
                                 style={{
                                     padding: '5px 14px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600,
-                                    border: `1.5px solid ${q.type === t.value ? '#6366f1' : 'var(--color-gray-200)'}`,
+                                    border: `1.5px solid ${q.type === t.value ? '#245fb5' : 'var(--color-gray-200)'}`,
                                     background: q.type === t.value ? '#eff6ff' : 'white',
                                     color: q.type === t.value ? '#4338ca' : 'var(--color-gray-600)',
                                     cursor: 'pointer'

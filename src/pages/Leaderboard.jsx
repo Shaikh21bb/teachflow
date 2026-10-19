@@ -11,7 +11,7 @@ import {
 // ── Avatar ────────────────────────────────────────────────────
 function Avatar({ src, name, size = 44 }) {
     const initials = (name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    const colors = ['#6366f1','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
+    const colors = ['#245fb5','#10b981','#f59e0b','#ec4899','#06b6d4','#8b5cf6']
     const color = colors[(name?.charCodeAt(0) || 0) % colors.length]
     const [err, setErr] = useState(false)
     if (src && !err) return <img src={src} alt={name} onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -86,7 +86,7 @@ export default function Leaderboard() {
 
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                    <Loader2 size={36} color="#6366f1" style={{ animation: 'spin 1s linear infinite' }} />
+                    <Loader2 size={36} color="#245fb5" style={{ animation: 'spin 1s linear infinite' }} />
                 </div>
             ) : teachers.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray-400)' }}>
@@ -159,7 +159,7 @@ export default function Leaderboard() {
                                         {tab === 'views' ? (
                                             <>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 800, fontSize: '1rem', color: 'var(--color-gray-900)' }}>
-                                                    <Eye size={14} color="#6366f1" /> {(teacher.total_views || 0).toLocaleString('ru-RU')}
+                                                    <Eye size={14} color="#245fb5" /> {(teacher.total_views || 0).toLocaleString('ru-RU')}
                                                 </div>
                                                 <div style={{ fontSize: '0.72rem', color: 'var(--color-gray-400)' }}>
                                                     <BookOpen size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
@@ -189,7 +189,7 @@ export default function Leaderboard() {
             {/* CTA to publish */}
             {myRank < 0 && teachers.length > 0 && (
                 <div style={{ marginTop: 28, background: 'linear-gradient(135deg,#f5f3ff,#eff6ff)', border: '1px solid #ddd6fe', borderRadius: 16, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                    <Trophy size={28} color="#6366f1" style={{ flexShrink: 0 }} />
+                    <Trophy size={28} color="#245fb5" style={{ flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 800, color: 'var(--color-gray-900)', marginBottom: 3 }}>
                             {L('Попадите в рейтинг', 'Рейтингке кіріңіз')}
@@ -198,7 +198,7 @@ export default function Leaderboard() {
                             {L('Публикуйте уроки и получайте просмотры — это бесплатно', 'Сабақтарды жариялаңыз — бұл тегін')}
                         </div>
                     </div>
-                    <Link to="/builder" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: '#6366f1', color: 'white', borderRadius: 11, textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem', flexShrink: 0 }}>
+                    <Link to="/builder" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: '#245fb5', color: 'white', borderRadius: 11, textDecoration: 'none', fontWeight: 700, fontSize: '0.875rem', flexShrink: 0 }}>
                         {L('Создать урок', 'Сабақ жасау')} <ChevronRight size={14} />
                     </Link>
                 </div>
