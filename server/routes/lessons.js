@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
-const { getOne, getAll, runQuery, getLastInsertId } = require('../db/database');
-const { checkLessonLimit } = require('../middleware/planMiddleware');
+const { getOne, getAll, runQuery, withTransaction } = require('../db/database');
+const { checkLessonLimit, getPlanLimits } = require('../middleware/planMiddleware');
 const { canReadLesson } = require('../utils/lessonAccess');
+const {
+    enqueueCloudinaryCleanup,
+    isCloudinaryCleanupQueued,
+    isOwnedLessonAsset,
+    processCloudinaryCleanupJobs,
+} = require('../utils/cloudinaryCleanup');
 
 
 // Lazy-loaded to avoid circular deps — required once on first use, then cached
@@ -13,6 +19,33 @@ function getAddTokens() {
     return _addTokens;
 }
 const crypto = require('crypto');
+
+async function getLessonCapacity(transaction, userId) {
+    const row = (await transaction.execute({
+        sql: `SELECT u.plan, COUNT(l.id) AS count
+              FROM users u
+              LEFT JOIN lessons l ON l.user_id = u.id AND l.is_archived = 0
+              WHERE u.id = ?
+              GROUP BY u.id`,
+        args: [userId],
+    })).rows[0];
+    const plan = row?.plan || 'free';
+    const count = Number(row?.count || 0);
+    const limit = getPlanLimits(plan).lessons;
+    return { allowed: count < limit, count, limit, plan };
+}
+
+function lessonLimitResult({ limit, plan }) {
+    return {
+        status: 403,
+        body: {
+            error: 'Превышен лимит уроков',
+            message: `На тарифе ${plan} можно создать не более ${limit} уроков.`,
+            limit_reached: true,
+            code: 'LIMIT_REACHED_LESSONS',
+        },
+    };
+}
 
 // ──────────────────────────────────────────
 // GET all lessons for the authenticated teacher
@@ -99,16 +132,37 @@ router.post('/:id/like', authenticateToken, async (req, res) => {
     try {
         const lessonId = parseInt(req.params.id);
         const userId = req.user.userId;
-        const existing = await getOne('SELECT 1 FROM lesson_likes WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
-        if (existing) {
-            await runQuery('DELETE FROM lesson_likes WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
-            await runQuery('UPDATE lessons SET likes = MAX(0, likes - 1) WHERE id = ?', [lessonId]);
-        } else {
-            await runQuery('INSERT OR IGNORE INTO lesson_likes (user_id, lesson_id) VALUES (?, ?)', [userId, lessonId]);
-            await runQuery('UPDATE lessons SET likes = likes + 1 WHERE id = ?', [lessonId]);
-        }
-        const l = await getOne('SELECT likes FROM lessons WHERE id = ?', [lessonId]);
-        res.json({ liked: !existing, likes: l?.likes || 0 });
+        const outcome = await withTransaction(async transaction => {
+            const existing = (await transaction.execute({
+                sql: 'SELECT 1 FROM lesson_likes WHERE user_id = ? AND lesson_id = ?',
+                args: [userId, lessonId],
+            })).rows[0];
+            if (existing) {
+                await transaction.execute({
+                    sql: 'DELETE FROM lesson_likes WHERE user_id = ? AND lesson_id = ?',
+                    args: [userId, lessonId],
+                });
+                await transaction.execute({
+                    sql: 'UPDATE lessons SET likes = MAX(0, likes - 1) WHERE id = ?',
+                    args: [lessonId],
+                });
+            } else {
+                await transaction.execute({
+                    sql: 'INSERT INTO lesson_likes (user_id, lesson_id) VALUES (?, ?)',
+                    args: [userId, lessonId],
+                });
+                await transaction.execute({
+                    sql: 'UPDATE lessons SET likes = likes + 1 WHERE id = ?',
+                    args: [lessonId],
+                });
+            }
+            const lesson = (await transaction.execute({
+                sql: 'SELECT likes FROM lessons WHERE id = ?',
+                args: [lessonId],
+            })).rows[0];
+            return { liked: !existing, likes: lesson?.likes || 0 };
+        });
+        res.json(outcome);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -124,7 +178,8 @@ router.post('/:id/save', authenticateToken, async (req, res) => {
             await runQuery('DELETE FROM saved_materials WHERE user_id = ? AND lesson_id = ?', [userId, lessonId]);
             res.json({ saved: false });
         } else {
-            await runQuery(`INSERT INTO saved_materials (user_id, lesson_id, title, type) VALUES (?, ?, ?, 'lesson')`, [userId, lessonId, lesson.title]);
+            // The unique index plus OR IGNORE keeps rapid parallel save clicks idempotent.
+            await runQuery(`INSERT OR IGNORE INTO saved_materials (user_id, lesson_id, title, type) VALUES (?, ?, ?, 'lesson')`, [userId, lessonId, lesson.title]);
             res.json({ saved: true });
         }
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -250,36 +305,67 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
     try {
         const {
             title, subject, grade, duration, description, content,
-            thumbnail_url, content_url, file_type, is_published,
+            thumbnail_url, thumbnail_public_id, content_url, file_type, is_published,
             slides_json, theme
         } = req.body;
         const userId = req.user.userId;
+        if (thumbnail_public_id && !isOwnedLessonAsset(thumbnail_public_id, userId)) {
+            return res.status(400).json({
+                error: 'Превью загружено вне защищённой папки пользователя',
+                code: 'INVALID_ASSET_PROVENANCE',
+            });
+        }
 
-        const inserted = await runQuery(`
-            INSERT INTO lessons 
-                (title, subject, grade, duration, description, content, 
-                 thumbnail_url, content_url, file_type, is_published, user_id,
-                 slides_json, theme)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-            title || 'Новый урок',
-            subject || 'Математика',
-            grade || 5,
-            duration || 45,
-            description || '',
-            content || '[]',
-            thumbnail_url || null,
-            content_url || null,
-            file_type || 'text',
-            is_published ? 1 : 0,
-            userId,
-            slides_json ? JSON.stringify(slides_json) : null,
-            theme || 'dark'
-        ]);
+        const outcome = await withTransaction(async transaction => {
+            const capacity = await getLessonCapacity(transaction, userId);
+            if (!capacity.allowed) return lessonLimitResult(capacity);
+            if (thumbnail_public_id && await isCloudinaryCleanupQueued(
+                transaction,
+                thumbnail_public_id,
+                'image'
+            )) {
+                return {
+                    status: 409,
+                    body: {
+                        error: 'Превью уже удаляется. Загрузите его заново.',
+                        code: 'ASSET_CLEANUP_IN_PROGRESS',
+                    },
+                };
+            }
 
-        const id = Number(inserted.lastInsertRowid);
-        const lesson = await getOne('SELECT * FROM lessons WHERE id = ?', [id]);
-        res.status(201).json(lesson);
+            const inserted = await transaction.execute({
+                sql: `INSERT INTO lessons
+                    (title, subject, grade, duration, description, content,
+                     thumbnail_url, thumbnail_public_id, thumbnail_asset_owner_id,
+                     content_url, file_type, is_published, user_id, slides_json, theme)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [
+                    title || 'Новый урок',
+                    subject || 'Математика',
+                    grade || 5,
+                    duration || 45,
+                    description || '',
+                    content || '[]',
+                    thumbnail_url || null,
+                    thumbnail_public_id || null,
+                    thumbnail_public_id ? userId : null,
+                    content_url || null,
+                    file_type || 'text',
+                    is_published ? 1 : 0,
+                    userId,
+                    slides_json ? JSON.stringify(slides_json) : null,
+                    theme || 'dark',
+                ],
+            });
+            const id = Number(inserted.lastInsertRowid);
+            const lesson = (await transaction.execute({
+                sql: 'SELECT * FROM lessons WHERE id = ?',
+                args: [id],
+            })).rows[0];
+            return { status: 201, body: lesson };
+        });
+
+        res.status(outcome.status).json(outcome.body);
     } catch (err) {
         console.error('POST lesson error:', err);
         res.status(500).json({ error: err.message });
@@ -292,46 +378,111 @@ router.post('/', authenticateToken, checkLessonLimit, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const lessonId = parseInt(req.params.id);
-        const existing = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
-        if (!existing) return res.status(404).json({ error: 'Урок не найден' });
-        if (existing.user_id !== userId && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Нет прав на редактирование' });
+        const lessonId = Number(req.params.id);
+        if (!Number.isSafeInteger(lessonId) || lessonId <= 0) {
+            return res.status(400).json({ error: 'Неверный ID урока', code: 'INVALID_LESSON_ID' });
         }
 
         const {
             title, subject, grade, duration, description, content,
-            thumbnail_url, content_url, file_type, is_published,
+            thumbnail_url, thumbnail_public_id, content_url, file_type, is_published,
             slides_json, theme
         } = req.body;
 
-        await runQuery(`
-            UPDATE lessons 
-            SET title = ?, subject = ?, grade = ?, duration = ?, description = ?, 
-                content = ?, thumbnail_url = ?, content_url = ?, file_type = ?,
-                is_published = ?, slides_json = ?, theme = ?,
-                updated_at = datetime('now')
-            WHERE id = ?
-        `, [
-            title ?? existing.title,
-            subject ?? existing.subject,
-            grade ?? existing.grade,
-            duration ?? existing.duration,
-            description ?? existing.description,
-            content ?? existing.content,
-            thumbnail_url ?? existing.thumbnail_url,
-            content_url ?? existing.content_url,
-            file_type ?? existing.file_type,
-            is_published !== undefined ? (is_published ? 1 : 0) : existing.is_published,
-            slides_json !== undefined ? JSON.stringify(slides_json) : existing.slides_json,
-            theme ?? existing.theme ?? 'dark',
-            lessonId
-        ]);
+        const outcome = await withTransaction(async transaction => {
+            const existing = (await transaction.execute({
+                sql: 'SELECT * FROM lessons WHERE id = ?',
+                args: [lessonId],
+            })).rows[0];
+            if (!existing) return { status: 404, body: { error: 'Урок не найден' } };
+            if (existing.user_id !== userId && req.user.role !== 'admin') {
+                return { status: 403, body: { error: 'Нет прав на редактирование' } };
+            }
 
-        const updated = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
+            const thumbnailUrlChanged = thumbnail_url !== undefined && thumbnail_url !== existing.thumbnail_url;
+            let nextThumbnailPublicId = existing.thumbnail_public_id || null;
+            let nextThumbnailAssetOwnerId = existing.thumbnail_asset_owner_id || null;
+            if (thumbnail_public_id !== undefined) {
+                nextThumbnailPublicId = thumbnail_public_id || null;
+                if (nextThumbnailPublicId !== existing.thumbnail_public_id) {
+                    if (nextThumbnailPublicId && !isOwnedLessonAsset(nextThumbnailPublicId, userId)) {
+                        return {
+                            status: 400,
+                            body: {
+                                error: 'Превью загружено вне защищённой папки пользователя',
+                                code: 'INVALID_ASSET_PROVENANCE',
+                            },
+                        };
+                    }
+                    nextThumbnailAssetOwnerId = nextThumbnailPublicId ? userId : null;
+                }
+            } else if (thumbnailUrlChanged) {
+                // A custom/inline replacement cannot safely inherit provenance
+                // from the previous Cloudinary image.
+                nextThumbnailPublicId = null;
+                nextThumbnailAssetOwnerId = null;
+            }
+            if (
+                nextThumbnailPublicId
+                && nextThumbnailPublicId !== existing.thumbnail_public_id
+                && await isCloudinaryCleanupQueued(transaction, nextThumbnailPublicId, 'image')
+            ) {
+                return {
+                    status: 409,
+                    body: {
+                        error: 'Превью уже удаляется. Загрузите его заново.',
+                        code: 'ASSET_CLEANUP_IN_PROGRESS',
+                    },
+                };
+            }
+            await transaction.execute({
+                sql: `UPDATE lessons
+                      SET title = ?, subject = ?, grade = ?, duration = ?, description = ?,
+                          content = ?, thumbnail_url = ?, thumbnail_public_id = ?,
+                          thumbnail_asset_owner_id = ?, content_url = ?, file_type = ?,
+                          is_published = ?, slides_json = ?, theme = ?,
+                          updated_at = datetime('now')
+                      WHERE id = ?`,
+                args: [
+                    title ?? existing.title,
+                    subject ?? existing.subject,
+                    grade ?? existing.grade,
+                    duration ?? existing.duration,
+                    description ?? existing.description,
+                    content ?? existing.content,
+                    thumbnail_url ?? existing.thumbnail_url,
+                    nextThumbnailPublicId,
+                    nextThumbnailAssetOwnerId,
+                    content_url ?? existing.content_url,
+                    file_type ?? existing.file_type,
+                    is_published !== undefined ? (is_published ? 1 : 0) : existing.is_published,
+                    slides_json !== undefined ? JSON.stringify(slides_json) : existing.slides_json,
+                    theme ?? existing.theme ?? 'dark',
+                    lessonId,
+                ],
+            });
+            let cleanup = { queued: 0, skipped: 0 };
+            if (existing.thumbnail_public_id && existing.thumbnail_public_id !== nextThumbnailPublicId) {
+                cleanup = await enqueueCloudinaryCleanup(transaction, [{
+                    public_id: existing.thumbnail_public_id,
+                    asset_owner_id: existing.thumbnail_asset_owner_id,
+                    resource_type: 'image',
+                }]);
+            }
+            const updated = (await transaction.execute({
+                sql: 'SELECT * FROM lessons WHERE id = ?',
+                args: [lessonId],
+            })).rows[0];
+            return { status: 200, updated, cleanup, wasPublished: Boolean(existing.is_published) };
+        });
+        if (outcome.status !== 200) return res.status(outcome.status).json(outcome.body);
+        const updated = outcome.updated;
+        if (outcome.cleanup.queued) {
+            processCloudinaryCleanupJobs().catch(error => console.warn('Cloudinary cleanup:', error.message));
+        }
 
         // ── Token reward: first publish ──────────────────────
-        if (is_published && !existing.is_published) {
+        if (is_published && !outcome.wasPublished) {
             try {
                 const addTokens = getAddTokens();
                 await addTokens(userId, 30, 'publish_bonus', `Первая публикация урока "${updated.title}"`, lessonId);
@@ -367,46 +518,69 @@ router.patch('/:id/archive', authenticateToken, async (req, res) => {
 // ──────────────────────────────────────────
 // POST duplicate lesson
 // ──────────────────────────────────────────
-router.post('/:id/duplicate', authenticateToken, async (req, res) => {
+router.post('/:id/duplicate', authenticateToken, checkLessonLimit, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const lessonId = parseInt(req.params.id);
-        const original = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
-        if (!original) return res.status(404).json({ error: 'Урок не найден' });
-        if (original.user_id !== userId && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Нет прав' });
+        const lessonId = Number(req.params.id);
+        if (!Number.isSafeInteger(lessonId) || lessonId <= 0) {
+            return res.status(400).json({ error: 'Неверный ID урока', code: 'INVALID_LESSON_ID' });
         }
 
-        const duplicated = await runQuery(`
-            INSERT INTO lessons 
-                (title, subject, grade, duration, description, content, 
-                 thumbnail_url, content_url, file_type, is_published, user_id,
-                 slides_json, theme)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
-        `, [
-            `${original.title} (Копия)`,
-            original.subject, original.grade, original.duration,
-            original.description, original.content,
-            original.thumbnail_url, original.content_url,
-            original.file_type, userId,
-            original.slides_json || null,
-            original.theme || 'dark'
-        ]);
+        const outcome = await withTransaction(async transaction => {
+            const original = (await transaction.execute({
+                sql: 'SELECT * FROM lessons WHERE id = ?',
+                args: [lessonId],
+            })).rows[0];
+            if (!original) return { status: 404, body: { error: 'Урок не найден' } };
+            if (original.user_id !== userId && req.user.role !== 'admin') {
+                return { status: 403, body: { error: 'Нет прав' } };
+            }
+            const capacity = await getLessonCapacity(transaction, userId);
+            if (!capacity.allowed) return lessonLimitResult(capacity);
 
-        const newId = Number(duplicated.lastInsertRowid);
+            const duplicated = await transaction.execute({
+                sql: `INSERT INTO lessons
+                    (title, subject, grade, duration, description, content,
+                     thumbnail_url, thumbnail_public_id, thumbnail_asset_owner_id,
+                     content_url, file_type, is_published, user_id, slides_json, theme)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+                args: [
+                    `${original.title} (Копия)`,
+                    original.subject, original.grade, original.duration,
+                    original.description, original.content,
+                    original.thumbnail_url, original.thumbnail_public_id,
+                    original.thumbnail_asset_owner_id, original.content_url,
+                    original.file_type, userId,
+                    original.slides_json || null,
+                    original.theme || 'dark',
+                ],
+            });
+            const newId = Number(duplicated.lastInsertRowid);
+            const files = (await transaction.execute({
+                sql: 'SELECT * FROM lesson_files WHERE lesson_id = ?',
+                args: [lessonId],
+            })).rows;
 
-        // Duplicate files in parallel (non-blocking)
-        const files = await getAll('SELECT * FROM lesson_files WHERE lesson_id = ?', [lessonId]);
-        if (files.length > 0) {
-            Promise.all(files.map(f => runQuery(
-                `INSERT INTO lesson_files (lesson_id, file_url, file_name, file_size, file_type, public_id, order_index)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [newId, f.file_url, f.file_name, f.file_size, f.file_type, f.public_id, f.order_index]
-            ))).catch(e => console.warn('Duplicate files warning:', e.message));
-        }
+            for (const file of files) {
+                await transaction.execute({
+                    sql: `INSERT INTO lesson_files
+                        (lesson_id, file_url, file_name, file_size, file_type, public_id, asset_owner_id, order_index)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    args: [
+                        newId, file.file_url, file.file_name, file.file_size,
+                        file.file_type, file.public_id, file.asset_owner_id, file.order_index,
+                    ],
+                });
+            }
 
-        const newLesson = await getOne('SELECT * FROM lessons WHERE id = ?', [newId]);
-        res.status(201).json(newLesson);
+            const newLesson = (await transaction.execute({
+                sql: 'SELECT * FROM lessons WHERE id = ?',
+                args: [newId],
+            })).rows[0];
+            return { status: 201, body: newLesson };
+        });
+
+        res.status(outcome.status).json(outcome.body);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -418,21 +592,34 @@ router.post('/:id/duplicate', authenticateToken, async (req, res) => {
 router.post('/:id/share', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const lessonId = parseInt(req.params.id);
-        const existing = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
-        if (!existing) return res.status(404).json({ error: 'Урок не найден' });
-        if (existing.user_id !== userId && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Нет прав' });
+        const lessonId = Number(req.params.id);
+        if (!Number.isSafeInteger(lessonId) || lessonId <= 0) {
+            return res.status(400).json({ error: 'Неверный ID урока', code: 'INVALID_LESSON_ID' });
         }
 
-        // Generate or reuse share token
-        const token = existing.share_token || crypto.randomBytes(16).toString('hex');
-        if (!existing.share_token) {
-            await runQuery('UPDATE lessons SET share_token = ? WHERE id = ?', [token, lessonId]);
-        }
+        const outcome = await withTransaction(async transaction => {
+            const existing = (await transaction.execute({
+                sql: 'SELECT user_id, share_token FROM lessons WHERE id = ?',
+                args: [lessonId],
+            })).rows[0];
+            if (!existing) return { status: 404, body: { error: 'Урок не найден' } };
+            if (existing.user_id !== userId && req.user.role !== 'admin') {
+                return { status: 403, body: { error: 'Нет прав' } };
+            }
+
+            const token = existing.share_token || crypto.randomBytes(16).toString('hex');
+            if (!existing.share_token) {
+                await transaction.execute({
+                    sql: 'UPDATE lessons SET share_token = ? WHERE id = ?',
+                    args: [token, lessonId],
+                });
+            }
+            return { status: 200, token };
+        });
+        if (outcome.status !== 200) return res.status(outcome.status).json(outcome.body);
 
         const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        res.json({ share_url: `${baseUrl}/lesson/${lessonId}?share_token=${token}` });
+        res.json({ share_url: `${baseUrl}/lesson/${lessonId}?share_token=${outcome.token}` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -465,14 +652,81 @@ router.get('/:id/slides', authenticateToken, async (req, res) => {
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const lessonId = parseInt(req.params.id);
-        const existing = await getOne('SELECT * FROM lessons WHERE id = ?', [lessonId]);
-        if (!existing) return res.status(404).json({ error: 'Урок не найден' });
-        if (existing.user_id !== userId && req.user.role !== 'admin') {
-            return res.status(403).json({ error: 'Нет прав на удаление' });
+        const lessonId = Number(req.params.id);
+        if (!Number.isSafeInteger(lessonId) || lessonId <= 0) {
+            return res.status(400).json({ error: 'Неверный ID урока', code: 'INVALID_LESSON_ID' });
         }
-        await runQuery('DELETE FROM lessons WHERE id = ?', [lessonId]);
-        res.json({ success: true });
+
+        const outcome = await withTransaction(async transaction => {
+            const existing = (await transaction.execute({
+                sql: `SELECT id, user_id, thumbnail_public_id, thumbnail_asset_owner_id
+                      FROM lessons WHERE id = ?`,
+                args: [lessonId],
+            })).rows[0];
+            if (!existing) return { status: 404, body: { error: 'Урок не найден' } };
+            if (existing.user_id !== userId && req.user.role !== 'admin') {
+                return { status: 403, body: { error: 'Нет прав на удаление' } };
+            }
+
+            const purchase = (await transaction.execute({
+                sql: 'SELECT id FROM marketplace_purchases WHERE lesson_id = ? LIMIT 1',
+                args: [lessonId],
+            })).rows[0];
+            if (purchase) {
+                return {
+                    status: 409,
+                    body: {
+                        error: 'Проданный урок нельзя удалить. Переместите его в архив.',
+                        code: 'LESSON_HAS_PURCHASES',
+                    },
+                };
+            }
+
+            const filesToCleanup = (await transaction.execute({
+                sql: `SELECT public_id, file_type, asset_owner_id
+                      FROM lesson_files
+                      WHERE lesson_id = ? AND public_id IS NOT NULL`,
+                args: [lessonId],
+            })).rows;
+            if (existing.thumbnail_public_id) {
+                filesToCleanup.push({
+                    public_id: existing.thumbnail_public_id,
+                    asset_owner_id: existing.thumbnail_asset_owner_id,
+                    resource_type: 'image',
+                });
+            }
+            const cleanup = await enqueueCloudinaryCleanup(transaction, filesToCleanup);
+
+            for (const table of ['saved_materials', 'lesson_categories', 'lesson_stats', 'lesson_likes', 'lesson_files']) {
+                await transaction.execute({
+                    sql: `DELETE FROM ${table} WHERE lesson_id = ?`,
+                    args: [lessonId],
+                });
+            }
+            for (const table of ['lesson_schedule', 'live_sessions']) {
+                await transaction.execute({
+                    sql: `UPDATE ${table} SET lesson_id = NULL WHERE lesson_id = ?`,
+                    args: [lessonId],
+                });
+            }
+            await transaction.execute({
+                sql: 'DELETE FROM lessons WHERE id = ?',
+                args: [lessonId],
+            });
+            return {
+                status: 200,
+                body: {
+                    success: true,
+                    cleanup_pending: cleanup.queued,
+                    cleanup_manual: cleanup.skipped,
+                },
+            };
+        });
+
+        if (outcome.status === 200 && outcome.body.cleanup_pending) {
+            processCloudinaryCleanupJobs().catch(error => console.warn('Cloudinary cleanup:', error.message));
+        }
+        res.status(outcome.status).json(outcome.body);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { marketplaceAPI } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -148,6 +148,7 @@ export default function Marketplace() {
     const { user } = useAuth()
     const { language } = useLanguage()
     const navigate = useNavigate()
+    const [routeSearchParams, setRouteSearchParams] = useSearchParams()
     const L = (ru, kk) => language === 'kk' ? kk : ru
 
     const [lessons, setLessons] = useState([])
@@ -162,10 +163,17 @@ export default function Marketplace() {
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
-    const [tab, setTab] = useState('browse') // browse | purchased
+    const tab = routeSearchParams.get('tab') === 'purchased' ? 'purchased' : 'browse'
     const [purchased, setPurchased] = useState([])
     const [buySuccess, setBuySuccess] = useState(null)
-    const searchTimeout = useRef(null)
+    const marketplaceRequestRef = useRef(0)
+
+    const changeTab = useCallback(nextTab => {
+        const params = new URLSearchParams(routeSearchParams)
+        if (nextTab === 'purchased') params.set('tab', 'purchased')
+        else params.delete('tab')
+        setRouteSearchParams(params)
+    }, [routeSearchParams, setRouteSearchParams])
 
     const loadBalance = useCallback(async () => {
         try {
@@ -175,6 +183,7 @@ export default function Marketplace() {
     }, [])
 
     const loadLessons = useCallback(async (p = 1) => {
+        const requestId = ++marketplaceRequestRef.current
         setLoading(true)
         try {
             const params = { sort, page: p }
@@ -182,34 +191,44 @@ export default function Marketplace() {
             if (subject) params.subject = subject
             if (grade) params.grade = grade
             const d = await marketplaceAPI.browse(params)
-            setLessons(d.lessons || [])
-            setTotalPages(d.pages || 1)
-            setTotal(d.total || 0)
-            setPage(p)
+            if (requestId === marketplaceRequestRef.current) {
+                setLessons(d.lessons || [])
+                setTotalPages(d.pages || 1)
+                setTotal(d.total || 0)
+                setPage(p)
+            }
         } catch { /* silent */ }
-        setLoading(false)
+        if (requestId === marketplaceRequestRef.current) setLoading(false)
     }, [sort, search, subject, grade])
 
     const loadPurchased = useCallback(async () => {
+        const requestId = ++marketplaceRequestRef.current
         setLoading(true)
         try {
             const d = await marketplaceAPI.getMyPurchases()
-            setPurchased(d.lessons || [])
+            if (requestId === marketplaceRequestRef.current) setPurchased(d.lessons || [])
         } catch { /* silent */ }
-        setLoading(false)
+        if (requestId === marketplaceRequestRef.current) setLoading(false)
     }, [])
 
     useEffect(() => {
         loadBalance()
-        if (tab === 'browse') loadLessons(1)
-        else loadPurchased()
-    }, [tab, sort, subject, grade])
+    }, [loadBalance])
 
-    const handleSearch = (val) => {
-        setSearch(val)
-        clearTimeout(searchTimeout.current)
-        searchTimeout.current = setTimeout(() => loadLessons(1), 400)
-    }
+    useEffect(() => {
+        // Invalidate an in-flight response immediately; the replacement request
+        // is debounced only for text search.
+        marketplaceRequestRef.current += 1
+        setLoading(true)
+        const timer = window.setTimeout(() => {
+            if (tab === 'browse') loadLessons(1)
+            else loadPurchased()
+        }, tab === 'browse' && search ? 400 : 0)
+        return () => {
+            window.clearTimeout(timer)
+            marketplaceRequestRef.current += 1
+        }
+    }, [tab, loadLessons, loadPurchased, search])
 
     const handleBuy = async (lesson) => {
         if (!user) { navigate('/login'); return }
@@ -278,7 +297,7 @@ export default function Marketplace() {
                     { id: 'browse', label: L('Витрина', 'Витрина'), icon: <ShoppingBag size={15} /> },
                     { id: 'purchased', label: L('Мои покупки', 'Сатып алғандарым'), icon: <BookOpen size={15} /> },
                 ].map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={{
+                    <button key={t.id} aria-pressed={tab === t.id} onClick={() => changeTab(t.id)} style={{
                         display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
                         border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
                         background: tab === t.id ? 'white' : 'transparent',
@@ -297,7 +316,7 @@ export default function Marketplace() {
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20, alignItems: 'center' }}>
                         <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 320 }}>
                             <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-                            <input value={search} onChange={e => handleSearch(e.target.value)}
+                            <input value={search} onChange={e => setSearch(e.target.value)}
                                 placeholder={L('Поиск уроков...', 'Сабақтарды іздеу...')}
                                 style={{ width: '100%', padding: '9px 12px 9px 30px', border: '1px solid #e5e7eb', borderRadius: 9, fontSize: '0.875rem', outline: 'none', background: 'white', boxSizing: 'border-box', color: '#111827' }}
                                 onFocus={e => e.target.style.borderColor = '#245fb5'}
@@ -392,7 +411,7 @@ export default function Marketplace() {
                             <BookOpen size={48} color="#d1d5db" style={{ marginBottom: 12 }} />
                             <h3 style={{ margin: '0 0 8px', color: '#374151', fontWeight: 700 }}>{L('Нет купленных уроков', 'Сатып алынған сабақтар жоқ')}</h3>
                             <p style={{ margin: '0 0 20px', fontSize: '0.875rem' }}>{L('Найдите интересный урок в витрине', 'Витринадан қызықты сабақ табыңыз')}</p>
-                            <button onClick={() => setTab('browse')} style={{ padding: '10px 22px', background: '#245fb5', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
+                            <button onClick={() => changeTab('browse')} style={{ padding: '10px 22px', background: '#245fb5', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>
                                 {L('Перейти в витрину', 'Витринаға өту')}
                             </button>
                         </div>
@@ -404,7 +423,14 @@ export default function Marketplace() {
                                         {!lesson.thumbnail_url && <BookOpen size={22} color="white" />}
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: '0 0 3px', fontWeight: 700, fontSize: '0.875rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.title}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lesson.title}</p>
+                                            {Boolean(lesson.is_archived) && (
+                                                <span style={{ flexShrink: 0, padding: '2px 6px', borderRadius: 999, background: '#f3f4f6', color: '#6b7280', fontSize: '0.62rem', fontWeight: 700 }}>
+                                                    {L('Архив', 'Мұрағат')}
+                                                </span>
+                                            )}
+                                        </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                             <Avatar src={lesson.seller_avatar} name={lesson.seller_name} size={16} />
                                             <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{lesson.seller_name}</span>
@@ -415,7 +441,17 @@ export default function Marketplace() {
                                             )}
                                         </div>
                                     </div>
-                                    <CheckCircle size={18} color="#10b981" style={{ flexShrink: 0 }} />
+                                    <Link
+                                        to={`/lesson/${lesson.id}/present?source=purchased`}
+                                        aria-label={`${L('Открыть урок', 'Сабақты ашу')}: ${lesson.title}`}
+                                        style={{
+                                            flexShrink: 0, width: 36, height: 36, borderRadius: 10,
+                                            background: '#eff6ff', color: '#245fb5', textDecoration: 'none',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}
+                                    >
+                                        <ChevronRight size={18} aria-hidden="true" />
+                                    </Link>
                                 </div>
                             ))}
                         </div>

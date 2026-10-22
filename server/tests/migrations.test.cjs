@@ -27,6 +27,13 @@ test('legacy database upgrades without losing accounts or refilling spent balanc
         sql: "INSERT INTO game_rooms (code,teacher_id,title,questions,expires_at) VALUES (?,?,?,?,?)",
         args: ['ABC123', 1, 'Legacy arena', '[]', Date.now() + 3600000],
     });
+    await legacy.execute(`CREATE TABLE saved_materials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, lesson_id INTEGER,
+        title TEXT NOT NULL, type TEXT DEFAULT 'lesson', notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await legacy.execute("INSERT INTO saved_materials (user_id, lesson_id, title) VALUES (1, 77, 'Duplicate lesson')");
+    await legacy.execute("INSERT INTO saved_materials (user_id, lesson_id, title) VALUES (1, 77, 'Duplicate lesson')");
     legacy.close();
     const app = require('../index');
     const db = require('../db/database');
@@ -40,8 +47,19 @@ test('legacy database upgrades without losing accounts or refilling spent balanc
         assert.ok(columns.some(column => column.name === 'claim_token'));
         const gameColumns = await db.getAll('PRAGMA table_info(game_rooms)');
         assert.ok(gameColumns.some(column => column.name === 'mode'));
+        const lessonFileColumns = await db.getAll('PRAGMA table_info(lesson_files)');
+        assert.ok(lessonFileColumns.some(column => column.name === 'asset_owner_id'));
+        const lessonColumns = await db.getAll('PRAGMA table_info(lessons)');
+        assert.ok(lessonColumns.some(column => column.name === 'thumbnail_public_id'));
+        assert.ok(lessonColumns.some(column => column.name === 'thumbnail_asset_owner_id'));
+        assert.ok(await db.getOne("SELECT name FROM sqlite_master WHERE type='table' AND name='cloudinary_cleanup_jobs'"));
         const legacyRoom = await db.getOne("SELECT title,questions,mode FROM game_rooms WHERE code='ABC123'");
         assert.deepEqual(legacyRoom, { title: 'Legacy arena', questions: '[]', mode: 'arena' });
+        assert.equal((await db.getOne('SELECT COUNT(*) AS count FROM saved_materials WHERE user_id = 1 AND lesson_id = 77')).count, 1);
+        await assert.rejects(
+            db.runQuery("INSERT INTO saved_materials (user_id, lesson_id, title) VALUES (1, 77, 'Blocked duplicate')"),
+            /UNIQUE constraint failed/
+        );
         const child = spawnSync(process.execPath, ['-e', "const app=require('./server/index');app.ready().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)})"], {
             cwd: path.resolve(__dirname, '../..'), env: process.env, encoding: 'utf8', timeout: 10000,
         });

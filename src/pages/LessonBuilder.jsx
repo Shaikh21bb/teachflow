@@ -41,7 +41,7 @@ export default function LessonBuilderNew() {
         duration: templateDuration,
         description: templateDescription,
         content: '', file_type: 'text',
-        thumbnail_url: '', content_url: '', is_published: false
+        thumbnail_url: '', thumbnail_public_id: null, content_url: '', is_published: false
     })
 
     // Files state
@@ -111,7 +111,11 @@ export default function LessonBuilderNew() {
             const result = await uploadToCloudinary(file, (pct) => {
                 setUploadProgress(p => ({ ...p, [tempId]: pct }))
             })
-            setField('thumbnail_url', result.secure_url)
+            setForm(previous => ({
+                ...previous,
+                thumbnail_url: result.secure_url,
+                thumbnail_public_id: result.public_id || null,
+            }))
             showToast('Превью загружено!')
         } catch (e) {
             showToast('Не удалось загрузить превью: ' + e.message, 'error')

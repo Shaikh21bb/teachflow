@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS lessons (
     description TEXT,
     content TEXT,
     thumbnail_url TEXT,
+    thumbnail_public_id TEXT,
+    thumbnail_asset_owner_id INTEGER,
     content_url TEXT,
     file_type TEXT DEFAULT 'text',
     rating REAL DEFAULT 0,
@@ -69,10 +71,28 @@ CREATE TABLE IF NOT EXISTS lesson_files (
     file_size INTEGER DEFAULT 0,
     file_type TEXT,
     public_id TEXT,
+    asset_owner_id INTEGER,
     order_index INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS cloudinary_cleanup_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    public_id TEXT NOT NULL,
+    resource_type TEXT NOT NULL DEFAULT 'raw',
+    asset_owner_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    attempts INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    next_attempt_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(public_id, resource_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cloudinary_cleanup_due
+    ON cloudinary_cleanup_jobs(status, next_attempt_at);
 
 -- ══════════════════════════════════════════
 -- CATEGORIES
@@ -226,7 +246,7 @@ CREATE TABLE IF NOT EXISTS saved_materials (
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (lesson_id) REFERENCES lessons(id)
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS open_lessons (
@@ -326,6 +346,8 @@ CREATE INDEX IF NOT EXISTS idx_lessons_subject_grade ON lessons(subject, grade);
 CREATE INDEX IF NOT EXISTS idx_lessons_published ON lessons(is_published, is_archived);
 CREATE INDEX IF NOT EXISTS idx_lesson_files_lesson_id ON lesson_files(lesson_id);
 CREATE INDEX IF NOT EXISTS idx_lesson_stats_lesson_date ON lesson_stats(lesson_id, stat_date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_saved_materials_user_lesson_unique
+    ON saved_materials(user_id, lesson_id) WHERE lesson_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_integrations_user_type ON integrations(user_id, type);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_external_id ON transactions(external_id);

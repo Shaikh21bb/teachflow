@@ -108,7 +108,7 @@ router.get('/my', authenticateToken, async (req, res) => {
     try {
         const myId = req.user.userId;
         const lessons = await getAll(`
-            SELECT l.id, l.title, l.subject, l.grade, l.duration, l.thumbnail_url,
+            SELECT l.id, l.title, l.subject, l.grade, l.duration, l.thumbnail_url, l.is_archived,
                    l.views_count, mp.tokens_paid, mp.created_at as purchased_at,
                    u.name as seller_name,
                    COALESCE(tp.avatar_url, u.avatar_url) as seller_avatar
@@ -116,7 +116,7 @@ router.get('/my', authenticateToken, async (req, res) => {
             JOIN lessons l ON l.id = mp.lesson_id
             JOIN users u ON u.id = mp.seller_id
             LEFT JOIN teacher_profiles tp ON tp.teacher_id = u.id
-            WHERE mp.buyer_id = ? AND l.is_archived = 0
+            WHERE mp.buyer_id = ?
             ORDER BY mp.created_at DESC`, [myId]
         );
         res.json({ lessons });

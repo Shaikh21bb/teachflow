@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
-const { getDatabase, getOne, getAll, runQuery, SCHEMA_VERSION } = require('./db/database');
+const { getDatabase, getOne, getAll, runQuery, withTransaction, SCHEMA_VERSION } = require('./db/database');
 const { authLimiter, aiLimiter, generalLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -61,6 +61,8 @@ async function runMigrations() {
         `ALTER TABLE users ADD COLUMN avatar_url TEXT`,
         // v2 lesson columns
         `ALTER TABLE lessons ADD COLUMN thumbnail_url TEXT`,
+        `ALTER TABLE lessons ADD COLUMN thumbnail_public_id TEXT`,
+        `ALTER TABLE lessons ADD COLUMN thumbnail_asset_owner_id INTEGER`,
         `ALTER TABLE lessons ADD COLUMN content_url TEXT`,
         `ALTER TABLE lessons ADD COLUMN file_type TEXT DEFAULT 'text'`,
         `ALTER TABLE lessons ADD COLUMN views_count INTEGER DEFAULT 0`,
@@ -76,10 +78,27 @@ async function runMigrations() {
             file_size INTEGER DEFAULT 0,
             file_type TEXT,
             public_id TEXT,
+            asset_owner_id INTEGER,
             order_index INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
         )`,
+        `ALTER TABLE lesson_files ADD COLUMN asset_owner_id INTEGER`,
+        `CREATE TABLE IF NOT EXISTS cloudinary_cleanup_jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            public_id TEXT NOT NULL,
+            resource_type TEXT NOT NULL DEFAULT 'raw',
+            asset_owner_id INTEGER NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            last_error TEXT,
+            next_attempt_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(public_id, resource_type)
+        )`,
+        `CREATE INDEX IF NOT EXISTS idx_cloudinary_cleanup_due
+            ON cloudinary_cleanup_jobs(status, next_attempt_at)`,
         `CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -489,6 +508,32 @@ async function runMigrations() {
             }
         }
     }
+    // Dedupe and enforce uniqueness under one write lock so an older rolling-deploy
+    // instance cannot insert another duplicate between the two statements.
+    await withTransaction(async transaction => {
+        // Only backfill provenance when the historical public_id already proves
+        // that it lives in the lesson owner's signed upload folder.
+        await transaction.execute(`UPDATE lesson_files
+            SET asset_owner_id = (
+                SELECT lessons.user_id FROM lessons WHERE lessons.id = lesson_files.lesson_id
+            )
+            WHERE asset_owner_id IS NULL
+              AND public_id IS NOT NULL
+              AND public_id LIKE 'urpaq-lessons/' || (
+                  SELECT lessons.user_id FROM lessons WHERE lessons.id = lesson_files.lesson_id
+              ) || '/%'`);
+        await transaction.execute(`DELETE FROM saved_materials
+            WHERE lesson_id IS NOT NULL
+              AND id NOT IN (
+                  SELECT MIN(id)
+                  FROM saved_materials
+                  WHERE lesson_id IS NOT NULL
+                  GROUP BY user_id, lesson_id
+              )`);
+        await transaction.execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_saved_materials_user_lesson_unique
+            ON saved_materials(user_id, lesson_id)
+            WHERE lesson_id IS NOT NULL`);
+    });
     await runQuery('INSERT OR IGNORE INTO app_schema_versions (version) VALUES (?)', [SCHEMA_VERSION]);
     console.log('✅ Migrations complete');
 }
@@ -542,6 +587,7 @@ async function initializeApp() {
     await getDatabase();
     await runMigrations();
     await seedAdmins();
+    require('./utils/cloudinaryCleanup').startCloudinaryCleanupWorker();
 
     // Import routes
     const lessonsRouter = require('./routes/lessons');
@@ -581,7 +627,9 @@ async function initializeApp() {
         const apiSecret = process.env.CLOUDINARY_API_SECRET;
         const apiKey = process.env.CLOUDINARY_API_KEY;
         const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-        const folder = 'urpaq-lessons';
+        // The user-scoped path is also the server-side provenance check used
+        // before removing an uploaded asset.
+        const folder = `urpaq-lessons/${req.user.userId}`;
 
         if (!apiSecret || !apiKey || !cloudName) {
             return res.status(503).json({ error: 'Cloudinary не настроен на сервере' });

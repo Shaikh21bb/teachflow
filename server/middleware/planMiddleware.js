@@ -12,12 +12,21 @@ const PLAN_LIMITS = {
         classes: 10,
         ai_credits: PLAN_CREDIT_LIMITS.pro
     },
+    premium: {
+        lessons: 9999, // legacy alias for the pro plan
+        classes: 10,
+        ai_credits: PLAN_CREDIT_LIMITS.premium
+    },
     school: {
         lessons: 9999,
         classes: 9999,
         ai_credits: PLAN_CREDIT_LIMITS.school
     }
 };
+
+function getPlanLimits(plan) {
+    return PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+}
 
 async function checkLessonLimit(req, res, next) {
     try {
@@ -31,7 +40,7 @@ async function checkLessonLimit(req, res, next) {
         );
         const plan = row?.plan || 'free';
         const count = Number(row?.count || 0);
-        const limit = PLAN_LIMITS[plan]?.lessons ?? 999999;
+        const limit = getPlanLimits(plan).lessons;
         if (count >= limit) {
             return res.status(403).json({ error: 'Превышен лимит уроков', message: `На тарифе ${plan} можно создать не более ${limit} уроков.`, limit_reached: true, code: 'LIMIT_REACHED_LESSONS' });
         }
@@ -50,7 +59,7 @@ async function checkClassLimit(req, res, next) {
         );
         const plan = row?.plan || 'free';
         const count = Number(row?.count || 0);
-        const limit = PLAN_LIMITS[plan]?.classes ?? 999999;
+        const limit = getPlanLimits(plan).classes;
         if (count >= limit) {
             return res.status(403).json({ error: 'Превышен лимит классов', message: `На тарифе ${plan} можно создать не более ${limit} классов.`, limit_reached: true, code: 'LIMIT_REACHED_CLASSES' });
         }
@@ -148,4 +157,5 @@ module.exports = {
     PLAN_CREDIT_LIMITS,
     STARTER_CREDITS,
     PLAN_LIMITS,
+    getPlanLimits,
 };

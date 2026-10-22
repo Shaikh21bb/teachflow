@@ -14,6 +14,7 @@ const CREDIT_COSTS = {
 const PLAN_CREDIT_LIMITS = {
     free: STARTER_CREDITS,
     pro: 100,
+    premium: 100,
     school: 500
 };
 

@@ -1,15 +1,33 @@
 const { directory } = require('./setup.cjs');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const { rmSync } = require('node:fs');
 const jwt = require('jsonwebtoken');
 const database = require('../db/database');
+const { buildDestroyPayload, isOwnedLessonAsset } = require('../utils/cloudinaryCleanup');
 const providers = require('../utils/aiProviders');
 let aiResponse = 'A valid lesson plan';
 providers.chatWithAI = async () => { if (aiResponse instanceof Error) throw aiResponse; return aiResponse; };
 providers.getAvailableProviders = () => ({ primary: 'none' });
 const app = require('../index');
 let server, base, teacher, other, classId, studentToken, studentId, quizId, assignmentId, lessonId;
+
+test('Cloudinary cleanup only accepts assets from the lesson owner upload path', () => {
+    assert.equal(isOwnedLessonAsset('urpaq-lessons/42/file-name', 42), true);
+    assert.equal(isOwnedLessonAsset('urpaq-lessons/7/file-name', 42), false);
+    assert.equal(isOwnedLessonAsset('urpaq-lessons/file-name', 42), false);
+    assert.equal(isOwnedLessonAsset('urpaq-lessons/42/../7/file-name', 42), false);
+    assert.equal(isOwnedLessonAsset('urpaq-lessons/42//file-name', 42), false);
+    const destroyPayload = buildDestroyPayload('urpaq-lessons/42/file-name', 12345, 'secret');
+    assert.equal(destroyPayload.invalidate, 'true');
+    assert.equal(
+        destroyPayload.signature,
+        crypto.createHash('sha1')
+            .update('invalidate=true&public_id=urpaq-lessons/42/file-name&timestamp=12345secret')
+            .digest('hex')
+    );
+});
 
 async function request(path, token, method = 'GET', body) {
     const response = await fetch(base + path, {
@@ -79,9 +97,322 @@ test('lessons retain slides, previews, attachments, and access rules', async () 
     const file = await request('/lesson-files', teacher.token, 'POST', { lesson_id: lessonId, file_url: preview, file_name: 'preview.jpg', file_type: 'image' });
     assert.equal(file.status, 201);
     assert.ok(file.body.id > 0);
+    const untrustedFile = await request('/lesson-files', teacher.token, 'POST', {
+        lesson_id: lessonId,
+        file_url: 'https://example.test/untrusted.pdf',
+        file_name: 'untrusted.pdf',
+        file_type: 'pdf',
+        public_id: 'urpaq-lessons/someone-else/file',
+    });
+    assert.equal(untrustedFile.status, 400);
+    assert.equal(untrustedFile.body.code, 'INVALID_ASSET_PROVENANCE');
     assert.equal((await request(`/lessons/${lessonId}`, teacher.token)).body.files.length, 1);
+    assert.equal((await request(`/lesson-files/${lessonId}`, other.token)).status, 403);
     assert.equal((await request('/cloudinary/signature', teacher.token)).status, 503);
     assert.equal((await request('/cloudinary/signature')).status, 401);
+});
+
+test('concurrent lesson metadata changes keep thumbnail cleanup and like totals consistent', async () => {
+    const firstThumbnail = `urpaq-lessons/${teacher.user.id}/thumbnail-a-${process.pid}`;
+    const thumbnailB = `urpaq-lessons/${teacher.user.id}/thumbnail-b-${process.pid}`;
+    const thumbnailC = `urpaq-lessons/${teacher.user.id}/thumbnail-c-${process.pid}`;
+    const firstUpdate = await request(`/lessons/${lessonId}`, teacher.token, 'PUT', {
+        thumbnail_url: 'https://example.test/thumbnail-a.jpg',
+        thumbnail_public_id: firstThumbnail,
+    });
+    assert.equal(firstUpdate.status, 200, JSON.stringify(firstUpdate.body));
+
+    const replacements = await Promise.all([
+        request(`/lessons/${lessonId}`, teacher.token, 'PUT', {
+            thumbnail_url: 'https://example.test/thumbnail-b.jpg',
+            thumbnail_public_id: thumbnailB,
+        }),
+        request(`/lessons/${lessonId}`, teacher.token, 'PUT', {
+            thumbnail_url: 'https://example.test/thumbnail-c.jpg',
+            thumbnail_public_id: thumbnailC,
+        }),
+    ]);
+    assert.ok(replacements.every(response => response.status === 200), JSON.stringify(replacements));
+    const finalLesson = await database.getOne('SELECT thumbnail_public_id FROM lessons WHERE id = ?', [lessonId]);
+    const replacedIntermediate = finalLesson.thumbnail_public_id === thumbnailB ? thumbnailC : thumbnailB;
+    assert.ok(await database.getOne(
+        'SELECT id FROM cloudinary_cleanup_jobs WHERE public_id = ? AND resource_type = ?',
+        [firstThumbnail, 'image']
+    ));
+    assert.ok(await database.getOne(
+        'SELECT id FROM cloudinary_cleanup_jobs WHERE public_id = ? AND resource_type = ?',
+        [replacedIntermediate, 'image']
+    ));
+
+    const toggles = await Promise.all([
+        request(`/lessons/${lessonId}/like`, other.token, 'POST', {}),
+        request(`/lessons/${lessonId}/like`, other.token, 'POST', {}),
+    ]);
+    assert.ok(toggles.every(response => response.status === 200), JSON.stringify(toggles));
+    const likeRowCount = Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lesson_likes WHERE lesson_id = ?',
+        [lessonId]
+    )).count);
+    const likeTotal = Number((await database.getOne(
+        'SELECT likes FROM lessons WHERE id = ?',
+        [lessonId]
+    )).likes);
+    assert.equal(likeTotal, likeRowCount);
+});
+
+test('lesson deletion requires ownership and cleans references without erasing schedule history', async () => {
+    const title = `Delete contract lesson ${process.pid}`;
+    const created = await request('/lessons', teacher.token, 'POST', {
+        title,
+        subject: 'Biology',
+        grade: 7,
+        is_published: true,
+        thumbnail_url: 'https://example.test/delete-thumbnail.jpg',
+        thumbnail_public_id: `urpaq-lessons/${teacher.user.id}/delete-thumbnail-${process.pid}`,
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const deletableId = created.body.id;
+
+    const file = await request('/lesson-files', teacher.token, 'POST', {
+        lesson_id: deletableId,
+        file_url: 'https://example.test/delete-contract.pdf',
+        file_name: 'delete-contract.pdf',
+        file_type: 'pdf',
+        public_id: `urpaq-lessons/${teacher.user.id}/delete-contract-${process.pid}`,
+    });
+    assert.equal(file.status, 201, JSON.stringify(file.body));
+    assert.equal((await request(`/lessons/${deletableId}/like`, other.token, 'POST', {})).status, 200);
+    assert.equal((await request(`/lessons/${deletableId}/save`, other.token, 'POST', {})).body.saved, true);
+    await database.runQuery(
+        'INSERT INTO lesson_categories (lesson_id, category_id) VALUES (?, 1)',
+        [deletableId]
+    );
+    await database.runQuery(
+        'INSERT INTO lesson_stats (lesson_id, stat_date, views, downloads) VALUES (?, ?, 3, 1)',
+        [deletableId, '2099-01-01']
+    );
+    const schedule = await database.runQuery(
+        `INSERT INTO lesson_schedule
+            (user_id, lesson_id, title, day_of_week, start_time)
+         VALUES (?, ?, ?, 1, '09:00')`,
+        [teacher.user.id, deletableId, title]
+    );
+    const scheduleId = Number(schedule.lastInsertRowid);
+    const liveCode = `DL${String(deletableId).padStart(4, '0')}`;
+    const live = await database.runQuery(
+        'INSERT INTO live_sessions (code, lesson_id, teacher_id) VALUES (?, ?, ?)',
+        [liveCode, deletableId, teacher.user.id]
+    );
+    const liveId = Number(live.lastInsertRowid);
+
+    assert.equal((await request(`/lessons/${deletableId}`, null, 'DELETE')).status, 401);
+    assert.equal((await request(`/lessons/${deletableId}`, other.token, 'DELETE')).status, 403);
+    assert.ok(await database.getOne('SELECT id FROM lessons WHERE id = ?', [deletableId]));
+    assert.ok(await database.getOne('SELECT id FROM saved_materials WHERE lesson_id = ?', [deletableId]));
+
+    const removed = await request(`/lessons/${deletableId}`, teacher.token, 'DELETE');
+    assert.equal(removed.status, 200, JSON.stringify(removed.body));
+    assert.equal(removed.body.success, true);
+    assert.equal(removed.body.cleanup_pending, 2);
+    assert.equal((await request(`/lessons/${deletableId}`, teacher.token)).status, 404);
+    assert.equal((await request(`/lessons/${deletableId}`, teacher.token, 'DELETE')).status, 404);
+    assert.equal(await database.getOne('SELECT id FROM lessons WHERE id = ?', [deletableId]), null);
+    for (const table of ['lesson_files', 'lesson_likes', 'saved_materials', 'lesson_categories', 'lesson_stats']) {
+        assert.equal(
+            Number((await database.getOne(`SELECT COUNT(*) AS count FROM ${table} WHERE lesson_id = ?`, [deletableId])).count),
+            0,
+            `${table} should not retain lesson ${deletableId}`
+        );
+    }
+    assert.equal((await database.getOne('SELECT lesson_id FROM lesson_schedule WHERE id = ?', [scheduleId])).lesson_id, null);
+    assert.equal((await database.getOne('SELECT lesson_id FROM live_sessions WHERE id = ?', [liveId])).lesson_id, null);
+    assert.ok(!(await request('/lessons', teacher.token)).body.some(lesson => lesson.id === deletableId));
+    const cleanupJob = await database.getOne(
+        'SELECT status, attempts, asset_owner_id FROM cloudinary_cleanup_jobs WHERE public_id = ?',
+        [`urpaq-lessons/${teacher.user.id}/delete-contract-${process.pid}`]
+    );
+    assert.ok(['pending', 'processing'].includes(cleanupJob.status));
+    assert.ok([0, 1].includes(Number(cleanupJob.attempts)));
+    assert.equal(Number(cleanupJob.asset_owner_id), teacher.user.id);
+    const reattachDuringCleanup = await request('/lesson-files', teacher.token, 'POST', {
+        lesson_id: lessonId,
+        file_url: 'https://example.test/delete-contract.pdf',
+        file_name: 'delete-contract.pdf',
+        file_type: 'pdf',
+        public_id: `urpaq-lessons/${teacher.user.id}/delete-contract-${process.pid}`,
+    });
+    assert.equal(reattachDuringCleanup.status, 409, JSON.stringify(reattachDuringCleanup.body));
+    assert.equal(reattachDuringCleanup.body.code, 'ASSET_CLEANUP_IN_PROGRESS');
+    assert.ok(await database.getOne(
+        'SELECT id FROM cloudinary_cleanup_jobs WHERE public_id = ?',
+        [`urpaq-lessons/${teacher.user.id}/delete-thumbnail-${process.pid}`]
+    ));
+    await database.runQuery('DELETE FROM lesson_schedule WHERE id = ?', [scheduleId]);
+    await database.runQuery('DELETE FROM live_sessions WHERE id = ?', [liveId]);
+});
+
+test('sold lessons reject hard deletion and retain purchase access', async () => {
+    const created = await request('/lessons', teacher.token, 'POST', {
+        title: `Sold deletion guard ${process.pid}`,
+        is_published: true,
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const soldLessonId = created.body.id;
+    await database.runQuery(
+        'UPDATE lessons SET for_sale = 1, price_tokens = 20 WHERE id = ?',
+        [soldLessonId]
+    );
+    await database.runQuery(
+        `INSERT INTO marketplace_purchases
+            (buyer_id, seller_id, lesson_id, tokens_paid)
+         VALUES (?, ?, ?, 20)`,
+        [other.user.id, teacher.user.id, soldLessonId]
+    );
+    const attachment = await request('/lesson-files', teacher.token, 'POST', {
+        lesson_id: soldLessonId,
+        file_url: 'https://example.test/purchased-lesson.pdf',
+        file_name: 'purchased-lesson.pdf',
+        file_type: 'pdf',
+    });
+    assert.equal(attachment.status, 201, JSON.stringify(attachment.body));
+
+    const blocked = await request(`/lessons/${soldLessonId}`, teacher.token, 'DELETE');
+    assert.equal(blocked.status, 409, JSON.stringify(blocked.body));
+    assert.ok(await database.getOne('SELECT id FROM lessons WHERE id = ?', [soldLessonId]));
+    assert.ok(await database.getOne('SELECT id FROM marketplace_purchases WHERE lesson_id = ?', [soldLessonId]));
+    assert.equal((await request(`/lessons/${soldLessonId}`, other.token)).status, 200);
+    assert.equal((await request(`/lesson-files/${soldLessonId}`, other.token)).body.length, 1);
+    const archived = await request(`/lessons/${soldLessonId}/archive`, teacher.token, 'PATCH', {});
+    assert.equal(archived.status, 200, JSON.stringify(archived.body));
+    assert.equal(archived.body.is_archived, 1);
+    assert.equal((await request(`/lessons/${soldLessonId}`, other.token)).status, 200);
+    assert.equal((await request(`/lesson-files/${soldLessonId}`, other.token)).body.length, 1);
+    const purchased = await request('/marketplace/my', other.token);
+    assert.ok(purchased.body.lessons.some(lesson => lesson.id === soldLessonId && lesson.is_archived === 1));
+
+    await database.runQuery('DELETE FROM marketplace_purchases WHERE lesson_id = ?', [soldLessonId]);
+    await database.runQuery('DELETE FROM lessons WHERE id = ?', [soldLessonId]);
+});
+
+test('lesson creation and duplication copy files safely and enforce the free-plan limit atomically', async () => {
+    const source = await request('/lessons', other.token, 'POST', {
+        title: `Duplicate source ${process.pid}`,
+        subject: 'Physics',
+        grade: 9,
+        thumbnail_url: 'https://example.test/duplicate-thumbnail.jpg',
+        thumbnail_public_id: `urpaq-lessons/${other.user.id}/duplicate-thumbnail-${process.pid}`,
+    });
+    assert.equal(source.status, 201, JSON.stringify(source.body));
+    const sourceId = source.body.id;
+    for (const [index, name] of ['notes.pdf', 'diagram.png'].entries()) {
+        const attached = await request('/lesson-files', other.token, 'POST', {
+            lesson_id: sourceId,
+            file_url: `https://example.test/${name}`,
+            file_name: name,
+            file_type: name.endsWith('.pdf') ? 'pdf' : 'image',
+            public_id: `urpaq-lessons/${other.user.id}/duplicate-${process.pid}-${index}`,
+            order_index: index,
+        });
+        assert.equal(attached.status, 201, JSON.stringify(attached.body));
+    }
+
+    const duplicated = await request(`/lessons/${sourceId}/duplicate`, other.token, 'POST', {});
+    assert.equal(duplicated.status, 201, JSON.stringify(duplicated.body));
+    assert.equal(duplicated.body.thumbnail_public_id, `urpaq-lessons/${other.user.id}/duplicate-thumbnail-${process.pid}`);
+    assert.equal(Number(duplicated.body.thumbnail_asset_owner_id), other.user.id);
+    const copiedFiles = await database.getAll(
+        `SELECT file_name, file_url, file_type, public_id, asset_owner_id, order_index
+         FROM lesson_files WHERE lesson_id = ? ORDER BY order_index`,
+        [duplicated.body.id]
+    );
+    assert.deepEqual(
+        copiedFiles.map(file => ({
+            file_name: file.file_name,
+            file_url: file.file_url,
+            file_type: file.file_type,
+            public_id: file.public_id,
+            asset_owner_id: Number(file.asset_owner_id),
+            order_index: Number(file.order_index),
+        })),
+        [
+            { file_name: 'notes.pdf', file_url: 'https://example.test/notes.pdf', file_type: 'pdf', public_id: `urpaq-lessons/${other.user.id}/duplicate-${process.pid}-0`, asset_owner_id: other.user.id, order_index: 0 },
+            { file_name: 'diagram.png', file_url: 'https://example.test/diagram.png', file_type: 'image', public_id: `urpaq-lessons/${other.user.id}/duplicate-${process.pid}-1`, asset_owner_id: other.user.id, order_index: 1 },
+        ]
+    );
+
+    const currentCount = Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lessons WHERE user_id = ? AND is_archived = 0',
+        [other.user.id]
+    )).count);
+    for (let index = currentCount; index < 4; index += 1) {
+        await database.runQuery(
+            'INSERT INTO lessons (title, user_id) VALUES (?, ?)',
+            [`Limit filler ${process.pid}-${index}`, other.user.id]
+        );
+    }
+    const beforeParallelDuplicate = Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lessons WHERE user_id = ? AND is_archived = 0',
+        [other.user.id]
+    )).count);
+    assert.equal(beforeParallelDuplicate, 4);
+    const parallel = await Promise.all([
+        request(`/lessons/${sourceId}/duplicate`, other.token, 'POST', {}),
+        request(`/lessons/${sourceId}/duplicate`, other.token, 'POST', {}),
+    ]);
+    assert.deepEqual(parallel.map(result => result.status).sort(), [201, 403]);
+    assert.equal(parallel.find(result => result.status === 403).body.code, 'LIMIT_REACHED_LESSONS');
+    assert.equal(Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lessons WHERE user_id = ? AND is_archived = 0',
+        [other.user.id]
+    )).count), 5);
+
+    const blocked = await request(`/lessons/${sourceId}/duplicate`, other.token, 'POST', {});
+    assert.equal(blocked.status, 403, JSON.stringify(blocked.body));
+    assert.equal(blocked.body.code, 'LIMIT_REACHED_LESSONS');
+    assert.equal(Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lessons WHERE user_id = ? AND is_archived = 0',
+        [other.user.id]
+    )).count), 5);
+
+    await database.runQuery('DELETE FROM lessons WHERE user_id = ?', [other.user.id]);
+    for (let index = 0; index < 4; index += 1) {
+        await database.runQuery(
+            'INSERT INTO lessons (title, user_id) VALUES (?, ?)',
+            [`Create limit filler ${process.pid}-${index}`, other.user.id]
+        );
+    }
+    const parallelCreates = await Promise.all([
+        request('/lessons', other.token, 'POST', { title: `Parallel create A ${process.pid}` }),
+        request('/lessons', other.token, 'POST', { title: `Parallel create B ${process.pid}` }),
+    ]);
+    assert.deepEqual(parallelCreates.map(result => result.status).sort(), [201, 403]);
+    assert.equal(Number((await database.getOne(
+        'SELECT COUNT(*) AS count FROM lessons WHERE user_id = ? AND is_archived = 0',
+        [other.user.id]
+    )).count), 5);
+    await database.runQuery('DELETE FROM lessons WHERE user_id = ?', [other.user.id]);
+});
+
+test('parallel share requests return one durable lesson URL', async () => {
+    const created = await request('/lessons', teacher.token, 'POST', {
+        title: `Parallel share ${process.pid}`,
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+
+    const shares = await Promise.all([
+        request(`/lessons/${created.body.id}/share`, teacher.token, 'POST', {}),
+        request(`/lessons/${created.body.id}/share`, teacher.token, 'POST', {}),
+    ]);
+    assert.deepEqual(shares.map(result => result.status), [200, 200]);
+    assert.equal(shares[0].body.share_url, shares[1].body.share_url);
+
+    const persisted = await database.getOne(
+        'SELECT share_token FROM lessons WHERE id = ?',
+        [created.body.id]
+    );
+    assert.ok(persisted.share_token);
+    assert.match(shares[0].body.share_url, new RegExp(`share_token=${persisted.share_token}$`));
+    await database.runQuery('DELETE FROM lessons WHERE id = ?', [created.body.id]);
 });
 
 test('AI charges the last credit correctly and refunds a provider failure', async () => {

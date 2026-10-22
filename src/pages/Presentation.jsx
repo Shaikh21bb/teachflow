@@ -8,6 +8,7 @@ import {
     RotateCcw, ArrowLeft, Radio, Copy, StopCircle
 } from 'lucide-react'
 import { lessonsAPI, lessonFilesAPI, liveAPI, API_BASE } from '../api'
+import { useAuth } from '../contexts/AuthContext'
 import { TrophyIcon, ObjectivesIcon, HomeworkIcon, SummaryIcon, ExampleIcon, LiveDotIcon, QrCodeIcon } from '../components/Icons'
 
 // ─── 5 Presentation Themes ─────────────────────────────────
@@ -227,13 +228,16 @@ function SlideThumbnail({ slide, index, isCurrent, onClick, theme }) {
 export default function Presentation() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const { user } = useAuth()
     const [searchParams] = useSearchParams()
+    const isPurchasedView = searchParams.get('source') === 'purchased'
+    const requestedExitPath = isPurchasedView ? '/marketplace?tab=purchased' : '/my-lessons'
     const [lesson, setLesson] = useState(null)
     const [slides, setSlides] = useState([])
     const [loading, setLoading] = useState(true)
     const [currentSlide, setCurrentSlide] = useState(0)
     const [isFullscreen, setIsFullscreen] = useState(false)
-    const [showSidebar, setShowSidebar] = useState(true)
+    const [showSidebar, setShowSidebar] = useState(() => typeof window === 'undefined' || window.innerWidth > 768)
     const [showNotes, setShowNotes] = useState(false)
     const [theme, setTheme] = useState('dark')
     const [showThemePicker, setShowThemePicker] = useState(false)
@@ -249,6 +253,11 @@ export default function Presentation() {
     const [codeCopied, setCodeCopied] = useState(false)
     const liveStatsInterval = useRef(null)
     const liveEventSource = useRef(null)
+    const canManageLesson = Boolean(lesson && user && (
+        user.role === 'admin' || String(lesson.user_id) === String(user.id)
+    ))
+    const returnsToPurchases = isPurchasedView || Boolean(lesson && !canManageLesson)
+    const exitPath = returnsToPurchases ? '/marketplace?tab=purchased' : requestedExitPath
 
     useEffect(() => {
         async function fetchData() {
@@ -275,20 +284,20 @@ export default function Presentation() {
             } catch (err) {
                 console.error(err)
                 alert('Ошибка загрузки урока')
-                navigate('/my-lessons')
+                navigate(requestedExitPath)
             } finally {
                 setLoading(false)
             }
         }
         fetchData()
-    }, [id, navigate])
+    }, [id, navigate, requestedExitPath])
 
     // Auto-start live session if ?live=true
     useEffect(() => {
-        if (searchParams.get('live') === 'true' && lesson && !liveSession) {
+        if (canManageLesson && searchParams.get('live') === 'true' && lesson && !liveSession) {
             startLiveSession()
         }
-    }, [lesson])
+    }, [canManageLesson, lesson])
 
     // Cleanup live on unmount
     useEffect(() => {
@@ -373,14 +382,14 @@ export default function Presentation() {
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowRight' || e.key === 'Space') nextSlide()
             if (e.key === 'ArrowLeft') prevSlide()
-            if (e.key === 'Escape') navigate('/my-lessons')
+            if (e.key === 'Escape') navigate(exitPath)
             if (e.key === 'f' || e.key === 'F') handleFullscreen()
             if (e.key === 'n' || e.key === 'N') setShowNotes(v => !v)
             if (e.key === 's' || e.key === 'S') setShowSidebar(v => !v)
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [currentSlide, slides.length])
+    }, [currentSlide, exitPath, navigate, slides.length])
 
     const nextSlide = () => setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1))
     const prevSlide = () => setCurrentSlide(prev => Math.max(prev - 1, 0))
@@ -420,7 +429,7 @@ export default function Presentation() {
     const isLight = theme === 'light'
 
     return (
-        <div style={{ 
+        <div className="presentation-root" style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
             background: T.stageBg,
             color: T.text,
@@ -429,7 +438,7 @@ export default function Presentation() {
         }}>
 
             {/* ── TOP BAR ── */}
-            <div style={{ 
+            <div className="presentation-topbar" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 20px', 
                 background: T.topbar,
@@ -438,8 +447,8 @@ export default function Presentation() {
                 zIndex: 10, gap: '16px', flexShrink: 0
             }}>
                 {/* Left: Close + Title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <button onClick={() => navigate('/my-lessons')} title="Закрыть (Esc)" style={{
+                <div className="presentation-heading" style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                    <button onClick={() => navigate(exitPath)} title="Закрыть (Esc)" style={{
                         background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)',
                         border: 'none', color: T.subtext,
                         width: '36px', height: '36px', borderRadius: '10px', display: 'flex',
@@ -471,7 +480,7 @@ export default function Presentation() {
                 </div>
 
                 {/* Center: slide counter */}
-                <div style={{ 
+                <div className="presentation-counter" style={{
                     background: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)',
                     borderRadius: '10px', padding: '6px 16px', fontSize: '0.85rem', fontWeight: 600,
                     color: T.subtext, whiteSpace: 'nowrap', flexShrink: 0
@@ -480,11 +489,12 @@ export default function Presentation() {
                 </div>
 
                 {/* Right: Theme + Timer + Controls */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                <div className="presentation-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
                     {/* Live button */}
-                    {!liveSession ? (
+                    {canManageLesson && (!liveSession ? (
                         <button
+                            className="presentation-live"
                             onClick={startLiveSession}
                             disabled={liveLoading}
                             title="Запустить Live-сессию"
@@ -504,6 +514,7 @@ export default function Presentation() {
                         </button>
                     ) : (
                         <button
+                            className="presentation-live"
                             onClick={() => setShowLiveModal(v => !v)}
                             title="Открыть Live-панель"
                             style={{
@@ -518,7 +529,7 @@ export default function Presentation() {
                             <LiveDotIcon size={16} color="#ef4444" />
                             Live · {liveParticipants}
                         </button>
-                    )}
+                    ))}
 
                     {/* Theme picker */}
                     <div style={{ position: 'relative' }}>
@@ -570,7 +581,7 @@ export default function Presentation() {
                     </div>
 
                     {/* Timer */}
-                    <div style={{ 
+                    <div className="presentation-timer" style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
                         background: running ? `${T.accent}15` : (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'),
                         border: `1px solid ${running ? T.accent + '40' : (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)')}`,
@@ -735,10 +746,10 @@ export default function Presentation() {
                 )}
 
                 {/* ── SLIDE STAGE ── */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: T.stageBg }}>
+                    <div className="presentation-stage" style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', background: T.stageBg }}>
                     
                     {/* Slide */}
-                    <div style={{
+                    <div className="presentation-slide" style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         padding: '40px', position: 'relative', overflow: 'auto'
                     }}>
@@ -851,7 +862,7 @@ export default function Presentation() {
                             {slide.type === 'infographic' && (
                                 <div style={{ width: '100%', maxWidth: '860px' }}>
                                     <h2 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: '0 0 32px', color: T.text, textAlign: 'center' }}>{slide.title}</h2>
-                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.items?.length || 2, 3)}, 1fr)`, gap: '16px' }}>
+                                    <div className="presentation-infographic-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.items?.length || 2, 3)}, 1fr)`, gap: '16px' }}>
                                         {(slide.items || []).map((item, i) => (
                                             <div key={i} style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '16px', padding: '24px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                                 <div style={{ fontSize: '2.5rem', lineHeight: 1 }}>{item.icon || '📊'}</div>
@@ -883,11 +894,11 @@ export default function Presentation() {
                             {slide.type === 'statistics' && (
                                 <div style={{ width: '100%', maxWidth: '860px' }}>
                                     <h2 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: '0 0 32px', color: T.text, textAlign: 'center' }}>{slide.title}</h2>
-                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.stats?.length || 2, 4)}, 1fr)`, gap: '20px' }}>
+                                    <div className="presentation-statistics-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slide.stats?.length || 2, 4)}, 1fr)`, gap: '20px' }}>
                                         {(slide.stats || []).map((stat, i) => (
-                                            <div key={i} style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '20px', padding: '28px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                                            <div className="presentation-stat-card" key={i} style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: '20px', padding: '28px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
                                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg,${T.accent},${T.accent}80)` }} />
-                                                <div style={{ fontWeight: 900, fontSize: 'clamp(2rem,5vw,3.5rem)', color: T.accent, lineHeight: 1, marginBottom: '8px' }}>{stat.value}</div>
+                                                <div className="presentation-stat-value" style={{ fontWeight: 900, fontSize: 'clamp(2rem,5vw,3.5rem)', color: T.accent, lineHeight: 1, marginBottom: '8px' }}>{stat.value}</div>
                                                 <div style={{ fontSize: '0.9rem', color: T.subtext, lineHeight: 1.4 }}>{stat.label}</div>
                                             </div>
                                         ))}
@@ -1048,8 +1059,8 @@ export default function Presentation() {
                                         <p style={{ fontSize: '1.3rem', color: T.subtext, margin: 0 }}>{slide.subtitle}</p>
                                     </div>
                                     <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        <button onClick={() => navigate('/my-lessons')} style={{ padding: '14px 32px', background: `linear-gradient(135deg,${T.accent},${T.accent}cc)`, color: 'white', border: 'none', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 24px ${T.accentGlow}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <ArrowLeft size={18} /> Вернуться к урокам
+                                        <button onClick={() => navigate(exitPath)} style={{ padding: '14px 32px', background: `linear-gradient(135deg,${T.accent},${T.accent}cc)`, color: 'white', border: 'none', borderRadius: '14px', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', boxShadow: `0 8px 24px ${T.accentGlow}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <ArrowLeft size={18} /> {returnsToPurchases ? 'Вернуться к покупкам' : 'Вернуться к урокам'}
                                         </button>
                                         <button onClick={() => { setCurrentSlide(0); setPollAnswers({}) }} style={{ padding: '14px 32px', background: T.card, color: T.text, border: `1px solid ${T.cardBorder}`, borderRadius: '14px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <RotateCcw size={18} /> Начать заново
@@ -1106,7 +1117,7 @@ export default function Presentation() {
                                     ОТВЕТЫ УЧЕНИКОВ — {liveStats.total || 0} из {liveParticipants}
                                 </span>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                            <div className="presentation-live-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                                 {Object.entries(liveStats.percentages || {}).map(([label, pct]) => {
                                     const isCorrect = liveStats.correct === label
                                     const barColor = isCorrect ? '#10b981' : T.accent
@@ -1168,7 +1179,7 @@ export default function Presentation() {
             </div>
 
             {/* ── BOTTOM KEYBOARD HINTS ── */}
-            <div style={{
+            <div className="presentation-shortcuts" style={{
                 display: 'flex', gap: '20px', justifyContent: 'center', padding: '8px',
                 background: T.topbar, borderTop: `1px solid ${isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.04)'}`,
                 flexShrink: 0
@@ -1204,6 +1215,60 @@ export default function Presentation() {
                 @keyframes livePulse {
                     0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
                     50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+                }
+                @media (max-width: 640px) {
+                    .presentation-topbar {
+                        padding: 8px 10px !important;
+                        gap: 6px !important;
+                    }
+                    .presentation-heading {
+                        flex: 0 0 auto !important;
+                        position: relative;
+                        z-index: 2;
+                    }
+                    .presentation-heading > div {
+                        display: none !important;
+                    }
+                    .presentation-counter {
+                        padding: 6px 10px !important;
+                        font-size: 0.75rem !important;
+                    }
+                    .presentation-controls {
+                        flex: 1 1 auto !important;
+                        justify-content: flex-end;
+                        min-width: 0;
+                    }
+                    .presentation-controls > * {
+                        display: none !important;
+                    }
+                    .presentation-controls > .presentation-timer {
+                        display: flex !important;
+                        padding: 6px 8px !important;
+                    }
+                    .presentation-controls > .presentation-live {
+                        display: flex !important;
+                    }
+                    .presentation-slide {
+                        padding: 20px 16px !important;
+                    }
+                    .presentation-infographic-grid,
+                    .presentation-statistics-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 12px !important;
+                    }
+                    .presentation-stat-card {
+                        padding: 18px 14px !important;
+                    }
+                    .presentation-stat-value {
+                        overflow-wrap: anywhere;
+                        font-size: clamp(1.6rem, 12vw, 3rem) !important;
+                    }
+                    .presentation-live-stats {
+                        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                    }
+                    .presentation-shortcuts {
+                        display: none !important;
+                    }
                 }
             `}</style>
         </div>
