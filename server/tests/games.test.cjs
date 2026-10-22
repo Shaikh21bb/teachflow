@@ -11,7 +11,7 @@ const providers = require("../utils/aiProviders");
 let aiResponse = "invalid";
 providers.chatWithAI = async () => aiResponse;
 const app = require("../index");
-let server, base, teacher, other;
+let server, base, teacher, other, persistedModeCode;
 async function request(path, token, method = "GET", body) {
   const response = await fetch(base + path, {
     method,
@@ -56,8 +56,10 @@ before(async () => {
     );
   teacher = jwt.sign({ userId: 1, role: "teacher" }, process.env.JWT_SECRET);
   other = jwt.sign({ userId: 2, role: "teacher" }, process.env.JWT_SECRET);
-  server = app.listen(0, "127.0.0.1");
-  await new Promise((r) => server.on("listening", r));
+  await new Promise((resolve, reject) => {
+    server = app.listen(0, "127.0.0.1", resolve);
+    server.once("error", reject);
+  });
   base = `http://127.0.0.1:${server.address().port}/api`;
 });
 after(async () => {
@@ -82,7 +84,7 @@ test("arena validates questions and isolates teachers, rooms and player tokens",
     (
       await request("/games", teacher, "POST", {
         demo: true,
-        padding: "x".repeat(17000),
+        padding: "x".repeat(70000),
       })
     ).status,
     413,
@@ -116,6 +118,264 @@ test("arena validates questions and isolates teachers, rooms and player tokens",
     403,
   );
   await control(code, "finish");
+});
+
+test("arena, garden and word keep distinct validated mechanics and persisted modes", async () => {
+  const wordQuestions = ["cell", "organ", "tissue", "gene"].map(
+    (term, index, terms) => ({
+      question: `What is ${term}?`,
+      options: terms.map((value) => `${value} definition`),
+      correct: index,
+    }),
+  );
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        demo: true,
+        mode: "unknown",
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        demo: true,
+        quizId: 999,
+        mode: "arena",
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        mode: "arena",
+        questions: wordQuestions,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        demo: false,
+        mode: "word",
+        title: "Too short",
+        questions: wordQuestions.slice(0, 3),
+      })
+    ).status,
+    400,
+  );
+
+  const garden = await create({ mode: "garden" });
+  const gardenA = await join(garden, "Garden A");
+  await join(garden, "Garden B");
+  await control(garden, "start");
+  await request(`/games/${garden}/answer`, gardenA.token, "POST", {
+    roundIndex: 0,
+    answerIndex: 0,
+  });
+  assert.equal(
+    (
+      await request(`/games/${garden}/action`, gardenA.token, "POST", {
+        roundIndex: 0,
+        kind: "water",
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await request(`/games/${garden}/action`, gardenA.token, "POST", {
+        roundIndex: 0,
+        kind: "water",
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/games/${garden}/attack`, gardenA.token, "POST", {
+        roundIndex: 0,
+        kind: "strike",
+      })
+    ).status,
+    409,
+  );
+  arena.invalidate(garden);
+  const gardenState = (
+    await request(`/games/${garden}/state`, gardenA.token)
+  ).body;
+  assert.equal(gardenState.mode, "garden");
+  assert.deepEqual(gardenState.health, [100, 100]);
+  assert.deepEqual(gardenState.progress, [10, 0]);
+  await control(garden, "finish");
+  assert.equal(
+    (await request(`/games/${garden}/state`, gardenA.token)).body.winner,
+    0,
+  );
+
+  const wordCreated = await request("/games", teacher, "POST", {
+    demo: false,
+    mode: "word",
+    title: "Biology words",
+    language: "ru",
+    questions: wordQuestions,
+  });
+  assert.equal(wordCreated.status, 201, JSON.stringify(wordCreated.body));
+  assert.equal(wordCreated.body.mode, "word");
+  const word = wordCreated.body.code;
+  persistedModeCode = word;
+  const wordA = await join(word, "Word A");
+  await join(word, "Word B");
+  await control(word, "start");
+  await request(`/games/${word}/answer`, wordA.token, "POST", {
+    roundIndex: 0,
+    answerIndex: 0,
+  });
+  arena.invalidate(word);
+  const wordState = (await request(`/games/${word}/state`, wordA.token)).body;
+  assert.equal(wordState.mode, "word");
+  assert.deepEqual(wordState.progress, [25, 0]);
+  assert.equal(wordState.me.attackReady, false);
+  assert.equal(wordState.question.correct, undefined);
+  assert.equal(
+    (
+      await request(`/games/${word}/action`, wordA.token, "POST", {
+        roundIndex: 0,
+        kind: "boost",
+      })
+    ).status,
+    409,
+  );
+  await control(word, "finish");
+  const wordReport = (await request(`/games/${word}/report`, teacher)).body;
+  assert.equal(wordReport.mode, "word");
+  assert.equal(
+    (await request(`/games/${word}/state`, wordA.token)).body.winner,
+    0,
+  );
+
+  const listed = (await request("/games", teacher)).body;
+  assert.equal(listed.find((room) => room.code === garden).mode, "garden");
+  assert.equal(listed.find((room) => room.code === word).mode, "word");
+
+  const requestKey = crypto.randomUUID();
+  const arenaCode = await create({ requestKey });
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        demo: true,
+        mode: "garden",
+        language: "ru",
+        requestKey,
+      })
+    ).status,
+    409,
+  );
+  await control(arenaCode, "finish");
+});
+
+test("word accepts a twenty-pair payload near the UI field limits", async () => {
+  const definitions = Array.from({ length: 20 }, (_, index) =>
+    `${"определение".repeat(20)} ${index}`.slice(0, 240),
+  );
+  const questions = Array.from({ length: 20 }, (_, index) => {
+    const term = `${"термин".repeat(16)} ${index}`.slice(0, 112);
+    return {
+      question: `Что означает «${term}»?`,
+      options: [0, 1, 2, 3].map(
+        (offset) => definitions[(index + offset) % definitions.length],
+      ),
+      correct: 0,
+      explanation: definitions[index],
+    };
+  });
+  const payload = {
+    mode: "word",
+    language: "ru",
+    title: "Большой словарь",
+    questions,
+  };
+  assert.ok(Buffer.byteLength(JSON.stringify(payload)) > 45 * 1024);
+  const created = await request("/games", teacher, "POST", payload);
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const state = (
+    await request(`/games/${created.body.code}/state`, teacher)
+  ).body;
+  assert.equal(state.mode, "word");
+  assert.equal(state.questionCount, 20);
+  await control(created.body.code, "finish");
+});
+
+test("word auto-finish normalizes unequal teams and preserves ties", async () => {
+  const questions = ["cell", "organ", "tissue", "gene"].map(
+    (term, index, terms) => ({
+      question: `What is ${term}?`,
+      options: terms.map((value) => `${value} definition`),
+      correct: index,
+    }),
+  );
+  async function createWord(title) {
+    const created = await request("/games", teacher, "POST", {
+      mode: "word",
+      language: "ru",
+      title,
+      questions,
+    });
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    return created.body.code;
+  }
+  async function expireFinalRound(code, token) {
+    await db.runQuery(
+      "UPDATE game_rooms SET round_index=3,deadline=? WHERE code=?",
+      [Date.now() - 10, code],
+    );
+    arena.invalidate(code);
+    return (await request(`/games/${code}/state`, token)).body;
+  }
+
+  const unequal = await createWord("Unequal word teams");
+  const leftA = await join(unequal, "Left A");
+  const right = await join(unequal, "Right");
+  const leftB = await join(unequal, "Left B");
+  await control(unequal, "start");
+  for (const [player, answerIndex] of [
+    [leftA, 0],
+    [right, 0],
+    [leftB, 1],
+  ]) {
+    const answered = await request(
+      `/games/${unequal}/answer`,
+      player.token,
+      "POST",
+      { roundIndex: 0, answerIndex },
+    );
+    assert.equal(answered.status, 200, JSON.stringify(answered.body));
+  }
+  const unequalResult = await expireFinalRound(unequal, leftA.token);
+  assert.equal(unequalResult.status, "finished");
+  assert.deepEqual(unequalResult.progress, [12.5, 25]);
+  assert.equal(unequalResult.winner, 1);
+
+  const tied = await createWord("Tied word teams");
+  const tieLeft = await join(tied, "Tie Left");
+  const tieRight = await join(tied, "Tie Right");
+  await control(tied, "start");
+  for (const player of [tieLeft, tieRight]) {
+    const answered = await request(
+      `/games/${tied}/answer`,
+      player.token,
+      "POST",
+      { roundIndex: 0, answerIndex: 0 },
+    );
+    assert.equal(answered.status, 200, JSON.stringify(answered.body));
+  }
+  const tiedResult = await expireFinalRound(tied, tieLeft.token);
+  assert.equal(tiedResult.status, "finished");
+  assert.deepEqual(tiedResult.progress, [25, 25]);
+  assert.equal(tiedResult.winner, null);
 });
 
 test("joining is balanced and idempotent, the lobby locks on start and hidden answers never leak", async () => {
@@ -455,7 +715,7 @@ test("a separate server process reopens the saved game and scores", async () => 
     process.execPath,
     [
       "-e",
-      `(async()=>{const app=require('./server/index');await app.ready();const db=require('./server/db/database');const row=await db.getOne('SELECT status,(SELECT SUM(score) FROM game_players WHERE room_id=r.id) AS score FROM game_rooms r WHERE code=?',[${JSON.stringify(row.code)}]);console.log('PERSIST:'+JSON.stringify(row));(await db.getDatabase()).close();})().catch(e=>{console.error(e);process.exit(1)})`,
+      `(async()=>{const app=require('./server/index');await app.ready();const db=require('./server/db/database');const row=await db.getOne('SELECT status,(SELECT SUM(score) FROM game_players WHERE room_id=r.id) AS score FROM game_rooms r WHERE code=?',[${JSON.stringify(row.code)}]);const mode=await db.getOne('SELECT mode FROM game_rooms WHERE code=?',[${JSON.stringify(persistedModeCode)}]);console.log('PERSIST:'+JSON.stringify(row));console.log('MODE:'+JSON.stringify(mode));(await db.getDatabase()).close();})().catch(e=>{console.error(e);process.exit(1)})`,
     ],
     {
       cwd: require("node:path").resolve(__dirname, "../.."),
@@ -479,4 +739,13 @@ test("a separate server process reopens the saved game and scores", async () => 
       .slice(8),
   );
   assert.equal(restored.score, 1800);
+  assert.equal(
+    JSON.parse(
+      output
+        .split("\n")
+        .find((line) => line.startsWith("MODE:"))
+        .slice(5),
+    ).mode,
+    "word",
+  );
 });

@@ -24,6 +24,153 @@ async function noOverflow(page) {
   ).toBeLessThanOrEqual(2);
 }
 
+test("catalog creates persisted garden and word rooms with their own stages", async ({
+  page,
+  request,
+  browser,
+}, testInfo) => {
+  const teacher = await teacherLogin(page, request);
+  const created = [];
+  const studentContext = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    serviceWorkers: "block",
+  });
+  await studentContext.addInitScript(() => {
+    localStorage.setItem("urpaq_language", "ru");
+    localStorage.setItem("urpaq_theme", "light");
+  });
+  const student = await studentContext.newPage();
+  try {
+    await page.goto("/games");
+    const catalog = page.getByTestId("game-catalog");
+    await expect(catalog.locator("[data-game-mode]")).toHaveCount(3);
+    for (const mode of ["arena", "garden", "word"])
+      await expect(catalog.locator(`[data-game-mode="${mode}"]`)).toBeVisible();
+    await noOverflow(page);
+
+    await page.getByRole("button", { name: "Создать сад", exact: true }).click();
+    await expect(page.locator(".game-create[data-game-mode='garden']")).toBeVisible();
+    await page.getByRole("button", { name: "Создать комнату", exact: true }).click();
+    await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+    const gardenCode = page.url().split("/").pop();
+    created.push(gardenCode);
+    await expect(page.locator("main[data-game-mode='garden']")).toBeVisible();
+    await expect(page.getByTestId("garden-stage")).toBeVisible();
+    const gardenState = await request.get(`/api/games/${gardenCode}/state`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+    });
+    expect(gardenState.ok()).toBeTruthy();
+    expect((await gardenState.json()).mode).toBe("garden");
+
+    await student.goto(`http://127.0.0.1:4173/play/${gardenCode}`);
+    await student.getByLabel("Твоё имя").fill("Garden A");
+    await student
+      .getByRole("button", { name: "Присоединиться", exact: true })
+      .click();
+    const gardenOther = await request.post(`/api/games/${gardenCode}/join`, {
+      data: { name: "Garden B", clientKey: crypto.randomUUID() },
+    });
+    expect(gardenOther.ok()).toBeTruthy();
+    await expect(
+      page.getByRole("button", { name: "Начать игру", exact: true }),
+    ).toBeEnabled();
+    await page
+      .getByRole("button", { name: "Начать игру", exact: true })
+      .click();
+    await expect(student.getByTestId("garden-stage")).toBeVisible();
+    await student.locator(".arena-option").nth(0).click();
+    await student.getByRole("button", { name: "Полить", exact: true }).click();
+    await expect(
+      page.getByRole("progressbar", { name: "Солнце рост" }),
+    ).toHaveAttribute("aria-valuenow", "10");
+    await noOverflow(student);
+    await student.screenshot({
+      path: `test-results/${testInfo.project.name}-garden-player.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+
+    await request.post(`/api/games/${gardenCode}/control`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+      data: { action: "finish" },
+    });
+    await page.goto("/games");
+    await page.getByRole("button", { name: "Создать спринт", exact: true }).click();
+    await expect(page.locator(".game-create[data-game-mode='word']")).toBeVisible();
+    await page.getByLabel("Название набора", { exact: true }).fill("Biology words");
+    await page.getByLabel("Пары слов", { exact: false }).fill(
+      "cell = клетка\norgan = орган\ntissue = ткань\ngene = ген",
+    );
+    await page.getByRole("button", { name: "Создать комнату", exact: true }).click();
+    await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+    const wordCode = page.url().split("/").pop();
+    created.push(wordCode);
+    await expect(page.locator("main[data-game-mode='word']")).toBeVisible();
+    await expect(page.getByTestId("word-stage")).toBeVisible();
+    const wordState = await request.get(`/api/games/${wordCode}/state`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+    });
+    expect(wordState.ok()).toBeTruthy();
+    const wordBody = await wordState.json();
+    expect(wordBody.mode).toBe("word");
+    expect(wordBody.questionCount).toBe(4);
+
+    await student.goto(`http://127.0.0.1:4173/play/${wordCode}`);
+    await student.getByLabel("Твоё имя").fill("Word A");
+    await student
+      .getByRole("button", { name: "Присоединиться", exact: true })
+      .click();
+    const wordOther = await request.post(`/api/games/${wordCode}/join`, {
+      data: { name: "Word B", clientKey: crypto.randomUUID() },
+    });
+    expect(wordOther.ok()).toBeTruthy();
+    await expect(
+      page.getByRole("button", { name: "Начать игру", exact: true }),
+    ).toBeEnabled();
+    await page
+      .getByRole("button", { name: "Начать игру", exact: true })
+      .click();
+    await expect(student.getByTestId("word-stage")).toBeVisible();
+    await student.getByRole("button", { name: /клетка/ }).click();
+    await expect(
+      page.getByRole("progressbar", { name: "Сапфир путь" }),
+    ).toHaveAttribute("aria-valuenow", "25");
+    await expect(student.locator(".arena-attack-buttons")).toHaveCount(0);
+    await student.reload();
+    await expect(student.getByTestId("word-stage")).toBeVisible();
+    await expect(
+      student.getByRole("progressbar", { name: "Сапфир путь" }),
+    ).toHaveAttribute("aria-valuenow", "25");
+    await noOverflow(student);
+    await student.screenshot({
+      path: `test-results/${testInfo.project.name}-word-player.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+
+    await page.goto("/games");
+    await expect(
+      page.locator(`[data-room-code="${wordCode}"][data-game-mode="word"]`),
+    ).toBeVisible();
+    await noOverflow(page);
+    await page.screenshot({
+      path: `test-results/${testInfo.project.name}-game-catalog-modes.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+  } finally {
+    await studentContext.close();
+    await Promise.all(
+      created.map((code) =>
+        request.post(`/api/games/${code}/control`, {
+          headers: { Authorization: `Bearer ${teacher.token}` },
+          data: { action: "finish" },
+        }),
+      ),
+    );
+  }
+});
+
 test("teacher and phones complete an arena match, reconnect, retain scores and export results", async ({
   page,
   request,

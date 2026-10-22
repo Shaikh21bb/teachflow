@@ -7,6 +7,12 @@ const { getAll, getOne, withTransaction } = require("../db/database");
 const arena = require("../utils/arena");
 const router = express.Router();
 const secret = process.env.JWT_SECRET;
+const MODES = new Set(["arena", "garden", "word"]);
+const MODE_ACTIONS = {
+  arena: new Set(["strike", "kick", "burst"]),
+  garden: new Set(["water", "sun", "bloom"]),
+  word: new Set(),
+};
 const wrap = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res)).catch(next);
 const codeOf = (req) => String(req.params.code || "").toUpperCase();
@@ -72,7 +78,7 @@ router.get(
   authenticateToken,
   wrap(async (req, res) => {
     const rooms = await getAll(
-      `SELECT code,title,status,created_at,winner,
+      `SELECT code,title,mode,status,created_at,winner,
         (SELECT COUNT(*) FROM game_players WHERE room_id=game_rooms.id AND active=1) AS player_count
         FROM game_rooms WHERE teacher_id=? ORDER BY id DESC LIMIT 20`,
       [req.user.userId],
@@ -86,18 +92,47 @@ router.post(
   authenticateToken,
   wrap(async (req, res) => {
     const language = req.body.language === "ru" ? "ru" : "kk";
+    const mode = typeof req.body.mode === "string" ? req.body.mode : "arena";
+    if (!MODES.has(mode)) arena.fail("Неизвестный режим игры");
     const seconds = Number(req.body.roundSeconds ?? 30);
     if (!Number.isInteger(seconds) || seconds < 15 || seconds > 120)
       arena.fail("Время на вопрос: 15–120 секунд");
     let questions, title;
-    if (req.body.demo === true) {
+    const demo = req.body.demo === true;
+    const quizId = Number(req.body.quizId) || 0;
+    const direct = Array.isArray(req.body.questions);
+    if (mode === "word") {
+      if (!direct || demo || quizId)
+        arena.fail("Добавьте от 4 до 20 пар слов / 4–20 сөз жұбын қосыңыз");
+      try {
+        questions = arena.normalizeQuestions(req.body.questions);
+      } catch (error) {
+        arena.fail(error.status ? error.message : "Некорректные пары слов");
+      }
+      if (questions.length < 4)
+        arena.fail("Добавьте от 4 до 20 пар слов / 4–20 сөз жұбын қосыңыз");
+      title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+      if (
+        title.length < 2 ||
+        title.length > 120 ||
+        /[\u0000-\u001f<>]/.test(title)
+      )
+        arena.fail("Название: 2–120 символов / Атауы: 2–120 таңба");
+    } else if (direct || (demo && quizId) || (!demo && !quizId)) {
+      arena.fail("Выберите один источник вопросов / Бір сұрақ көзін таңдаңыз");
+    } else if (demo) {
       questions = arena.demoQuestions(language);
-      title =
-        language === "kk" ? "Математикалық дуэль" : "Математическая дуэль";
+      title = mode === "garden"
+        ? language === "kk"
+          ? "Білім бағы"
+          : "Сад знаний"
+        : language === "kk"
+          ? "Математикалық дуэль"
+          : "Математическая дуэль";
     } else {
       const quiz = await getOne(
         "SELECT * FROM quizzes WHERE id=? AND user_id=?",
-        [Number(req.body.quizId) || 0, req.user.userId],
+        [quizId, req.user.userId],
       );
       if (!quiz) arena.fail("Выберите свой тест / Өз тестіңізді таңдаңыз", 404);
       try {
@@ -114,14 +149,32 @@ router.post(
         !/^[a-zA-Z0-9-]{32,80}$/.test(requestKey))
     )
       arena.fail("Неверный идентификатор запроса");
-    const code = await withTransaction(async (tx) => {
+    const payloadHash = JSON.stringify({
+      mode,
+      language,
+      seconds,
+      title,
+      questions,
+    });
+    const roomResult = await withTransaction(async (tx) => {
       if (requestKey) {
         const existing = await arena.one(
           tx,
-          "SELECT code FROM game_rooms WHERE teacher_id=? AND request_key=?",
+          "SELECT code,mode,language,title,questions,round_seconds FROM game_rooms WHERE teacher_id=? AND request_key=?",
           [req.user.userId, requestKey],
         );
-        if (existing) return existing.code;
+        if (existing) {
+          const existingHash = JSON.stringify({
+            mode: existing.mode || "arena",
+            language: existing.language,
+            seconds: existing.round_seconds,
+            title: existing.title,
+            questions: JSON.parse(existing.questions),
+          });
+          if (existingHash !== payloadHash)
+            arena.fail("Этот запрос уже создал другую игру", 409);
+          return { code: existing.code, mode: existing.mode || "arena" };
+        }
       }
       const active = await arena.one(
         tx,
@@ -132,11 +185,12 @@ router.post(
       for (let attempt = 0; attempt < 6; attempt++) {
         const candidate = crypto.randomBytes(3).toString("hex").toUpperCase();
         const result = await tx.execute({
-          sql: "INSERT OR IGNORE INTO game_rooms (code,teacher_id,title,language,questions,round_seconds,expires_at,request_key) VALUES (?,?,?,?,?,?,?,?)",
+          sql: "INSERT OR IGNORE INTO game_rooms (code,teacher_id,title,mode,language,questions,round_seconds,expires_at,request_key) VALUES (?,?,?,?,?,?,?,?,?)",
           args: [
             candidate,
             req.user.userId,
             title,
+            mode,
             language,
             JSON.stringify(questions),
             seconds,
@@ -144,11 +198,11 @@ router.post(
             requestKey,
           ],
         });
-        if (result.rowsAffected) return candidate;
+        if (result.rowsAffected) return { code: candidate, mode };
       }
       arena.fail("Не удалось создать комнату. Повторите запрос", 503);
     });
-    res.status(201).json({ code });
+    res.status(201).json(roomResult);
   }),
 );
 
@@ -335,7 +389,7 @@ router.post(
           roundIndex,
           answerIndex,
           correct ? 1 : 0,
-          correct ? 1 : 0,
+          correct && (room.mode || "arena") !== "word" ? 1 : 0,
           correct ? 100 : 0,
           correct ? 1 : 0,
           player.id,
@@ -347,21 +401,23 @@ router.post(
   }),
 );
 
-router.post(
-  "/:code/attack",
-  viewer,
-  actionLimiter,
+const gameAction = (legacyAttack = false) =>
   wrap(async (req, res) => {
     if (!req.viewer.playerId) arena.fail("Только для участников", 403);
-    if (!["strike", "kick", "burst"].includes(req.body.kind))
-      arena.fail("Неизвестная атака");
     await arena.mutate(codeOf(req), async (tx, room) => {
+      const mode = room.mode || "arena";
+      if (mode === "word")
+        arena.fail("В этом режиме команда движется после ответа", 409);
+      if (legacyAttack && mode !== "arena")
+        arena.fail("Используйте игровое действие / Ойын әрекетін қолданыңыз", 409);
+      if (!MODE_ACTIONS[mode]?.has(req.body.kind))
+        arena.fail("Неизвестное игровое действие");
       if (
         room.status !== "running" ||
         room.round_index !== req.body.roundIndex ||
         room.deadline <= Date.now()
       )
-        arena.fail("Атака недоступна / Шабуыл қолжетімсіз", 409);
+        arena.fail("Действие недоступно / Әрекет қолжетімсіз", 409);
       const player = await arena.one(
         tx,
         "SELECT * FROM game_players WHERE id=? AND room_id=? AND active=1",
@@ -382,6 +438,7 @@ router.post(
         [room.id, player.team],
       );
       const damage = Math.max(1, Math.round(1800 / size.n));
+      const questionCount = JSON.parse(room.questions).length;
       const health = player.team === 0 ? "coral_health" : "cyan_health";
       const event = {
         id: room.revision + 1,
@@ -389,33 +446,42 @@ router.post(
         team: player.team,
         kind: req.body.kind,
         name: player.name,
-        damage: damage / 100,
+        damage:
+          mode === "arena"
+            ? damage / 100
+            : Number((100 / (size.n * questionCount)).toFixed(1)),
         at: Date.now(),
       };
       await tx.execute({
         sql: "UPDATE game_players SET attack_ready=0,hits=hits+1,score=score+20 WHERE id=?",
         args: [player.id],
       });
-      await tx.execute({
-        sql: `UPDATE game_rooms SET ${health}=MAX(0,${health}-?),revision=revision+1,last_event=?,events=? WHERE id=?`,
-        args: [
-          damage,
-          JSON.stringify(event),
-          JSON.stringify([...JSON.parse(room.events), event].slice(-40)),
-          room.id,
-        ],
-      });
-      const updated = await arena.one(
-        tx,
-        "SELECT * FROM game_rooms WHERE id=?",
-        [room.id],
-      );
-      if (!updated.cyan_health || !updated.coral_health)
-        await arena.finish(tx, updated);
+      const events = JSON.stringify([...JSON.parse(room.events), event].slice(-40));
+      if (mode === "arena") {
+        await tx.execute({
+          sql: `UPDATE game_rooms SET ${health}=MAX(0,${health}-?),revision=revision+1,last_event=?,events=? WHERE id=?`,
+          args: [damage, JSON.stringify(event), events, room.id],
+        });
+        const updated = await arena.one(
+          tx,
+          "SELECT * FROM game_rooms WHERE id=?",
+          [room.id],
+        );
+        if (!updated.cyan_health || !updated.coral_health)
+          await arena.finish(tx, updated);
+      } else {
+        await tx.execute({
+          sql: "UPDATE game_rooms SET revision=revision+1,last_event=?,events=? WHERE id=?",
+          args: [JSON.stringify(event), events, room.id],
+        });
+      }
     });
     res.json({ ok: true });
-  }),
-);
+  });
+
+router.post("/:code/action", viewer, actionLimiter, gameAction(false));
+// Kept for old Arena clients and links created before game modes were introduced.
+router.post("/:code/attack", viewer, actionLimiter, gameAction(true));
 
 router.get(
   "/:code/report",
@@ -433,6 +499,7 @@ router.get(
     );
     res.json({
       title: room.title,
+      mode: room.mode || "arena",
       questions: JSON.parse(room.questions).length,
       players: rows,
     });

@@ -46,7 +46,7 @@ app.use(cors({
 app.use('/api/', (req, res, next) => /^\/(games|student-quests)(\/|$)/.test(req.path) ? next() : generalLimiter(req, res, next));
 
 // 6. Body parsing
-app.use('/api/games', express.json({ limit: '16kb' }));
+app.use('/api/games', express.json({ limit: '64kb' }));
 app.use('/api/student-quests', express.json({ limit: '4kb' }));
 app.use(express.json({ limit: '2mb' }));
 
@@ -428,7 +428,7 @@ async function runMigrations() {
         `CREATE TABLE IF NOT EXISTS game_rooms (
             id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL UNIQUE,
             teacher_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            title TEXT NOT NULL, language TEXT NOT NULL DEFAULT 'kk', questions TEXT NOT NULL,
+            title TEXT NOT NULL, mode TEXT NOT NULL DEFAULT 'arena', language TEXT NOT NULL DEFAULT 'kk', questions TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'lobby', round_index INTEGER NOT NULL DEFAULT 0,
             round_seconds INTEGER NOT NULL DEFAULT 30, deadline INTEGER, remaining_ms INTEGER,
             cyan_health INTEGER NOT NULL DEFAULT 10000, coral_health INTEGER NOT NULL DEFAULT 10000,
@@ -437,6 +437,7 @@ async function runMigrations() {
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, expires_at INTEGER NOT NULL,
             ended_at TEXT, UNIQUE(teacher_id, request_key)
         )`,
+        `ALTER TABLE game_rooms ADD COLUMN mode TEXT NOT NULL DEFAULT 'arena'`,
         `CREATE INDEX IF NOT EXISTS idx_game_rooms_teacher ON game_rooms(teacher_id, id)`,
         `CREATE TABLE IF NOT EXISTS game_players (
             id TEXT PRIMARY KEY, room_id INTEGER NOT NULL REFERENCES game_rooms(id) ON DELETE CASCADE,

@@ -22,6 +22,9 @@ import {
   RefreshCw,
   Trophy,
   WifiOff,
+  Droplets,
+  Sun,
+  Sprout,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import {
@@ -31,11 +34,20 @@ import {
   forgetPlayer,
   playerRequest,
   text,
-  teamNames,
 } from "../games/api";
 import useArena from "../games/useArena";
-import PixelArena from "../games/PixelArena";
+import GameStage, { GameCover } from "../games/GameStage";
+import { getGameMode } from "../games/modes";
 import "../games/games.css";
+
+const actionIcons = {
+  swords: Swords,
+  footprints: Footprints,
+  flame: Flame,
+  droplets: Droplets,
+  sun: Sun,
+  sprout: Sprout,
+};
 
 function JoinForm({ code: initialCode = "" }) {
   const { language, toggleLanguage } = useLanguage(),
@@ -77,7 +89,18 @@ function JoinForm({ code: initialCode = "" }) {
         </button>
       </header>
       <div className="arena-join-content">
-        <PixelArena motion={false} />
+        <div className="game-join-preview" aria-hidden="true">
+          {[
+            ["arena", "Arena"],
+            ["garden", t("Сад", "Бақ")],
+            ["word", t("Слова", "Сөздер")],
+          ].map(([mode, label]) => (
+            <div className={`game-join-preview-item mode-${mode}`} key={mode}>
+              <GameCover mode={mode} />
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
         <div className="arena-join-form">
           <Gamepad2 size={28} />
           <h1>{t("Войти в игру", "Ойынға кіру")}</h1>
@@ -154,7 +177,7 @@ function QR({ url }) {
   ) : null;
 }
 
-function Results({ game, host, t, onExport }) {
+function Results({ game, host, t, mode, onExport }) {
   const answered = game.players.reduce((n, p) => n + p.answered, 0),
     correct = game.players.reduce((n, p) => n + p.correct, 0);
   return (
@@ -164,7 +187,7 @@ function Results({ game, host, t, onExport }) {
         <h1>
           {game.winner === null
             ? t("Ничья!", "Тең ойын!")
-            : `${teamNames[game.winner]} ${t("побеждает!", "жеңді!")}`}
+            : `${mode.teams[game.winner]} ${t("побеждает!", "жеңді!")}`}
         </h1>
       </div>
       <div className="arena-result-summary">
@@ -243,10 +266,15 @@ export default function ArenaGame({ host = false }) {
     refresh,
   } = useArena(code, player?.token, host);
   const t = text(game?.language || language);
+  const mode = getGameMode(game?.mode, game?.language || language);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [copied, setCopied] = useState(false),
-    [motion, setMotion] = useState(true),
+    [motion, setMotion] = useState(
+      () =>
+        typeof window === "undefined" ||
+        !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches,
+    ),
     [confirmEnd, setConfirmEnd] = useState(false);
   const [now, setNow] = useState(Date.now());
   const actionLock = useRef(false),
@@ -264,14 +292,15 @@ export default function ArenaGame({ host = false }) {
   if (!host && (!code || !player?.token)) return <JoinForm code={code} />;
   const shell = (children) => (
     <main
-      className={`arena-shell ${!host && game?.me?.attackReady ? "arena-has-attack" : ""}`}
+      className={`arena-shell mode-${mode.id} ${!host && game?.me?.attackReady ? "arena-has-attack" : ""}`}
+      data-game-mode={mode.id}
     >
       <header className="arena-top">
         <Link to={host ? "/games" : "/play"} className="arena-back">
           <ArrowLeft size={18} />
           <span>{host ? t("Игры", "Ойындар") : "Urpaq.ai"}</span>
         </Link>
-        <span className="arena-top-title">BILIM ARENA</span>
+        <span className="arena-top-title">{mode.brand}</span>
         <div className="arena-top-tools">
           <button
             className="arena-icon"
@@ -390,15 +419,21 @@ export default function ArenaGame({ host = false }) {
           t("Очки", "Ұпай"),
           t("Ответы", "Жауаптар"),
           t("Правильно", "Дұрыс"),
-          t("Удары", "Соққы"),
+          ...(mode.id === "word"
+            ? []
+            : [
+                mode.id === "arena"
+                  ? t("Удары", "Соққы")
+                  : t("Действия", "Әрекеттер"),
+              ]),
         ],
         ...data.players.map((p) => [
           p.name,
-          teamNames[p.team],
+          mode.teams[p.team],
           p.score,
           p.answer_count,
           p.correct_count,
-          p.hits,
+          ...(mode.id === "word" ? [] : [p.hits]),
         ]),
       ];
       const url = URL.createObjectURL(
@@ -409,7 +444,7 @@ export default function ArenaGame({ host = false }) {
       );
       const link = document.createElement("a");
       link.href = url;
-      link.download = `arena-${code}.csv`;
+      link.download = `${mode.id}-${code}.csv`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
@@ -450,7 +485,9 @@ export default function ArenaGame({ host = false }) {
             {game.status === "lobby"
               ? t("Сбор участников", "Қатысушылар жиналуда")
               : game.status === "finished"
-                ? t("Матч завершён", "Матч аяқталды")
+                ? mode.id === "arena"
+                  ? t("Матч завершён", "Матч аяқталды")
+                  : t("Игра завершена", "Ойын аяқталды")
                 : `${t("Вопрос", "Сұрақ")} ${game.roundIndex + 1} / ${game.questionCount}`}
           </span>
         </div>
@@ -468,28 +505,46 @@ export default function ArenaGame({ host = false }) {
           )}
         </div>
       </div>
-      <section className="arena-stage" aria-label={t("Арена", "Арена")}>
+      <section className="arena-stage" aria-label={mode.stageLabel}>
         <div className="arena-scoreboard">
           {[0, 1].map((team) => (
             <div className={`arena-team-score team-${team}`} key={team}>
               <div>
-                <strong>{teamNames[team]}</strong>
-                <span>{game.health[team]} HP</span>
+                <strong>{mode.teams[team]}</strong>
+                <span>
+                  {mode.id === "arena"
+                    ? `${game.health[team]} HP`
+                    : `${Math.round(game.progress?.[team] || 0)}% ${mode.metric}`}
+                </span>
               </div>
               <div
                 className="arena-health"
                 role="progressbar"
-                aria-label={`${teamNames[team]} HP`}
+                aria-label={`${mode.teams[team]} ${mode.metric}`}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={game.health[team]}
+                aria-valuenow={
+                  mode.id === "arena"
+                    ? game.health[team]
+                    : game.progress?.[team] || 0
+                }
               >
-                <span style={{ width: `${game.health[team]}%` }} />
+                <span
+                  style={{
+                    width: `${
+                      mode.id === "arena"
+                        ? game.health[team]
+                        : game.progress?.[team] || 0
+                    }%`,
+                  }}
+                />
               </div>
             </div>
           ))}
         </div>
-        <PixelArena
+        <GameStage
+          mode={mode.id}
+          progress={game.progress}
           responsive
           event={game.lastEvent}
           events={game.events}
@@ -516,7 +571,7 @@ export default function ArenaGame({ host = false }) {
             </div>
             {!host && game.me && (
               <div className={`arena-your-team team-${game.me.team}`}>
-                {game.me.name} · {teamNames[game.me.team]}
+                {game.me.name} · {mode.teams[game.me.team]}
               </div>
             )}
             <div className="arena-rosters">
@@ -524,7 +579,7 @@ export default function ArenaGame({ host = false }) {
                 <div key={team}>
                   <h3>
                     <span className={`arena-team-dot team-${team}`} />
-                    {teamNames[team]}
+                    {mode.teams[team]}
                   </h3>
                   <ul>
                     {game.players
@@ -560,7 +615,9 @@ export default function ArenaGame({ host = false }) {
                 onClick={() => act("start")}
               >
                 <Play size={18} />
-                {t("Начать матч", "Матчты бастау")}
+                {mode.id === "arena"
+                  ? t("Начать матч", "Матчты бастау")
+                  : t("Начать игру", "Ойынды бастау")}
               </button>
             )}
           </div>
@@ -576,7 +633,7 @@ export default function ArenaGame({ host = false }) {
           )}
         </section>
       ) : game.status === "finished" ? (
-        <Results game={game} host={host} t={t} onExport={exportCSV} />
+        <Results game={game} host={host} t={t} mode={mode} onExport={exportCSV} />
       ) : (
         <section className="arena-question-section">
           <div className="arena-question-heading">
@@ -584,7 +641,7 @@ export default function ArenaGame({ host = false }) {
               {host
                 ? `${answered}/${game.players.length} ${t("ответили", "жауап берді")}`
                 : game.me
-                  ? `${game.me.name} · ${teamNames[game.me.team]}`
+                  ? `${game.me.name} · ${mode.teams[game.me.team]}`
                   : ""}
             </span>
             <span
@@ -600,6 +657,7 @@ export default function ArenaGame({ host = false }) {
             {game.question?.options.map((option, index) => (
               <button
                 key={`${game.roundIndex}-${index}`}
+                data-answer-index={index}
                 className={`arena-option ${game.me?.answer === index ? (game.me.correct ? "correct" : "incorrect") : ""}`}
                 disabled={
                   host ||
@@ -635,14 +693,13 @@ export default function ArenaGame({ host = false }) {
                   </span>
                   {game.me.attackReady ? (
                     <div className="arena-attack-buttons">
-                      {[
-                        ["strike", Swords, t("Удар", "Соққы")],
-                        ["kick", Footprints, t("Удар ногой", "Аяқпен соғу")],
-                        ["burst", Flame, t("Импульс", "Импульс")],
-                      ].map(([kind, Icon, label]) => (
+                      {mode.actions.map(({ id: kind, icon, label }) => {
+                        const Icon = actionIcons[icon];
+                        return (
                         <button
                           className="arena-button"
                           key={kind}
+                          data-game-action={kind}
                           disabled={
                             busy ||
                             !online ||
@@ -650,18 +707,19 @@ export default function ArenaGame({ host = false }) {
                             !seconds
                           }
                           onClick={() =>
-                            act("attack", { roundIndex: game.roundIndex, kind })
+                            act("action", { roundIndex: game.roundIndex, kind })
                           }
                         >
                           <Icon size={18} />
                           {label}
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <strong>
                       <Zap size={18} />
-                      {t("Атака выполнена", "Шабуыл орындалды")}
+                      {mode.done}
                     </strong>
                   )}
                 </>
@@ -713,7 +771,11 @@ export default function ArenaGame({ host = false }) {
             className="arena-icon danger"
             disabled={busy || !online}
             onClick={() => setConfirmEnd(true)}
-            title={t("Завершить матч", "Матчты аяқтау")}
+            title={
+              mode.id === "arena"
+                ? t("Завершить матч", "Матчты аяқтау")
+                : t("Завершить игру", "Ойынды аяқтау")
+            }
           >
             <Square size={18} />
           </button>
@@ -729,7 +791,9 @@ export default function ArenaGame({ host = false }) {
           aria-labelledby="arena-end-title"
         >
           <h2 id="arena-end-title">
-            {t("Завершить матч?", "Матчты аяқтау керек пе?")}
+            {mode.id === "arena"
+              ? t("Завершить матч?", "Матчты аяқтау керек пе?")
+              : t("Завершить игру?", "Ойынды аяқтау керек пе?")}
           </h2>
           <div>
             <button

@@ -124,12 +124,33 @@ async function mutate(code, work) {
 }
 
 async function finish(tx, room) {
-  const winner =
-    Math.abs(room.cyan_health - room.coral_health) < 5
-      ? null
-      : room.cyan_health > room.coral_health
-        ? 0
-        : 1;
+  const mode = room.mode || "arena";
+  let winner;
+  if (mode === "arena") {
+    winner =
+      Math.abs(room.cyan_health - room.coral_health) < 5
+        ? null
+        : room.cyan_health > room.coral_health
+          ? 0
+          : 1;
+  } else {
+    const totals = (
+      await tx.execute({
+        sql: "SELECT team,COUNT(*) AS n,SUM(hits) AS hits,SUM(correct_count) AS correct FROM game_players WHERE room_id=? AND active=1 GROUP BY team",
+        args: [room.id],
+      })
+    ).rows;
+    const teams = [0, 1].map(
+      (team) => totals.find((row) => row.team === team) || { n: 0, hits: 0, correct: 0 },
+    );
+    if (!teams[0].n || !teams[1].n) winner = null;
+    else {
+      const field = mode === "garden" ? "hits" : "correct";
+      const left = teams[0][field] * teams[1].n;
+      const right = teams[1][field] * teams[0].n;
+      winner = left === right ? null : left > right ? 0 : 1;
+    }
+  }
   await tx.execute({
     sql: "UPDATE game_rooms SET status='finished', winner=?, deadline=NULL, ended_at=CURRENT_TIMESTAMP, revision=revision+1 WHERE id=?",
     args: [winner, room.id],
@@ -187,6 +208,7 @@ async function readRoom(code) {
 
 function project({ room, players }, viewer) {
   const questions = JSON.parse(room.questions);
+  const mode = room.mode || "arena";
   const me = viewer.playerId
     ? players.find((p) => p.id === viewer.playerId)
     : null;
@@ -195,9 +217,25 @@ function project({ room, players }, viewer) {
   if (!viewer.playerId && room.teacher_id !== viewer.userId)
     fail("Игра не найдена", 404);
   const question = questions[room.round_index];
+  const progress =
+    mode === "arena"
+      ? [100 - room.coral_health / 100, 100 - room.cyan_health / 100]
+      : [0, 1].map((team) => {
+          const members = players.filter((player) => player.team === team);
+          if (!members.length) return 0;
+          const value = members.reduce(
+            (sum, player) =>
+              sum + (mode === "garden" ? player.hits : player.correct_count),
+            0,
+          );
+          return Number(
+            Math.min(100, (value / (members.length * questions.length)) * 100).toFixed(1),
+          );
+        });
   return {
     code: room.code,
     title: room.title,
+    mode,
     language: room.language,
     status: room.status,
     roundIndex: room.round_index,
@@ -209,6 +247,7 @@ function project({ room, players }, viewer) {
     health: [room.cyan_health, room.coral_health].map((h) =>
       Number((h / 100).toFixed(1)),
     ),
+    progress,
     revision: room.revision,
     winner: room.winner,
     lastEvent: room.last_event ? JSON.parse(room.last_event) : null,
