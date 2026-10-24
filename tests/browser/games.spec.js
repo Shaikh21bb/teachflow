@@ -1,6 +1,65 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+const gameModes = [
+  { id: "arena", name: "Арена знаний", stage: ".pixel-arena" },
+  {
+    id: "garden",
+    name: "Сад знаний",
+    stage: "[data-testid='garden-stage']",
+  },
+  {
+    id: "word",
+    name: "Словарный спринт",
+    stage: "[data-testid='word-stage']",
+  },
+  {
+    id: "orbit",
+    name: "Орбитальная гонка",
+    stage: "[data-testid='orbit-stage']",
+  },
+  {
+    id: "tower",
+    name: "Башня знаний",
+    stage: "[data-testid='tower-stage']",
+  },
+  {
+    id: "circuit",
+    name: "Энергосеть",
+    stage: "[data-testid='circuit-stage']",
+  },
+  {
+    id: "ocean",
+    name: "Хранители океана",
+    stage: "[data-testid='ocean-stage']",
+  },
+];
+
+const expandedModes = [
+  {
+    id: "orbit",
+    createLabel: "Запустить миссию",
+    title: "Орбитальная гонка",
+  },
+  {
+    id: "tower",
+    createLabel: "Построить башню",
+    title: "Башня знаний",
+  },
+  {
+    id: "circuit",
+    createLabel: "Запустить сеть",
+    title: "Энергосеть",
+    action: "charge",
+  },
+  {
+    id: "ocean",
+    createLabel: "Спасти океан",
+    title: "Спасение океана",
+    action: "collect",
+  },
+];
+
 async function teacherLogin(page, request) {
   const response = await request.post("/api/auth/login", {
     data: { email: "teacher@test.example", password: "Testing12345" },
@@ -24,14 +83,24 @@ async function noOverflow(page) {
   ).toBeLessThanOrEqual(2);
 }
 
+async function finishRoom(request, teacher, code) {
+  if (!code) return;
+  await request.post(`/api/games/${code}/control`, {
+    headers: { Authorization: `Bearer ${teacher.token}` },
+    data: { action: "finish" },
+  });
+}
+
 test("catalog creates persisted garden and word rooms with their own stages", async ({
   page,
   request,
   browser,
+  baseURL,
 }, testInfo) => {
   const teacher = await teacherLogin(page, request);
   const created = [];
   const studentContext = await browser.newContext({
+    baseURL,
     viewport: { width: 390, height: 844 },
     serviceWorkers: "block",
   });
@@ -43,9 +112,15 @@ test("catalog creates persisted garden and word rooms with their own stages", as
   try {
     await page.goto("/games");
     const catalog = page.getByTestId("game-catalog");
-    await expect(catalog.locator("[data-game-mode]")).toHaveCount(3);
-    for (const mode of ["arena", "garden", "word"])
-      await expect(catalog.locator(`[data-game-mode="${mode}"]`)).toBeVisible();
+    await expect(catalog.locator("[data-game-mode]")).toHaveCount(gameModes.length);
+    for (const mode of gameModes) {
+      const card = catalog.locator(`[data-game-mode="${mode.id}"]`);
+      await expect(card).toBeVisible();
+      await expect(
+        card.getByRole("heading", { name: mode.name, exact: true }),
+      ).toBeVisible();
+      await expect(card.locator(mode.stage)).toBeVisible();
+    }
     await noOverflow(page);
 
     await page.getByRole("button", { name: "Создать сад", exact: true }).click();
@@ -62,7 +137,7 @@ test("catalog creates persisted garden and word rooms with their own stages", as
     expect(gardenState.ok()).toBeTruthy();
     expect((await gardenState.json()).mode).toBe("garden");
 
-    await student.goto(`http://127.0.0.1:4173/play/${gardenCode}`);
+    await student.goto(`/play/${gardenCode}`);
     await student.getByLabel("Твоё имя").fill("Garden A");
     await student
       .getByRole("button", { name: "Присоединиться", exact: true })
@@ -115,7 +190,7 @@ test("catalog creates persisted garden and word rooms with their own stages", as
     expect(wordBody.mode).toBe("word");
     expect(wordBody.questionCount).toBe(4);
 
-    await student.goto(`http://127.0.0.1:4173/play/${wordCode}`);
+    await student.goto(`/play/${wordCode}`);
     await student.getByLabel("Твоё имя").fill("Word A");
     await student
       .getByRole("button", { name: "Присоединиться", exact: true })
@@ -171,10 +246,167 @@ test("catalog creates persisted garden and word rooms with their own stages", as
   }
 });
 
+test("all seven catalog modes preserve their exact stage and mechanics", async ({
+  page,
+  request,
+}, testInfo) => {
+  test.setTimeout(120000);
+  const teacher = await teacherLogin(page, request);
+  const created = [];
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+
+  try {
+    for (const mode of expandedModes) {
+      await page.goto("/games");
+      const card = page
+        .getByTestId("game-catalog")
+        .locator(`[data-game-mode="${mode.id}"]`);
+      await expect(card).toBeVisible();
+      await card
+        .getByRole("button", { name: mode.createLabel, exact: true })
+        .click();
+      await expect(
+        page.locator(`.game-create[data-game-mode="${mode.id}"]`),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: "Создать комнату", exact: true })
+        .click();
+      await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+
+      const code = page.url().split("/").pop();
+      created.push(code);
+      await expect(
+        page.locator(`main[data-game-mode="${mode.id}"]`),
+      ).toBeVisible();
+      await expect(
+        page.locator(`[data-testid="${mode.id}-stage"]`),
+      ).toBeVisible();
+
+      const stateResponse = await request.get(`/api/games/${code}/state`, {
+        headers: { Authorization: `Bearer ${teacher.token}` },
+      });
+      expect(stateResponse.ok()).toBeTruthy();
+      const initialState = await stateResponse.json();
+      expect(initialState.mode).toBe(mode.id);
+      expect(initialState.title).toBe(mode.title);
+
+      const firstKey = crypto.randomUUID();
+      const firstJoin = await request.post(`/api/games/${code}/join`, {
+        data: { name: `${mode.id} Alpha`, clientKey: firstKey },
+      });
+      const secondJoin = await request.post(`/api/games/${code}/join`, {
+        data: { name: `${mode.id} Beta`, clientKey: crypto.randomUUID() },
+      });
+      expect(firstJoin.ok()).toBeTruthy();
+      expect(secondJoin.ok()).toBeTruthy();
+      const first = await firstJoin.json();
+
+      const started = await request.post(`/api/games/${code}/control`, {
+        headers: { Authorization: `Bearer ${teacher.token}` },
+        data: { action: "start" },
+      });
+      expect(started.ok()).toBeTruthy();
+      const answered = await request.post(`/api/games/${code}/answer`, {
+        headers: { Authorization: `Bearer ${first.token}` },
+        data: { roundIndex: 0, answerIndex: 0 },
+      });
+      expect(answered.ok()).toBeTruthy();
+      expect((await answered.json()).correct).toBe(true);
+
+      if (mode.action) {
+        const acted = await request.post(`/api/games/${code}/action`, {
+          headers: { Authorization: `Bearer ${first.token}` },
+          data: { roundIndex: 0, kind: mode.action },
+        });
+        expect(acted.ok()).toBeTruthy();
+      } else {
+        const rejected = await request.post(`/api/games/${code}/action`, {
+          headers: { Authorization: `Bearer ${first.token}` },
+          data: { roundIndex: 0, kind: "strike" },
+        });
+        expect(rejected.status()).toBe(409);
+      }
+
+      const playerStateResponse = await request.get(
+        `/api/games/${code}/state`,
+        { headers: { Authorization: `Bearer ${first.token}` } },
+      );
+      expect(playerStateResponse.ok()).toBeTruthy();
+      const playerState = await playerStateResponse.json();
+      expect(playerState.mode).toBe(mode.id);
+      expect(playerState.progress[0]).toBe(10);
+      expect(playerState.me.attackReady).toBe(false);
+      if (mode.action) expect(playerState.lastEvent.kind).toBe(mode.action);
+
+      await expect(
+        page.locator(
+          ".arena-team-score.team-0 [role='progressbar']",
+        ),
+      ).toHaveAttribute("aria-valuenow", "10", { timeout: 10000 });
+      if (mode.id === "circuit") {
+        await expect(page.locator(".game-stage-event")).toBeVisible();
+        await page.reload();
+        await expect(page.getByTestId("circuit-stage")).toBeVisible();
+        await expect(page.locator(".game-stage-event")).toHaveCount(0);
+        const advanced = await request.post(`/api/games/${code}/control`, {
+          headers: { Authorization: `Bearer ${teacher.token}` },
+          data: { action: "next", roundIndex: 0 },
+        });
+        expect(advanced.ok()).toBeTruthy();
+        await page.reload();
+        await expect(page.getByTestId("circuit-stage")).toBeVisible();
+        await expect(page.locator(".game-stage-event")).toHaveCount(0);
+      }
+      await noOverflow(page);
+
+      if (testInfo.project.name === "desktop") {
+        await page.screenshot({
+          path: `test-results/${mode.id}-host.png`,
+          fullPage: true,
+          animations: "disabled",
+        });
+      }
+      await finishRoom(request, teacher, code);
+      if (!mode.action) {
+        await expect(
+          page.getByRole("button", { name: "CSV", exact: true }),
+        ).toBeVisible({ timeout: 10000 });
+        const downloading = page.waitForEvent("download");
+        await page
+          .getByRole("button", { name: "CSV", exact: true })
+          .click();
+        const download = await downloading;
+        expect(download.suggestedFilename()).toBe(`${mode.id}-${code}.csv`);
+        const csv = await readFile(await download.path(), "utf8");
+        const columnCounts = csv
+          .trim()
+          .split(/\r?\n/)
+          .map((row) => (row.match(/;/g) || []).length + 1);
+        expect(columnCounts.length).toBeGreaterThan(1);
+        expect(new Set(columnCounts).size).toBe(1);
+        expect(columnCounts[0]).toBe(5);
+      }
+      await page.goto("/games");
+      await expect(
+        page.locator(
+          `[data-room-code="${code}"][data-game-mode="${mode.id}"]`,
+        ),
+      ).toBeVisible();
+    }
+    expect(errors).toEqual([]);
+  } finally {
+    await Promise.all(
+      created.map((code) => finishRoom(request, teacher, code)),
+    );
+  }
+});
+
 test("teacher and phones complete an arena match, reconnect, retain scores and export results", async ({
   page,
   request,
   browser,
+  baseURL,
 }, testInfo) => {
   test.setTimeout(90000);
   const errors = [];
@@ -200,6 +432,7 @@ test("teacher and phones complete an arena match, reconnect, retain scores and e
   await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
   const code = page.url().split("/").pop();
   const context = await browser.newContext({
+    baseURL,
     viewport: { width: 390, height: 844 },
     serviceWorkers: "block",
   });
@@ -210,7 +443,7 @@ test("teacher and phones complete an arena match, reconnect, retain scores and e
   const phone = await context.newPage();
   phone.on("pageerror", (e) => errors.push(e.message));
   try {
-    await phone.goto(`http://127.0.0.1:4173/play/${code}`);
+    await phone.goto(`/play/${code}`);
     await phone.getByLabel("Твоё имя").fill("Ayan");
     await phone
       .getByRole("button", { name: "Присоединиться", exact: true })
@@ -253,6 +486,30 @@ test("teacher and phones complete an arena match, reconnect, retain scores and e
         timeout: 3000,
       })
       .not.toBe(initial);
+    const motionToggle = phone.getByRole("button", {
+      name: "Анимация",
+      exact: true,
+    });
+    await expect(motionToggle).toHaveAttribute("aria-pressed", "true");
+    await motionToggle.click();
+    await expect(motionToggle).toHaveAttribute("aria-pressed", "false");
+    await phone.waitForTimeout(200);
+    const pausedFrame = await phone
+      .locator("canvas")
+      .evaluate((canvas) => canvas.toDataURL());
+    await phone.waitForTimeout(450);
+    expect(
+      await phone.locator("canvas").evaluate((canvas) => canvas.toDataURL()),
+    ).toBe(pausedFrame);
+    expect(
+      await phone.locator(".arena-shell *").evaluateAll((elements) =>
+        elements
+          .map((element) => getComputedStyle(element).animationName)
+          .filter((name) => name && name !== "none"),
+      ),
+    ).toEqual([]);
+    await motionToggle.click();
+    await expect(motionToggle).toHaveAttribute("aria-pressed", "true");
     await phone.locator(".arena-option").nth(0).click();
     await expect(phone.getByText("Правильно!", { exact: false })).toBeVisible();
     const attackBox = await phone
@@ -373,11 +630,132 @@ test("teacher and phones complete an arena match, reconnect, retain scores and e
   }
 });
 
+test("arena remains playable on small screens with reduced motion", async ({
+  request,
+  browser,
+  baseURL,
+}) => {
+  test.setTimeout(60000);
+  const login = await request.post("/api/auth/login", {
+    data: { email: "teacher@test.example", password: "Testing12345" },
+  });
+  expect(login.ok()).toBeTruthy();
+  const teacher = await login.json();
+  const created = await request.post("/api/games", {
+    headers: { Authorization: `Bearer ${teacher.token}` },
+    data: {
+      demo: true,
+      language: "ru",
+      mode: "arena",
+      requestKey: crypto.randomUUID(),
+      roundSeconds: 60,
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const { code } = await created.json();
+  const errors = [];
+  const context = await browser.newContext({
+    baseURL,
+    viewport: { width: 320, height: 568 },
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+  });
+  await context.addInitScript(() => {
+    localStorage.setItem("urpaq_language", "ru");
+    localStorage.setItem("urpaq_theme", "light");
+  });
+  const phone = await context.newPage();
+  phone.on("pageerror", (error) => errors.push(error.message));
+
+  try {
+    await phone.goto(`/play/${code}`);
+    await phone.getByLabel("Твоё имя").fill("Reduced A");
+    await phone
+      .getByRole("button", { name: "Присоединиться", exact: true })
+      .click();
+    const other = await request.post(`/api/games/${code}/join`, {
+      data: { name: "Reduced B", clientKey: crypto.randomUUID() },
+    });
+    expect(other.ok()).toBeTruthy();
+    const started = await request.post(`/api/games/${code}/control`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+      data: { action: "start" },
+    });
+    expect(started.ok()).toBeTruthy();
+
+    await expect(
+      phone.getByRole("heading", { name: "6 × 7 = ?" }),
+    ).toBeVisible({ timeout: 10000 });
+    await expect(
+      phone.getByRole("button", { name: "Анимация", exact: true }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await noOverflow(phone);
+
+    const canvas = phone.locator("canvas");
+    await expect(canvas).toBeVisible();
+    await phone.waitForTimeout(200);
+    const stillFrame = await canvas.evaluate((element) => element.toDataURL());
+    await phone.waitForTimeout(450);
+    expect(await canvas.evaluate((element) => element.toDataURL())).toBe(
+      stillFrame,
+    );
+    const activeAnimations = await phone
+      .locator(".arena-shell *")
+      .evaluateAll((elements) =>
+        elements
+          .map((element) => getComputedStyle(element).animationName)
+          .filter((name) => name && name !== "none"),
+      );
+    expect(activeAnimations).toEqual([]);
+
+    await phone.locator(".arena-option").nth(0).click();
+    await expect(
+      phone.getByRole("button", { name: "Импульс", exact: true }),
+    ).toBeVisible();
+    const portraitAction = await phone
+      .getByRole("button", { name: "Импульс", exact: true })
+      .boundingBox();
+    expect(portraitAction).not.toBeNull();
+    expect(portraitAction.y + portraitAction.height).toBeLessThanOrEqual(568);
+
+    await phone.setViewportSize({ width: 844, height: 390 });
+    await noOverflow(phone);
+    const landscapeButton = phone.getByRole("button", {
+      name: "Импульс",
+      exact: true,
+    });
+    await landscapeButton.scrollIntoViewIfNeeded();
+    const landscapeAction = await landscapeButton.boundingBox();
+    expect(landscapeAction).not.toBeNull();
+    expect(landscapeAction.y).toBeGreaterThanOrEqual(0);
+    expect(landscapeAction.y + landscapeAction.height).toBeLessThanOrEqual(
+      390,
+    );
+    await landscapeButton.click();
+    await expect(
+      phone.getByText("Атака выполнена", { exact: false }),
+    ).toBeVisible();
+
+    await expect
+      .poll(async () => {
+        const state = await request.get(`/api/games/${code}/state`, {
+          headers: { Authorization: `Bearer ${teacher.token}` },
+        });
+        return (await state.json()).health[1];
+      })
+      .toBe(82);
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+    await finishRoom(request, teacher, code);
+  }
+});
+
 test("AI questions are editable before creating a room and the join page fits a small phone", async ({
   page,
   request,
 }, testInfo) => {
-  await teacherLogin(page, request);
+  const teacher = await teacherLogin(page, request);
   await page.goto("/games");
   await page.getByRole("button", { name: "Создать матч", exact: true }).click();
   await page.getByRole("button", { name: "AI по теме", exact: true }).click();
@@ -404,10 +782,17 @@ test("AI questions are editable before creating a room and the join page fits a 
   if (testInfo.project.name === "mobile")
     await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/play");
+  const joinPreviews = page.locator(".game-join-preview-item");
+  await expect(joinPreviews).toHaveCount(4);
+  for (const mode of ["arena", "orbit", "garden", "ocean"])
+    await expect(
+      page.locator(`.game-join-preview-item.mode-${mode}`),
+    ).toHaveCount(1);
   await noOverflow(page);
   await page.screenshot({
     path: `test-results/${testInfo.project.name}-arena-join.png`,
     fullPage: true,
     animations: "disabled",
   });
+  await finishRoom(request, teacher, code);
 });

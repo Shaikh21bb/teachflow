@@ -3,16 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
+  Blocks,
   BookOpen,
+  CircuitBoard,
   Clock,
   Gamepad2,
   Library,
   Loader2,
   Plus,
   RefreshCw,
+  Rocket,
   Sparkles,
   Sprout,
   Users,
+  Waves,
   X,
   Play,
 } from "lucide-react";
@@ -24,7 +28,15 @@ import { GameCover } from "../games/GameStage";
 import { gameModeIds, getGameMode } from "../games/modes";
 import "../games/games.css";
 
-const coverIcons = { arena: Gamepad2, garden: Sprout, word: BookOpen };
+const coverIcons = {
+  arena: Gamepad2,
+  garden: Sprout,
+  word: BookOpen,
+  orbit: Rocket,
+  tower: Blocks,
+  circuit: CircuitBoard,
+  ocean: Waves,
+};
 
 export function buildWordQuestions(raw, language = "ru") {
   const lines = raw
@@ -122,6 +134,7 @@ export default function Games() {
     () => gameModeIds.map((id) => getGameMode(id, language)),
     [language],
   );
+  const SelectedModeIcon = coverIcons[selectedMode] || Gamepad2;
 
   async function load() {
     setLoading(true);
@@ -349,13 +362,9 @@ export default function Games() {
                 </fieldset>
                 {source === "demo" && (
                   <div className="game-demo-summary">
-                    {selectedMode === "garden" ? <Sprout size={25} /> : <Gamepad2 size={25} />}
+                    <SelectedModeIcon size={25} />
                     <div>
-                      <strong>
-                        {selectedMode === "garden"
-                          ? t("Сад знаний", "Білім бағы")
-                          : t("Математическая дуэль", "Математикалық дуэль")}
-                      </strong>
+                      <strong>{mode.demoTitle}</strong>
                       <span>{t("10 вопросов · Без AI-кредитов", "10 сұрақ · AI кредитсіз")}</span>
                     </div>
                   </div>
@@ -492,14 +501,9 @@ export default function Games() {
           <div className="game-catalog" data-testid="game-catalog">
             {catalog.map((item) => {
               const Icon = coverIcons[item.id];
-              const buttonLabel = item.id === "arena"
-                ? t("Создать матч", "Матч жасау")
-                : item.id === "garden"
-                  ? t("Создать сад", "Бақ жасау")
-                  : t("Создать спринт", "Жарыс жасау");
               return (
                 <article className={`game-catalog-item mode-${item.id}`} data-game-mode={item.id} key={item.id}>
-                  <div className="game-cover">
+                  <div className="game-cover" aria-hidden="true">
                     <GameCover mode={item.id} />
                     <span className="game-cover-tag"><Icon size={13} /> {item.brand}</span>
                   </div>
@@ -518,7 +522,7 @@ export default function Games() {
                       onClick={() => openCreate(item.id)}
                       disabled={loading}
                     >
-                      <Plus size={18} /> {buttonLabel}
+                      <Plus size={18} /> {item.createLabel}
                     </button>
                   </div>
                 </article>

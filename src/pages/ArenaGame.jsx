@@ -25,6 +25,11 @@ import {
   Droplets,
   Sun,
   Sprout,
+  Cable,
+  RadioTower,
+  Shell,
+  LifeBuoy,
+  Waves,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import {
@@ -36,7 +41,10 @@ import {
   text,
 } from "../games/api";
 import useArena from "../games/useArena";
-import GameStage, { GameCover } from "../games/GameStage";
+import GameStage, {
+  GameCover,
+  formatGameProgress,
+} from "../games/GameStage";
 import { getGameMode } from "../games/modes";
 import "../games/games.css";
 
@@ -47,6 +55,12 @@ const actionIcons = {
   droplets: Droplets,
   sun: Sun,
   sprout: Sprout,
+  zap: Zap,
+  cable: Cable,
+  radio: RadioTower,
+  shell: Shell,
+  lifebuoy: LifeBuoy,
+  waves: Waves,
 };
 
 function JoinForm({ code: initialCode = "" }) {
@@ -91,9 +105,10 @@ function JoinForm({ code: initialCode = "" }) {
       <div className="arena-join-content">
         <div className="game-join-preview" aria-hidden="true">
           {[
-            ["arena", "Arena"],
+            ["arena", t("Арена", "Арена")],
+            ["orbit", t("Орбита", "Орбита")],
             ["garden", t("Сад", "Бақ")],
-            ["word", t("Слова", "Сөздер")],
+            ["ocean", t("Океан", "Мұхит")],
           ].map(([mode, label]) => (
             <div className={`game-join-preview-item mode-${mode}`} key={mode}>
               <GameCover mode={mode} />
@@ -292,7 +307,9 @@ export default function ArenaGame({ host = false }) {
   if (!host && (!code || !player?.token)) return <JoinForm code={code} />;
   const shell = (children) => (
     <main
-      className={`arena-shell mode-${mode.id} ${!host && game?.me?.attackReady ? "arena-has-attack" : ""}`}
+      className={`arena-shell mode-${mode.id} ${
+        !host && game?.me?.attackReady ? "arena-has-attack" : ""
+      } ${!motion || game?.status === "paused" ? "arena-motion-off" : ""}`}
       data-game-mode={mode.id}
     >
       <header className="arena-top">
@@ -419,13 +436,13 @@ export default function ArenaGame({ host = false }) {
           t("Очки", "Ұпай"),
           t("Ответы", "Жауаптар"),
           t("Правильно", "Дұрыс"),
-          ...(mode.id === "word"
-            ? []
-            : [
+          ...(mode.actions.length
+            ? [
                 mode.id === "arena"
                   ? t("Удары", "Соққы")
                   : t("Действия", "Әрекеттер"),
-              ]),
+              ]
+            : []),
         ],
         ...data.players.map((p) => [
           p.name,
@@ -433,7 +450,7 @@ export default function ArenaGame({ host = false }) {
           p.score,
           p.answer_count,
           p.correct_count,
-          ...(mode.id === "word" ? [] : [p.hits]),
+          ...(mode.actions.length ? [p.hits] : []),
         ]),
       ];
       const url = URL.createObjectURL(
@@ -505,16 +522,27 @@ export default function ArenaGame({ host = false }) {
           )}
         </div>
       </div>
-      <section className="arena-stage" aria-label={mode.stageLabel}>
+      <section
+        className="arena-stage"
+        aria-label={mode.stageLabel}
+        data-game-status={game.status}
+      >
         <div className="arena-scoreboard">
           {[0, 1].map((team) => (
-            <div className={`arena-team-score team-${team}`} key={team}>
+            <div
+              className={`arena-team-score team-${team} ${
+                mode.id === "arena" && game.health[team] <= 25
+                  ? "is-critical"
+                  : ""
+              }`}
+              key={team}
+            >
               <div>
                 <strong>{mode.teams[team]}</strong>
                 <span>
                   {mode.id === "arena"
                     ? `${game.health[team]} HP`
-                    : `${Math.round(game.progress?.[team] || 0)}% ${mode.metric}`}
+                    : `${formatGameProgress(game.progress?.[team])}% ${mode.metric}`}
                 </span>
               </div>
               <div
@@ -541,6 +569,12 @@ export default function ArenaGame({ host = false }) {
               </div>
             </div>
           ))}
+          {mode.id === "arena" && (
+            <div className="arena-round-medallion" aria-hidden="true">
+              <small>{t("Раунд", "Раунд")}</small>
+              <strong>{Math.min(game.roundIndex + 1, game.questionCount)}</strong>
+            </div>
+          )}
         </div>
         <GameStage
           mode={mode.id}
@@ -550,8 +584,33 @@ export default function ArenaGame({ host = false }) {
           events={game.events}
           round={game.roundIndex}
           winner={game.status === "finished" ? game.winner : null}
+          finished={game.status === "finished"}
           motion={motion && game.status !== "paused"}
+          ariaLabel={`${t(
+            "Арена Knowledge Forge",
+            "Knowledge Forge аренасы",
+          )}: ${mode.teams.join(" — ")}`}
         />
+        {mode.id === "arena" && game.status === "running" && motion && (
+          <div
+            className="arena-round-cue"
+            key={`round-${game.roundIndex}`}
+            aria-hidden="true"
+          >
+            <span>{t("Раунд", "Раунд")}</span>
+            <strong>{game.roundIndex + 1}</strong>
+          </div>
+        )}
+        {mode.id === "arena" && game.status === "finished" && (
+          <div className="arena-fight-result" role="status">
+            <span>{t("Бой завершён", "Жекпе-жек аяқталды")}</span>
+            <strong>
+              {game.winner === null
+                ? t("Ничья", "Тең ойын")
+                : `${mode.teams[game.winner]} — ${t("победа", "жеңіс")}`}
+            </strong>
+          </div>
+        )}
         {game.status === "paused" && (
           <div className="arena-stage-notice">
             <Pause size={24} />

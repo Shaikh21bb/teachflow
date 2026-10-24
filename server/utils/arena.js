@@ -4,6 +4,52 @@ const cache = new Map();
 const reads = new Map();
 const queues = new Map();
 const MAX_PLAYERS = 40;
+const MODE_RULES = Object.freeze({
+  arena: Object.freeze({
+    actions: Object.freeze(["strike", "kick", "burst"]),
+    demoTitle: Object.freeze(["Математическая дуэль", "Математикалық дуэль"]),
+    progress: "health",
+    winner: "health",
+  }),
+  garden: Object.freeze({
+    actions: Object.freeze(["water", "sun", "bloom"]),
+    demoTitle: Object.freeze(["Сад знаний", "Білім бағы"]),
+    progress: "hits",
+    winner: "hits",
+  }),
+  word: Object.freeze({
+    actions: Object.freeze([]),
+    demoTitle: Object.freeze(["Словарный спринт", "Сөз жарысы"]),
+    progress: "correct",
+    winner: "correct",
+  }),
+  orbit: Object.freeze({
+    actions: Object.freeze([]),
+    demoTitle: Object.freeze(["Орбитальная гонка", "Орбиталық жарыс"]),
+    progress: "correct",
+    winner: "correct",
+  }),
+  tower: Object.freeze({
+    actions: Object.freeze([]),
+    demoTitle: Object.freeze(["Башня знаний", "Білім мұнарасы"]),
+    progress: "correct",
+    winner: "correct",
+  }),
+  circuit: Object.freeze({
+    actions: Object.freeze(["charge", "connect", "sync"]),
+    demoTitle: Object.freeze(["Энергосеть", "Энергия желісі"]),
+    progress: "hits",
+    winner: "hits",
+  }),
+  ocean: Object.freeze({
+    actions: Object.freeze(["collect", "rescue", "restore"]),
+    demoTitle: Object.freeze(["Спасение океана", "Мұхитты құтқару"]),
+    progress: "hits",
+    winner: "hits",
+  }),
+});
+const modeRule = (mode) => MODE_RULES[mode] || MODE_RULES.arena;
+const modeUsesActions = (mode) => modeRule(mode).actions.length > 0;
 const fail = (message, status = 400) => {
   throw Object.assign(new Error(message), { status });
 };
@@ -125,8 +171,9 @@ async function mutate(code, work) {
 
 async function finish(tx, room) {
   const mode = room.mode || "arena";
+  const rules = modeRule(mode);
   let winner;
-  if (mode === "arena") {
+  if (rules.winner === "health") {
     winner =
       Math.abs(room.cyan_health - room.coral_health) < 5
         ? null
@@ -145,7 +192,7 @@ async function finish(tx, room) {
     );
     if (!teams[0].n || !teams[1].n) winner = null;
     else {
-      const field = mode === "garden" ? "hits" : "correct";
+      const field = rules.winner;
       const left = teams[0][field] * teams[1].n;
       const right = teams[1][field] * teams[0].n;
       winner = left === right ? null : left > right ? 0 : 1;
@@ -209,6 +256,7 @@ async function readRoom(code) {
 function project({ room, players }, viewer) {
   const questions = JSON.parse(room.questions);
   const mode = room.mode || "arena";
+  const rules = modeRule(mode);
   const me = viewer.playerId
     ? players.find((p) => p.id === viewer.playerId)
     : null;
@@ -218,14 +266,17 @@ function project({ room, players }, viewer) {
     fail("Игра не найдена", 404);
   const question = questions[room.round_index];
   const progress =
-    mode === "arena"
+    rules.progress === "health"
       ? [100 - room.coral_health / 100, 100 - room.cyan_health / 100]
       : [0, 1].map((team) => {
           const members = players.filter((player) => player.team === team);
           if (!members.length) return 0;
           const value = members.reduce(
             (sum, player) =>
-              sum + (mode === "garden" ? player.hits : player.correct_count),
+              sum +
+                (rules.progress === "hits"
+                  ? player.hits
+                  : player.correct_count),
             0,
           );
           return Number(
@@ -282,6 +333,9 @@ function project({ room, players }, viewer) {
 
 module.exports = {
   MAX_PLAYERS,
+  MODE_RULES,
+  modeRule,
+  modeUsesActions,
   fail,
   one,
   normalizeQuestions,

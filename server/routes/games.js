@@ -7,12 +7,7 @@ const { getAll, getOne, withTransaction } = require("../db/database");
 const arena = require("../utils/arena");
 const router = express.Router();
 const secret = process.env.JWT_SECRET;
-const MODES = new Set(["arena", "garden", "word"]);
-const MODE_ACTIONS = {
-  arena: new Set(["strike", "kick", "burst"]),
-  garden: new Set(["water", "sun", "bloom"]),
-  word: new Set(),
-};
+const MODES = new Set(Object.keys(arena.MODE_RULES));
 const wrap = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res)).catch(next);
 const codeOf = (req) => String(req.params.code || "").toUpperCase();
@@ -122,13 +117,7 @@ router.post(
       arena.fail("Выберите один источник вопросов / Бір сұрақ көзін таңдаңыз");
     } else if (demo) {
       questions = arena.demoQuestions(language);
-      title = mode === "garden"
-        ? language === "kk"
-          ? "Білім бағы"
-          : "Сад знаний"
-        : language === "kk"
-          ? "Математикалық дуэль"
-          : "Математическая дуэль";
+      title = arena.modeRule(mode).demoTitle[language === "kk" ? 1 : 0];
     } else {
       const quiz = await getOne(
         "SELECT * FROM quizzes WHERE id=? AND user_id=?",
@@ -389,7 +378,7 @@ router.post(
           roundIndex,
           answerIndex,
           correct ? 1 : 0,
-          correct && (room.mode || "arena") !== "word" ? 1 : 0,
+          correct && arena.modeUsesActions(room.mode || "arena") ? 1 : 0,
           correct ? 100 : 0,
           correct ? 1 : 0,
           player.id,
@@ -406,11 +395,12 @@ const gameAction = (legacyAttack = false) =>
     if (!req.viewer.playerId) arena.fail("Только для участников", 403);
     await arena.mutate(codeOf(req), async (tx, room) => {
       const mode = room.mode || "arena";
-      if (mode === "word")
+      const rules = arena.modeRule(mode);
+      if (!rules.actions.length)
         arena.fail("В этом режиме команда движется после ответа", 409);
       if (legacyAttack && mode !== "arena")
         arena.fail("Используйте игровое действие / Ойын әрекетін қолданыңыз", 409);
-      if (!MODE_ACTIONS[mode]?.has(req.body.kind))
+      if (!rules.actions.includes(req.body.kind))
         arena.fail("Неизвестное игровое действие");
       if (
         room.status !== "running" ||

@@ -277,6 +277,150 @@ test("arena, garden and word keep distinct validated mechanics and persisted mod
   await control(arenaCode, "finish");
 });
 
+test("new game modes use the registered passive and action-progress rules", async () => {
+  assert.deepEqual(Object.keys(arena.MODE_RULES), [
+    "arena",
+    "garden",
+    "word",
+    "orbit",
+    "tower",
+    "circuit",
+    "ocean",
+  ]);
+
+  for (const mode of ["orbit", "tower"]) {
+    const code = await create({ mode });
+    const left = await join(code, `${mode} left`);
+    await join(code, `${mode} right`);
+    await control(code, "start");
+    const answer = await request(`/games/${code}/answer`, left.token, "POST", {
+      roundIndex: 0,
+      answerIndex: 0,
+    });
+    assert.equal(answer.status, 200, JSON.stringify(answer.body));
+    assert.equal(answer.body.correct, true);
+    assert.equal(
+      (
+        await request(`/games/${code}/action`, left.token, "POST", {
+          roundIndex: 0,
+          kind: "boost",
+        })
+      ).status,
+      409,
+    );
+    arena.invalidate(code);
+    const state = (await request(`/games/${code}/state`, left.token)).body;
+    assert.equal(state.mode, mode);
+    assert.deepEqual(state.health, [100, 100]);
+    assert.deepEqual(state.progress, [10, 0]);
+    assert.equal(state.me.attackReady, false);
+    await control(code, "finish");
+    assert.equal(
+      (await request(`/games/${code}/state`, left.token)).body.winner,
+      0,
+    );
+  }
+
+  const actionModes = {
+    circuit: ["charge", "connect", "sync"],
+    ocean: ["collect", "rescue", "restore"],
+  };
+  const demoAnswers = arena.demoQuestions("ru").map((question) => question.correct);
+  for (const [mode, actions] of Object.entries(actionModes)) {
+    const code = await create({ mode });
+    const left = await join(code, `${mode} left`);
+    await join(code, `${mode} right`);
+    await control(code, "start");
+    for (let roundIndex = 0; roundIndex < actions.length; roundIndex += 1) {
+      const answer = await request(`/games/${code}/answer`, left.token, "POST", {
+        roundIndex,
+        answerIndex: demoAnswers[roundIndex],
+      });
+      assert.equal(answer.status, 200, JSON.stringify(answer.body));
+      arena.invalidate(code);
+      assert.equal(
+        (await request(`/games/${code}/state`, left.token)).body.me.attackReady,
+        true,
+      );
+      const action = await request(
+        `/games/${code}/action`,
+        left.token,
+        "POST",
+        { roundIndex, kind: actions[roundIndex] },
+      );
+      assert.equal(action.status, 200, JSON.stringify(action.body));
+      if (roundIndex + 1 < actions.length) await control(code, "next");
+    }
+    assert.equal(
+      (
+        await request(`/games/${code}/action`, left.token, "POST", {
+          roundIndex: actions.length - 1,
+          kind: mode === "circuit" ? "collect" : "charge",
+        })
+      ).status,
+      400,
+    );
+    arena.invalidate(code);
+    const state = (await request(`/games/${code}/state`, left.token)).body;
+    assert.equal(state.mode, mode);
+    assert.deepEqual(state.health, [100, 100]);
+    assert.deepEqual(state.progress, [30, 0]);
+    assert.equal(state.me.attackReady, false);
+    assert.deepEqual(
+      state.events.map((event) => event.kind),
+      actions,
+    );
+    await control(code, "finish");
+    assert.equal(
+      (await request(`/games/${code}/state`, left.token)).body.winner,
+      0,
+    );
+  }
+});
+
+test("action progress keeps a non-zero tenth-percent step for forty players and twenty questions", async () => {
+  const questions = Array.from({ length: 20 }, (_, index) => ({
+    question: `Scale question ${index + 1}`,
+    options: ["Correct", "Wrong A", "Wrong B", "Wrong C"],
+    correct: 0,
+  }));
+  const quiz = await request("/quizzes", teacher, "POST", {
+    title: "Action progress scale",
+    questions,
+  });
+  assert.equal(quiz.status, 201, JSON.stringify(quiz.body));
+  const code = await create({
+    demo: false,
+    mode: "circuit",
+    quizId: quiz.body.id,
+  });
+  const players = await Promise.all(
+    Array.from({ length: 40 }, (_, index) =>
+      join(code, `Scale ${index + 1}`),
+    ),
+  );
+  await control(code, "start");
+  const answer = await request(
+    `/games/${code}/answer`,
+    players[0].token,
+    "POST",
+    { roundIndex: 0, answerIndex: 0 },
+  );
+  assert.equal(answer.status, 200, JSON.stringify(answer.body));
+  const action = await request(
+    `/games/${code}/action`,
+    players[0].token,
+    "POST",
+    { roundIndex: 0, kind: "charge" },
+  );
+  assert.equal(action.status, 200, JSON.stringify(action.body));
+  arena.invalidate(code);
+  const state = (await request(`/games/${code}/state`, players[0].token)).body;
+  assert.equal(state.lastEvent.damage, 0.3);
+  assert.deepEqual(state.progress, [0.3, 0]);
+  await control(code, "finish");
+});
+
 test("word accepts a twenty-pair payload near the UI field limits", async () => {
   const definitions = Array.from({ length: 20 }, (_, index) =>
     `${"определение".repeat(20)} ${index}`.slice(0, 240),
