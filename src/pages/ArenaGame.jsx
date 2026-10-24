@@ -19,6 +19,7 @@ import {
   Maximize,
   Sparkles,
   Loader2,
+  MonitorPlay,
   RefreshCw,
   Trophy,
   WifiOff,
@@ -62,6 +63,21 @@ const actionIcons = {
   lifebuoy: LifeBuoy,
   waves: Waves,
 };
+const boardAnswerKeys = new Map([
+  ["1", 0],
+  ["2", 1],
+  ["3", 2],
+  ["4", 3],
+  ["a", 0],
+  ["b", 1],
+  ["c", 2],
+  ["d", 3],
+]);
+const boardActionKeys = new Map([
+  ["q", 0],
+  ["w", 1],
+  ["e", 2],
+]);
 
 function JoinForm({ code: initialCode = "" }) {
   const { language, toggleLanguage } = useLanguage(),
@@ -192,7 +208,7 @@ function QR({ url }) {
   ) : null;
 }
 
-function Results({ game, host, t, mode, onExport }) {
+function Results({ game, host, t, mode, onExport, board = false }) {
   const answered = game.players.reduce((n, p) => n + p.answered, 0),
     correct = game.players.reduce((n, p) => n + p.correct, 0);
   return (
@@ -208,7 +224,7 @@ function Results({ game, host, t, mode, onExport }) {
       <div className="arena-result-summary">
         <div>
           <strong>{game.players.length}</strong>
-          <span>{t("Участников", "Қатысушы")}</span>
+          <span>{board ? t("Команды", "Команда") : t("Участников", "Қатысушы")}</span>
         </div>
         <div>
           <strong>
@@ -237,7 +253,7 @@ function Results({ game, host, t, mode, onExport }) {
           <thead>
             <tr>
               <th>#</th>
-              <th>{t("Участник", "Қатысушы")}</th>
+              <th>{board ? t("Команда", "Команда") : t("Участник", "Қатысушы")}</th>
               <th>{t("Ответы", "Жауаптар")}</th>
               <th>{t("Очки", "Ұпай")}</th>
             </tr>
@@ -248,7 +264,7 @@ function Results({ game, host, t, mode, onExport }) {
                 <td>{i + 1}</td>
                 <td>
                   <span className={`arena-team-dot team-${p.team}`} />
-                  {p.name}
+                  {board ? mode.teams[p.team] : p.name}
                 </td>
                 <td>
                   {p.correct}/{p.answered}
@@ -258,6 +274,192 @@ function Results({ game, host, t, mode, onExport }) {
             ))}
           </tbody>
         </table>
+      </div>
+    </section>
+  );
+}
+
+function BoardRound({
+  game,
+  mode,
+  t,
+  seconds,
+  busy,
+  online,
+  onAnswer,
+  onAction,
+  onNext,
+}) {
+  const activeTeam = Number.isInteger(game.activeTeam)
+    ? game.activeTeam
+    : game.roundIndex % 2;
+  const teamState =
+    game.boardTeams?.find((team) => team.team === activeTeam) || {};
+  const hasAnswered =
+    teamState.hasAnswered === true ||
+    (teamState.answer !== null && teamState.answer !== undefined);
+  const actionReady = teamState.actionReady === true;
+  const canAnswer =
+    !busy &&
+    online &&
+    game.status === "running" &&
+    seconds > 0 &&
+    !hasAnswered;
+  const canContinue = hasAnswered && !actionReady;
+  const keyboardControls = useRef({ onAnswer, onAction, onNext, actions: mode.actions });
+
+  useEffect(() => {
+    keyboardControls.current = {
+      onAnswer,
+      onAction,
+      onNext,
+      actions: mode.actions,
+    };
+  }, [mode.actions, onAction, onAnswer, onNext]);
+
+  useEffect(() => {
+    function handleKeydown(event) {
+      if (
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(
+          event.target?.tagName,
+        ) ||
+        document.querySelector("dialog[open]")
+      )
+        return;
+      const key = event.key.toLowerCase();
+      const answerIndex = boardAnswerKeys.get(key);
+      if (canAnswer && answerIndex !== undefined) {
+        event.preventDefault();
+        keyboardControls.current.onAnswer(answerIndex);
+        return;
+      }
+      const actionIndex = boardActionKeys.get(key);
+      const boardAction = keyboardControls.current.actions[actionIndex];
+      if (
+        actionReady &&
+        !busy &&
+        online &&
+        game.status === "running" &&
+        seconds > 0 &&
+        boardAction
+      ) {
+        event.preventDefault();
+        keyboardControls.current.onAction(boardAction.id);
+        return;
+      }
+      if (
+        canContinue &&
+        !busy &&
+        online &&
+        game.status === "running" &&
+        event.key === "Enter"
+      ) {
+        event.preventDefault();
+        keyboardControls.current.onNext();
+      }
+    }
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [actionReady, busy, canAnswer, canContinue, game.status, online, seconds]);
+
+  return (
+    <section className="arena-question-section arena-board-round">
+      <div className="arena-board-turn" role="status" aria-live="polite">
+        <div className="arena-board-team-track" aria-hidden="true">
+          {[0, 1].map((team) => (
+            <span
+              className={`team-${team} ${team === activeTeam ? "is-active" : ""}`}
+              key={team}
+            >
+              <i /> {mode.teams[team]}
+            </span>
+          ))}
+        </div>
+        <div className={`arena-board-turn-title team-${activeTeam}`}>
+          <span>{t("Ход команды", "Команда жүрісі")}</span>
+          <strong>{mode.teams[activeTeam]}</strong>
+        </div>
+        <span className={`arena-timer ${seconds <= 5 ? "urgent" : ""}`} role="timer">
+          {seconds}<small>{t("сек", "сек")}</small>
+        </span>
+      </div>
+
+      <div className="arena-board-question-count">
+        {t("Вопрос", "Сұрақ")} {game.roundIndex + 1} / {game.questionCount}
+      </div>
+      <h1>{game.question?.text}</h1>
+      <div className="arena-options arena-board-options">
+        {game.question?.options.map((option, index) => {
+          const selected = hasAnswered && teamState.answer === index;
+          return (
+            <button
+              key={`${game.roundIndex}-${index}`}
+              data-answer-index={index}
+              className={`arena-option ${
+                selected ? (teamState.correct ? "correct" : "incorrect") : ""
+              }`}
+              disabled={!canAnswer}
+              onClick={() => onAnswer(index)}
+            >
+              <span>{"ABCD"[index]}</span>
+              <span>{option}</span>
+              <kbd>{index + 1}</kbd>
+              {selected && (teamState.correct ? <Check size={21} /> : <X size={21} />)}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="arena-board-response" aria-live="polite">
+        {!hasAnswered ? (
+          <span>
+            {t("Команда отвечает касанием или клавишами 1–4", "Команда түрту арқылы немесе 1–4 пернелерімен жауап береді")}
+          </span>
+        ) : actionReady ? (
+          <>
+            <strong className="arena-correct"><Check size={19} /> {t("Верно! Выберите действие", "Дұрыс! Әрекетті таңдаңыз")}</strong>
+            <div className="arena-board-actions">
+              {mode.actions.map(({ id: kind, icon, label }, index) => {
+                const Icon = actionIcons[icon];
+                return (
+                  <button
+                    className="arena-button"
+                    key={kind}
+                    data-game-action={kind}
+                    disabled={busy || !online || game.status !== "running" || !seconds}
+                    onClick={() => onAction(kind)}
+                  >
+                    <Icon size={20} /> <span>{label}</span><kbd>{["Q", "W", "E"][index]}</kbd>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            <strong className={teamState.correct ? "arena-correct" : "arena-board-incorrect"}>
+              {teamState.correct ? <Check size={19} /> : <X size={19} />}
+              {teamState.correct
+                ? t("Верно! Команда продвинулась", "Дұрыс! Команда алға жылжыды")
+                : t("Ответ принят — ход переходит соперникам", "Жауап қабылданды — кезек қарсыласқа өтеді")}
+            </strong>
+            <button
+              className="arena-button arena-board-next"
+              disabled={busy || !online || game.status !== "running"}
+              onClick={onNext}
+            >
+              <SkipForward size={19} />
+              {game.roundIndex + 1 === game.questionCount
+                ? t("Показать итоги", "Қорытындыны көрсету")
+                : t("Ход следующей команды", "Келесі команданың жүрісі")}
+              <kbd>Enter</kbd>
+            </button>
+          </>
+        )}
       </div>
     </section>
   );
@@ -282,6 +484,7 @@ export default function ArenaGame({ host = false }) {
   } = useArena(code, player?.token, host);
   const t = text(game?.language || language);
   const mode = getGameMode(game?.mode, game?.language || language);
+  const isBoard = host && game?.playMode === "board";
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [copied, setCopied] = useState(false),
@@ -307,10 +510,11 @@ export default function ArenaGame({ host = false }) {
   if (!host && (!code || !player?.token)) return <JoinForm code={code} />;
   const shell = (children) => (
     <main
-      className={`arena-shell mode-${mode.id} ${
+      className={`arena-shell mode-${mode.id} ${isBoard ? "is-board-mode" : ""} ${
         !host && game?.me?.attackReady ? "arena-has-attack" : ""
       } ${!motion || game?.status === "paused" ? "arena-motion-off" : ""}`}
       data-game-mode={mode.id}
+      data-play-mode={game?.playMode || "multiplayer"}
     >
       <header className="arena-top">
         <Link to={host ? "/games" : "/play"} className="arena-back">
@@ -402,8 +606,29 @@ export default function ArenaGame({ host = false }) {
     setBusy(true);
     setError("");
     try {
-      if (host) await gamesAPI.control(code, action, body, game.roundIndex);
-      else await playerRequest(code, player.token, action, body);
+      if (isBoard && action === "board-answer") {
+        await gamesAPI.boardAnswer(
+          code,
+          Number.isInteger(game.activeTeam)
+            ? game.activeTeam
+            : game.roundIndex % 2,
+          game.roundIndex,
+          body.answerIndex,
+        );
+      } else if (isBoard && action === "board-action") {
+        await gamesAPI.boardAction(
+          code,
+          Number.isInteger(game.activeTeam)
+            ? game.activeTeam
+            : game.roundIndex % 2,
+          game.roundIndex,
+          body.kind,
+        );
+      } else if (host) {
+        await gamesAPI.control(code, action, body, game.roundIndex);
+      } else {
+        await playerRequest(code, player.token, action, body);
+      }
       refresh();
     } catch (e) {
       setError(e.message);
@@ -499,7 +724,11 @@ export default function ArenaGame({ host = false }) {
         <div>
           <h2>{game.title}</h2>
           <span>
-            {game.status === "lobby"
+            {isBoard
+              ? game.status === "finished"
+                ? t("Игра на доске завершена", "Тақтадағы ойын аяқталды")
+                : `${t("Режим доски", "Тақта режимі")} · ${t("Вопрос", "Сұрақ")} ${game.roundIndex + 1} / ${game.questionCount}`
+              : game.status === "lobby"
               ? t("Сбор участников", "Қатысушылар жиналуда")
               : game.status === "finished"
                 ? mode.id === "arena"
@@ -508,10 +737,16 @@ export default function ArenaGame({ host = false }) {
                 : `${t("Вопрос", "Сұрақ")} ${game.roundIndex + 1} / ${game.questionCount}`}
           </span>
         </div>
-        <div className="arena-room-code">
-          <span>{t("Код", "Код")}</span>
-          <strong>{code}</strong>
-          {host && (
+        {isBoard ? (
+          <div className="arena-board-badge">
+            <MonitorPlay size={18} />
+            <span>{t("Электронная доска", "Интерактивті тақта")}</span>
+          </div>
+        ) : (
+          <div className="arena-room-code">
+            <span>{t("Код", "Код")}</span>
+            <strong>{code}</strong>
+            {host && (
             <button
               className="arena-icon"
               onClick={copy}
@@ -519,9 +754,11 @@ export default function ArenaGame({ host = false }) {
             >
               {copied ? <Check size={17} /> : <Copy size={17} />}
             </button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
+      <div className="arena-game-grid">
       <section
         className="arena-stage"
         aria-label={mode.stageLabel}
@@ -533,6 +770,14 @@ export default function ArenaGame({ host = false }) {
               className={`arena-team-score team-${team} ${
                 mode.id === "arena" && game.health[team] <= 25
                   ? "is-critical"
+                  : ""
+              } ${
+                isBoard &&
+                game.status !== "finished" &&
+                (Number.isInteger(game.activeTeam)
+                  ? game.activeTeam
+                  : game.roundIndex % 2) === team
+                  ? "is-turn"
                   : ""
               }`}
               key={team}
@@ -618,7 +863,7 @@ export default function ArenaGame({ host = false }) {
           </div>
         )}
       </section>
-      {game.status === "lobby" ? (
+      {game.status === "lobby" && !isBoard ? (
         <section className="arena-lobby">
           <div className="arena-lobby-main">
             <div className="games-heading">
@@ -692,7 +937,19 @@ export default function ArenaGame({ host = false }) {
           )}
         </section>
       ) : game.status === "finished" ? (
-        <Results game={game} host={host} t={t} mode={mode} onExport={exportCSV} />
+        <Results game={game} host={host} t={t} mode={mode} onExport={exportCSV} board={isBoard} />
+      ) : isBoard ? (
+        <BoardRound
+          game={game}
+          mode={mode}
+          t={t}
+          seconds={seconds}
+          busy={busy}
+          online={online}
+          onAnswer={(answerIndex) => act("board-answer", { answerIndex })}
+          onAction={(kind) => act("board-action", { kind })}
+          onNext={() => act("next")}
+        />
       ) : (
         <section className="arena-question-section">
           <div className="arena-question-heading">
@@ -794,6 +1051,7 @@ export default function ArenaGame({ host = false }) {
           )}
         </section>
       )}
+      </div>
       {host && game.status !== "finished" && (
         <footer className="arena-host-controls">
           {game.status !== "lobby" && (
@@ -814,16 +1072,18 @@ export default function ArenaGame({ host = false }) {
                   ? t("Продолжить", "Жалғастыру")
                   : t("Пауза", "Үзіліс")}
               </button>
-              <button
-                className="arena-button"
-                disabled={busy || !online || game.status === "paused"}
-                onClick={() => act("next")}
-              >
-                <SkipForward size={17} />
-                {game.roundIndex + 1 === game.questionCount
-                  ? t("К итогам", "Қорытынды")
-                  : t("Следующий вопрос", "Келесі сұрақ")}
-              </button>
+              {!isBoard && (
+                <button
+                  className="arena-button"
+                  disabled={busy || !online || game.status === "paused"}
+                  onClick={() => act("next")}
+                >
+                  <SkipForward size={17} />
+                  {game.roundIndex + 1 === game.questionCount
+                    ? t("К итогам", "Қорытынды")
+                    : t("Следующий вопрос", "Келесі сұрақ")}
+                </button>
+              )}
             </>
           )}
           <button

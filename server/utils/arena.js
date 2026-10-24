@@ -50,6 +50,8 @@ const MODE_RULES = Object.freeze({
 });
 const modeRule = (mode) => MODE_RULES[mode] || MODE_RULES.arena;
 const modeUsesActions = (mode) => modeRule(mode).actions.length > 0;
+const boardTurnCount = (questionCount, team) =>
+  Math.floor((questionCount + (team === 0 ? 1 : 0)) / 2);
 const fail = (message, status = 400) => {
   throw Object.assign(new Error(message), { status });
 };
@@ -172,6 +174,8 @@ async function mutate(code, work) {
 async function finish(tx, room) {
   const mode = room.mode || "arena";
   const rules = modeRule(mode);
+  const questionCount = JSON.parse(room.questions).length;
+  const board = room.play_mode === "board";
   let winner;
   if (rules.winner === "health") {
     winner =
@@ -193,8 +197,14 @@ async function finish(tx, room) {
     if (!teams[0].n || !teams[1].n) winner = null;
     else {
       const field = rules.winner;
-      const left = teams[0][field] * teams[1].n;
-      const right = teams[1][field] * teams[0].n;
+      const left =
+        teams[0][field] *
+        teams[1].n *
+        (board ? boardTurnCount(questionCount, 1) : 1);
+      const right =
+        teams[1][field] *
+        teams[0].n *
+        (board ? boardTurnCount(questionCount, 0) : 1);
       winner = left === right ? null : left > right ? 0 : 1;
     }
   }
@@ -256,6 +266,7 @@ async function readRoom(code) {
 function project({ room, players }, viewer) {
   const questions = JSON.parse(room.questions);
   const mode = room.mode || "arena";
+  const playMode = room.play_mode || "multiplayer";
   const rules = modeRule(mode);
   const me = viewer.playerId
     ? players.find((p) => p.id === viewer.playerId)
@@ -279,14 +290,39 @@ function project({ room, players }, viewer) {
                   : player.correct_count),
             0,
           );
+          const opportunities =
+            playMode === "board"
+              ? boardTurnCount(questions.length, team)
+              : questions.length;
           return Number(
-            Math.min(100, (value / (members.length * questions.length)) * 100).toFixed(1),
+            Math.min(100, (value / (members.length * opportunities)) * 100).toFixed(1),
           );
         });
   return {
     code: room.code,
     title: room.title,
     mode,
+    playMode,
+    activeTeam: playMode === "board" ? room.round_index % 2 : null,
+    boardTeams:
+      playMode === "board"
+        ? [...players].sort((a, b) => a.team - b.team).map((player) => ({
+            team: player.team,
+            name: player.name,
+            hasAnswered: player.last_round === room.round_index,
+            answer:
+              player.last_round === room.round_index
+                ? player.last_answer
+                : null,
+            correct:
+              player.last_round === room.round_index
+                ? !!player.last_correct
+                : null,
+            actionReady:
+              player.last_round === room.round_index && !!player.attack_ready,
+            score: player.score,
+          }))
+        : undefined,
     language: room.language,
     status: room.status,
     roundIndex: room.round_index,
@@ -336,6 +372,7 @@ module.exports = {
   MODE_RULES,
   modeRule,
   modeUsesActions,
+  boardTurnCount,
   fail,
   one,
   normalizeQuestions,

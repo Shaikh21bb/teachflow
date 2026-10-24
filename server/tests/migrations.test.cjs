@@ -47,14 +47,15 @@ test('legacy database upgrades without losing accounts or refilling spent balanc
         assert.ok(columns.some(column => column.name === 'claim_token'));
         const gameColumns = await db.getAll('PRAGMA table_info(game_rooms)');
         assert.ok(gameColumns.some(column => column.name === 'mode'));
+        assert.ok(gameColumns.some(column => column.name === 'play_mode'));
         const lessonFileColumns = await db.getAll('PRAGMA table_info(lesson_files)');
         assert.ok(lessonFileColumns.some(column => column.name === 'asset_owner_id'));
         const lessonColumns = await db.getAll('PRAGMA table_info(lessons)');
         assert.ok(lessonColumns.some(column => column.name === 'thumbnail_public_id'));
         assert.ok(lessonColumns.some(column => column.name === 'thumbnail_asset_owner_id'));
         assert.ok(await db.getOne("SELECT name FROM sqlite_master WHERE type='table' AND name='cloudinary_cleanup_jobs'"));
-        const legacyRoom = await db.getOne("SELECT title,questions,mode FROM game_rooms WHERE code='ABC123'");
-        assert.deepEqual(legacyRoom, { title: 'Legacy arena', questions: '[]', mode: 'arena' });
+        const legacyRoom = await db.getOne("SELECT title,questions,mode,play_mode FROM game_rooms WHERE code='ABC123'");
+        assert.deepEqual(legacyRoom, { title: 'Legacy arena', questions: '[]', mode: 'arena', play_mode: 'multiplayer' });
         assert.equal((await db.getOne('SELECT COUNT(*) AS count FROM saved_materials WHERE user_id = 1 AND lesson_id = 77')).count, 1);
         await assert.rejects(
             db.runQuery("INSERT INTO saved_materials (user_id, lesson_id, title) VALUES (1, 77, 'Blocked duplicate')"),

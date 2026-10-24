@@ -91,6 +91,188 @@ async function finishRoom(request, teacher, code) {
   });
 }
 
+async function openCreateFor(page, mode, playMode = "multiplayer") {
+  const catalog = page.getByTestId("game-catalog");
+  const card = catalog.locator(`[data-game-mode="${mode}"]`);
+  await card
+    .getByRole("button", {
+      name: playMode === "board" ? "Играть на доске" : "С телефонами",
+      exact: true,
+    })
+    .click();
+  const form = page.locator(`.game-create[data-game-mode="${mode}"]`);
+  await expect(form).toBeVisible();
+  await expect(
+    form.getByRole("button", {
+      name:
+        playMode === "board"
+          ? /На электронной доске/
+          : /С телефонами/,
+    }),
+  ).toHaveAttribute("aria-pressed", "true");
+  return form;
+}
+
+test("board play starts immediately, keeps turns on reload, and leaves multiplayer available", async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(75000);
+  const teacher = await teacherLogin(page, request);
+  const created = [];
+
+  try {
+    await page.goto("/games");
+    await page
+      .getByRole("button", { name: "Быстрый старт", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+    const quickCode = page.url().split("/").pop();
+    created.push(quickCode);
+    await expect(
+      page.locator("main[data-game-mode='arena'][data-play-mode='board']"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "6 × 7 = ?", exact: true }),
+    ).toBeVisible();
+
+    await page.goto("/games");
+    const form = await openCreateFor(page, "arena", "board");
+    await expect(
+      form.getByRole("button", { name: /На электронной доске/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      form.getByRole("button", { name: /С телефонами/ }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await expect(form.getByRole("note")).toContainText(
+      "Один экран — две команды",
+    );
+    await form
+      .getByRole("combobox", { name: "Секунд на вопрос", exact: true })
+      .selectOption("120");
+    await form
+      .getByRole("button", { name: "Играть на доске", exact: true })
+      .click();
+
+    await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+    const boardCode = page.url().split("/").pop();
+    created.push(boardCode);
+    const board = page.locator(
+      "main[data-game-mode='arena'][data-play-mode='board']",
+    );
+    await expect(board).toBeVisible();
+    await expect(board.locator(".arena-board-badge")).toContainText(
+      "Электронная доска",
+    );
+    await expect(
+      board.getByRole("heading", { name: "6 × 7 = ?", exact: true }),
+    ).toBeVisible();
+    await expect(board.locator(".arena-board-turn-title strong")).toHaveText(
+      "Бірлік",
+    );
+    await expect(board.locator(".arena-room-code")).toHaveCount(0);
+    await expect(board.locator(".arena-qr")).toHaveCount(0);
+    await expect(board.locator(".arena-lobby")).toHaveCount(0);
+
+    const initialState = await request.get(`/api/games/${boardCode}/state`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+    });
+    expect(initialState.ok()).toBeTruthy();
+    expect(await initialState.json()).toMatchObject({
+      playMode: "board",
+      status: "running",
+      roundIndex: 0,
+      activeTeam: 0,
+    });
+
+    await page.keyboard.press("1");
+    await expect(board.getByText("Верно! Выберите действие")).toBeVisible();
+    await board.getByRole("button", { name: "Пауза", exact: true }).click();
+    await expect(
+      board.getByRole("button", { name: "Продолжить", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("q");
+    const pausedState = await request.get(`/api/games/${boardCode}/state`, {
+      headers: { Authorization: `Bearer ${teacher.token}` },
+    });
+    expect(pausedState.ok()).toBeTruthy();
+    expect(await pausedState.json()).toMatchObject({
+      status: "paused",
+      health: [100, 100],
+      boardTeams: [{ actionReady: true }, { actionReady: false }],
+    });
+    await board
+      .getByRole("button", { name: "Продолжить", exact: true })
+      .click();
+    await expect(
+      board.getByRole("button", { name: "Пауза", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("q");
+    await expect(board.getByText("Верно! Команда продвинулась")).toBeVisible();
+    await expect(
+      board.getByRole("progressbar", { name: "Жалын HP" }),
+    ).toHaveAttribute("aria-valuenow", "82");
+
+    await page.reload();
+    await expect(
+      page.locator(".arena-option[data-answer-index='0']"),
+    ).toHaveClass(/correct/);
+    await expect(
+      page.getByRole("progressbar", { name: "Жалын HP" }),
+    ).toHaveAttribute("aria-valuenow", "82");
+    await expect(page.getByText("Верно! Команда продвинулась")).toBeVisible();
+
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { name: "144 ÷ 12 = ?", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".arena-board-turn-title strong")).toHaveText(
+      "Жалын",
+    );
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "144 ÷ 12 = ?", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".arena-board-turn-title strong")).toHaveText(
+      "Жалын",
+    );
+
+    await page.goto("/games");
+    const history = page.locator(`[data-room-code="${boardCode}"]`);
+    await expect(history).toBeVisible();
+    await expect(history).toContainText("Электронная доска · 2 команды");
+
+    const multiplayerForm = await openCreateFor(
+      page,
+      "arena",
+      "multiplayer",
+    );
+    await multiplayerForm
+      .getByRole("button", { name: "Создать комнату", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
+    const multiplayerCode = page.url().split("/").pop();
+    created.push(multiplayerCode);
+    const multiplayer = page.locator(
+      "main[data-game-mode='arena'][data-play-mode='multiplayer']",
+    );
+    await expect(multiplayer.locator(".arena-lobby")).toBeVisible();
+    await expect(
+      multiplayer.getByRole("heading", {
+        name: "Ожидаем участников",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(multiplayer.locator(".arena-room-code")).toContainText(
+      multiplayerCode,
+    );
+  } finally {
+    await Promise.all(
+      created.map((code) => finishRoom(request, teacher, code)),
+    );
+  }
+});
+
 test("catalog creates persisted garden and word rooms with their own stages", async ({
   page,
   request,
@@ -123,8 +305,7 @@ test("catalog creates persisted garden and word rooms with their own stages", as
     }
     await noOverflow(page);
 
-    await page.getByRole("button", { name: "Создать сад", exact: true }).click();
-    await expect(page.locator(".game-create[data-game-mode='garden']")).toBeVisible();
+    await openCreateFor(page, "garden");
     await page.getByRole("button", { name: "Создать комнату", exact: true }).click();
     await expect(page).toHaveURL(/\/games\/host\/[A-F0-9]{6}/);
     const gardenCode = page.url().split("/").pop();
@@ -170,8 +351,7 @@ test("catalog creates persisted garden and word rooms with their own stages", as
       data: { action: "finish" },
     });
     await page.goto("/games");
-    await page.getByRole("button", { name: "Создать спринт", exact: true }).click();
-    await expect(page.locator(".game-create[data-game-mode='word']")).toBeVisible();
+    await openCreateFor(page, "word");
     await page.getByLabel("Название набора", { exact: true }).fill("Biology words");
     await page.getByLabel("Пары слов", { exact: false }).fill(
       "cell = клетка\norgan = орган\ntissue = ткань\ngene = ген",
@@ -263,12 +443,7 @@ test("all seven catalog modes preserve their exact stage and mechanics", async (
         .getByTestId("game-catalog")
         .locator(`[data-game-mode="${mode.id}"]`);
       await expect(card).toBeVisible();
-      await card
-        .getByRole("button", { name: mode.createLabel, exact: true })
-        .click();
-      await expect(
-        page.locator(`.game-create[data-game-mode="${mode.id}"]`),
-      ).toBeVisible();
+      await openCreateFor(page, mode.id);
       await page
         .getByRole("button", { name: "Создать комнату", exact: true })
         .click();
@@ -422,7 +597,7 @@ test("teacher and phones complete an arena match, reconnect, retain scores and e
     fullPage: true,
     animations: "disabled",
   });
-  await page.getByRole("button", { name: "Создать матч", exact: true }).click();
+  await openCreateFor(page, "arena");
   await page
     .getByRole("combobox", { name: "Секунд на вопрос", exact: true })
     .selectOption("60");
@@ -757,7 +932,7 @@ test("AI questions are editable before creating a room and the join page fits a 
 }, testInfo) => {
   const teacher = await teacherLogin(page, request);
   await page.goto("/games");
-  await page.getByRole("button", { name: "Создать матч", exact: true }).click();
+  await openCreateFor(page, "arena");
   await page.getByRole("button", { name: "AI по теме", exact: true }).click();
   await page.getByLabel("Тема", { exact: true }).fill("Fractions");
   await page.getByLabel("Количество вопросов", { exact: true }).fill("2");

@@ -6,8 +6,13 @@
   ready-made quiz, or generate and review questions with AI. AI uses the
   existing quiz credit cost; creating and playing a room does not consume
   credits.
+- For one shared computer or electronic board, choose board play. The match
+  opens immediately with two local teams, without a QR code, room code or pupil
+  devices. Teams alternate by question; the server, not the browser, determines
+  whose turn it is.
 - Pupils: `/play` or the room link/QR, enter a nickname and join. Accounts are
-  not required. Teams are balanced automatically, with a maximum of 40 pupils.
+  not required in multiplayer play. Teams are balanced automatically, with a
+  maximum of 40 pupils.
 - `BILIM FORGE` is the combat mode: a correct answer unlocks one manual action.
   Its three action animations have the same damage and add 20 points.
 - Garden, Grid and Ocean are action-progress modes. A correct answer unlocks a
@@ -25,7 +30,9 @@
 SQLite/Turso holds the room, quiz snapshot, timer, players, answer ledger and
 scores. Each answer/attack runs in a write transaction. One answer and one attack
 per pupil per round are enforced server-side; client-supplied damage and scores
-are ignored. Joining and room creation have retry keys. A pupil's reconnect
+are ignored. Board play uses two server-created local team players and accepts
+answers/actions only from the owning teacher for the active team. Joining and
+room creation have retry keys. A pupil's reconnect
 credential is stored locally, separate from teacher and student account tokens.
 
 State polling is every approximately two seconds, with no overlapping requests,

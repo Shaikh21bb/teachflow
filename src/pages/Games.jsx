@@ -10,7 +10,9 @@ import {
   Gamepad2,
   Library,
   Loader2,
+  MonitorPlay,
   Plus,
+  QrCode,
   RefreshCw,
   Rocket,
   Sparkles,
@@ -19,6 +21,7 @@ import {
   Waves,
   X,
   Play,
+  Smartphone,
 } from "lucide-react";
 import { quizzesAPI } from "../api";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -118,6 +121,7 @@ export default function Games() {
     [error, setError] = useState("");
   const [creating, setCreating] = useState(false),
     [selectedMode, setSelectedMode] = useState("arena"),
+    [playMode, setPlayMode] = useState("board"),
     [source, setSource] = useState("demo");
   const [quizId, setQuizId] = useState(""),
     [seconds, setSeconds] = useState(30);
@@ -154,13 +158,41 @@ export default function Games() {
     load();
   }, []);
 
-  function openCreate(id) {
+  function openCreate(id, nextPlayMode = "board") {
     requestKey.current = crypto.randomUUID();
     setSelectedMode(id);
+    setPlayMode(nextPlayMode);
     setSource(id === "word" ? "words" : "demo");
     setQuestions([]);
     setError("");
     setCreating(true);
+  }
+
+  function choosePlayMode(nextPlayMode) {
+    if (nextPlayMode === playMode) return;
+    requestKey.current = crypto.randomUUID();
+    setPlayMode(nextPlayMode);
+  }
+
+  async function quickStartBoard() {
+    if (busy || loading) return;
+    setBusy(true);
+    setError("");
+    try {
+      const room = await gamesAPI.create({
+        requestKey: requestKey.current,
+        mode: "arena",
+        playMode: "board",
+        roundSeconds: 60,
+        language,
+        demo: true,
+      });
+      navigate(`/games/host/${room.code}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function generate() {
@@ -206,6 +238,7 @@ export default function Games() {
       const payload = {
         requestKey: requestKey.current,
         mode: selectedMode,
+        playMode,
         roundSeconds: Number(seconds),
         language,
       };
@@ -257,8 +290,8 @@ export default function Games() {
           <h1 className="page-title">{t("Игровая лаборатория", "Ойын зертханасы")}</h1>
           <p className="page-subtitle">
             {t(
-              "Запускайте интерактивный урок на экране, а ученики подключатся по QR-коду.",
-              "Интерактивті сабақты экранда бастаңыз, оқушылар QR-кодпен қосылады.",
+              "Играйте всем классом прямо на электронной доске или подключайте учеников с телефонов.",
+              "Бүкіл сыныппен интерактивті тақтада ойнаңыз немесе оқушыларды телефонмен қосыңыз.",
             )}
           </p>
         </div>
@@ -304,6 +337,45 @@ export default function Games() {
             <p>{mode.description}</p>
           </div>
           <form onSubmit={create}>
+            <fieldset className="game-play-mode" data-testid="game-play-mode">
+              <legend>{t("Как будем играть?", "Қалай ойнаймыз?")}</legend>
+              <button
+                type="button"
+                aria-pressed={playMode === "board"}
+                disabled={busy || generating}
+                onClick={() => choosePlayMode("board")}
+              >
+                <span className="game-play-mode-icon"><MonitorPlay size={24} /></span>
+                <span>
+                  <strong>{t("На электронной доске", "Интерактивті тақтада")}</strong>
+                  <small>{t("2 команды · без QR и телефонов", "2 команда · QR мен телефонсыз")}</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={playMode === "multiplayer"}
+                disabled={busy || generating}
+                onClick={() => choosePlayMode("multiplayer")}
+              >
+                <span className="game-play-mode-icon"><QrCode size={24} /></span>
+                <span>
+                  <strong>{t("С телефонами", "Телефондармен")}</strong>
+                  <small>{t("Ученики входят по QR или коду", "Оқушылар QR не кодпен кіреді")}</small>
+                </span>
+              </button>
+            </fieldset>
+            {playMode === "board" && (
+              <div className="game-board-note" role="note">
+                <MonitorPlay size={19} />
+                <span>
+                  <strong>{t("Один экран — две команды.", "Бір экран — екі команда.")}</strong>{" "}
+                  {t(
+                    "После запуска включите полный экран и отвечайте касанием или клавишами 1–4.",
+                    "Іске қосқан соң толық экранды ашып, түрту арқылы немесе 1–4 пернелерімен жауап беріңіз.",
+                  )}
+                </span>
+              </div>
+            )}
             {selectedMode === "word" ? (
               <div className="word-builder">
                 <label className="arena-label">
@@ -490,14 +562,50 @@ export default function Games() {
                   (source === "ai" && !questions.length)
                 }
               >
-                {busy ? <Loader2 size={18} className="arena-spin" /> : <Plus size={18} />}
-                {t("Создать комнату", "Бөлме жасау")}
+                {busy ? (
+                  <Loader2 size={18} className="arena-spin" />
+                ) : playMode === "board" ? (
+                  <MonitorPlay size={18} />
+                ) : (
+                  <Plus size={18} />
+                )}
+                {playMode === "board"
+                  ? t("Играть на доске", "Тақтада ойнау")
+                  : t("Создать комнату", "Бөлме жасау")}
               </button>
             </div>
           </form>
         </section>
       ) : (
         <>
+          <section className="game-board-callout">
+            <div className="game-board-callout-icon" aria-hidden="true">
+              <MonitorPlay size={32} />
+            </div>
+            <div>
+              <span className="games-eyebrow">BOARD PLAY</span>
+              <h2>{t("Сразу на электронной доске", "Бірден интерактивті тақтада")}</h2>
+              <p>
+                {t(
+                  "Разделите класс на две команды: вопрос, ответы и игровой мир уже на одном экране. Никаких QR-кодов и ожидания подключения.",
+                  "Сыныпты екі командаға бөліңіз: сұрақ, жауаптар және ойын әлемі бір экранда. QR-код та, қосылуды күту де қажет емес.",
+                )}
+              </p>
+              <div className="game-board-benefits" aria-label={t("Преимущества", "Артықшылықтар")}>
+                <span>{t("2 команды", "2 команда")}</span>
+                <span>{t("Сенсор или мышь", "Сенсор не тінтуір")}</span>
+                <span>{t("Клавиши 1–4", "1–4 пернелері")}</span>
+              </div>
+            </div>
+            <button
+              className="arena-button"
+              onClick={quickStartBoard}
+              disabled={loading || busy}
+            >
+              {busy ? <Loader2 size={18} className="arena-spin" /> : <Play size={18} />}
+              {t("Быстрый старт", "Жылдам бастау")}
+            </button>
+          </section>
           <div className="game-catalog" data-testid="game-catalog">
             {catalog.map((item) => {
               const Icon = coverIcons[item.id];
@@ -517,13 +625,22 @@ export default function Games() {
                         <span><Clock size={15} /> {t("15–120 сек / вопрос", "15–120 сек / сұрақ")}</span>
                       </div>
                     </div>
-                    <button
-                      className="arena-button"
-                      onClick={() => openCreate(item.id)}
-                      disabled={loading}
-                    >
-                      <Plus size={18} /> {item.createLabel}
-                    </button>
+                    <div className="game-catalog-actions">
+                      <button
+                        className="arena-button"
+                        onClick={() => openCreate(item.id, "board")}
+                        disabled={loading}
+                      >
+                        <MonitorPlay size={18} /> {t("Играть на доске", "Тақтада ойнау")}
+                      </button>
+                      <button
+                        className="arena-button secondary"
+                        onClick={() => openCreate(item.id, "multiplayer")}
+                        disabled={loading}
+                      >
+                        <Smartphone size={17} /> {t("С телефонами", "Телефондармен")}
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
@@ -557,7 +674,11 @@ export default function Games() {
                       <span className={`game-mode-mark mode-${roomMode.id}`}>{roomMode.name}</span>
                       <div>
                         <strong>{room.title}</strong>
-                        <span>{room.code} · {room.player_count} {t("участников", "қатысушы")}</span>
+                        <span>
+                          {(room.play_mode || room.playMode) === "board"
+                            ? t("Электронная доска · 2 команды", "Интерактивті тақта · 2 команда")
+                            : `${room.code} · ${room.player_count} ${t("участников", "қатысушы")}`}
+                        </span>
                       </div>
                       <span className={`game-status ${room.status}`}>{status[room.status]}</span>
                       <ArrowRight size={17} />

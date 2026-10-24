@@ -5,7 +5,7 @@ const fs = require('fs');
 
 let db = null;
 let initialization = null;
-const SCHEMA_VERSION = 'platform-24-lesson-asset-lifecycle';
+const SCHEMA_VERSION = 'platform-25-board-games';
 
 async function getDatabase() {
     if (initialization) return initialization;

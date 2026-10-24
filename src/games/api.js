@@ -63,6 +63,16 @@ export const gamesAPI = {
       method: "POST",
       body: JSON.stringify({ action, playerId, roundIndex }),
     }),
+  boardAnswer: (code, team, roundIndex, answerIndex) =>
+    teacherRequest(`/games/${code}/board-answer`, {
+      method: "POST",
+      body: JSON.stringify({ team, roundIndex, answerIndex }),
+    }),
+  boardAction: (code, team, roundIndex, kind) =>
+    teacherRequest(`/games/${code}/board-action`, {
+      method: "POST",
+      body: JSON.stringify({ team, roundIndex, kind }),
+    }),
   report: (code) => teacherRequest(`/games/${code}/report`),
 };
 export async function playerRequest(code, token, path = "state", body, signal) {

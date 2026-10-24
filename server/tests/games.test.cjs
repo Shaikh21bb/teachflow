@@ -120,6 +120,252 @@ test("arena validates questions and isolates teachers, rooms and player tokens",
   await control(code, "finish");
 });
 
+test("board mode starts immediately with two local teams and host-only alternating play", async () => {
+  assert.equal(
+    (
+      await request("/games", teacher, "POST", {
+        demo: true,
+        language: "ru",
+        playMode: "couch",
+      })
+    ).status,
+    400,
+  );
+
+  const requestKey = crypto.randomUUID();
+  const payload = {
+    demo: true,
+    mode: "arena",
+    language: "ru",
+    playMode: "board",
+    requestKey,
+  };
+  const created = await request("/games", teacher, "POST", payload);
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(created.body.playMode, "board");
+  const code = created.body.code;
+  const replayed = await request("/games", teacher, "POST", payload);
+  assert.equal(replayed.status, 201, JSON.stringify(replayed.body));
+  assert.deepEqual(replayed.body, created.body);
+
+  const initial = (await request(`/games/${code}/state`, teacher)).body;
+  assert.equal(initial.playMode, "board");
+  assert.equal(initial.status, "running");
+  assert.equal(initial.activeTeam, 0);
+  assert.equal(initial.players.length, 2);
+  assert.deepEqual(
+    initial.boardTeams.map((team) => team.team).sort(),
+    [0, 1],
+  );
+  assert.ok(initial.boardTeams.every((team) => !team.hasAnswered));
+  assert.equal(
+    (await db.getOne("SELECT COUNT(*) AS n FROM game_players WHERE room_id=(SELECT id FROM game_rooms WHERE code=?)", [code])).n,
+    2,
+  );
+  assert.equal(
+    (
+      await request(`/games/${code}/join`, null, "POST", {
+        name: "Remote pupil",
+        clientKey: crypto.randomUUID(),
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/games/${code}/board-answer`, other, "POST", {
+        team: 0,
+        roundIndex: 0,
+        answerIndex: 0,
+      })
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(`/games/${code}/board-answer`, teacher, "POST", {
+        team: 1,
+        roundIndex: 0,
+        answerIndex: 0,
+      })
+    ).status,
+    409,
+  );
+
+  const answered = await request(
+    `/games/${code}/board-answer`,
+    teacher,
+    "POST",
+    { team: 0, roundIndex: 0, answerIndex: 0 },
+  );
+  assert.equal(answered.status, 200, JSON.stringify(answered.body));
+  assert.equal(answered.body.correct, true);
+  const replayedAnswer = await request(
+    `/games/${code}/board-answer`,
+    teacher,
+    "POST",
+    { team: 0, roundIndex: 0, answerIndex: 3 },
+  );
+  assert.deepEqual(replayedAnswer.body, { correct: true, answerIndex: 0 });
+  arena.invalidate(code);
+  const afterAnswer = (await request(`/games/${code}/state`, teacher)).body;
+  assert.equal(afterAnswer.boardTeams.find((team) => team.team === 0).correct, true);
+  assert.equal(
+    afterAnswer.boardTeams.find((team) => team.team === 0).actionReady,
+    true,
+  );
+
+  const action = await request(
+    `/games/${code}/board-action`,
+    teacher,
+    "POST",
+    { team: 0, roundIndex: 0, kind: "burst" },
+  );
+  assert.equal(action.status, 200, JSON.stringify(action.body));
+  arena.invalidate(code);
+  assert.deepEqual(
+    (await request(`/games/${code}/state`, teacher)).body.health,
+    [100, 82],
+  );
+  assert.equal(
+    (
+      await request(`/games/${code}/board-action`, teacher, "POST", {
+        team: 0,
+        roundIndex: 0,
+        kind: "burst",
+      })
+    ).status,
+    409,
+  );
+
+  await control(code, "next", { roundIndex: 0 });
+  arena.invalidate(code);
+  const secondRound = (await request(`/games/${code}/state`, teacher)).body;
+  assert.equal(secondRound.roundIndex, 1);
+  assert.equal(secondRound.activeTeam, 1);
+  assert.ok(secondRound.boardTeams.every((team) => !team.hasAnswered));
+  const delayedRetry = await request(
+    `/games/${code}/board-answer`,
+    teacher,
+    "POST",
+    { team: 0, roundIndex: 0, answerIndex: 3 },
+  );
+  assert.equal(delayedRetry.status, 200, JSON.stringify(delayedRetry.body));
+  assert.deepEqual(delayedRetry.body, { correct: true, answerIndex: 0 });
+  assert.equal(
+    (
+      await request(`/games/${code}/board-answer`, teacher, "POST", {
+        team: 0,
+        roundIndex: 1,
+        answerIndex: 2,
+      })
+    ).status,
+    409,
+  );
+  const secondAnswer = await request(
+    `/games/${code}/board-answer`,
+    teacher,
+    "POST",
+    { team: 1, roundIndex: 1, answerIndex: 2 },
+  );
+  assert.equal(secondAnswer.status, 200, JSON.stringify(secondAnswer.body));
+  assert.equal(secondAnswer.body.correct, true);
+
+  const listed = (await request("/games", teacher)).body;
+  assert.equal(listed.find((room) => room.code === code).playMode, "board");
+  const report = (await request(`/games/${code}/report`, teacher)).body;
+  assert.equal(report.playMode, "board");
+  await control(code, "finish");
+
+  const multiplayer = await create();
+  assert.equal(
+    (await request(`/games/${multiplayer}/state`, teacher)).body.playMode,
+    "multiplayer",
+  );
+  assert.equal(
+    (
+      await request(`/games/${multiplayer}/board-answer`, teacher, "POST", {
+        team: 0,
+        roundIndex: 0,
+        answerIndex: 0,
+      })
+    ).status,
+    409,
+  );
+  await control(multiplayer, "finish");
+});
+
+test("odd board quizzes normalize passive, action and Arena opportunities", async () => {
+  const questions = Array.from({ length: 5 }, (_, index) => ({
+    question: `Board question ${index + 1}`,
+    options: ["Correct", "Wrong A", "Wrong B", "Wrong C"],
+    correct: 0,
+  }));
+  const quiz = await request("/quizzes", teacher, "POST", {
+    title: "Odd board quiz",
+    questions,
+  });
+  assert.equal(quiz.status, 201, JSON.stringify(quiz.body));
+
+  const cases = [
+    { mode: "arena", action: "strike", progress: [90, 90] },
+    { mode: "circuit", action: "charge", progress: [100, 100] },
+    { mode: "word", action: null, progress: [100, 100] },
+  ];
+  for (const scenario of cases) {
+    const payload =
+      scenario.mode === "word"
+        ? {
+            mode: "word",
+            playMode: "board",
+            language: "ru",
+            title: "Odd board words",
+            questions,
+          }
+        : {
+            mode: scenario.mode,
+            playMode: "board",
+            language: "ru",
+            demo: false,
+            quizId: quiz.body.id,
+          };
+    const created = await request("/games", teacher, "POST", payload);
+    assert.equal(created.status, 201, JSON.stringify(created.body));
+    const code = created.body.code;
+    for (let roundIndex = 0; roundIndex < questions.length; roundIndex += 1) {
+      const team = roundIndex % 2;
+      const answer = await request(
+        `/games/${code}/board-answer`,
+        teacher,
+        "POST",
+        { team, roundIndex, answerIndex: 0 },
+      );
+      assert.equal(answer.status, 200, JSON.stringify(answer.body));
+      assert.equal(answer.body.correct, true);
+      if (scenario.action) {
+        const action = await request(
+          `/games/${code}/board-action`,
+          teacher,
+          "POST",
+          { team, roundIndex, kind: scenario.action },
+        );
+        assert.equal(action.status, 200, JSON.stringify(action.body));
+      }
+      if (roundIndex + 1 < questions.length)
+        await control(code, "next", { roundIndex });
+    }
+    arena.invalidate(code);
+    const beforeFinish = (await request(`/games/${code}/state`, teacher)).body;
+    assert.deepEqual(beforeFinish.progress, scenario.progress);
+    if (scenario.mode === "arena") assert.deepEqual(beforeFinish.health, [10, 10]);
+    await control(code, "next", { roundIndex: questions.length - 1 });
+    arena.invalidate(code);
+    const finished = (await request(`/games/${code}/state`, teacher)).body;
+    assert.equal(finished.status, "finished");
+    assert.equal(finished.winner, null);
+  }
+});
+
 test("arena, garden and word keep distinct validated mechanics and persisted modes", async () => {
   const wordQuestions = ["cell", "organ", "tissue", "gene"].map(
     (term, index, terms) => ({
